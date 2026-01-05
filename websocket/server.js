@@ -217,7 +217,7 @@ io.on('connection', (socket) => {
       const game = gameServer.getPlayerGame(playerToken);
       
       if (!game) {
-        callback({ success: false, message: 'Player not in a game' });
+        if (typeof callback === 'function') callback({ success: false, message: 'Player not in a game' });
         return;
       }
 
@@ -231,10 +231,10 @@ io.on('connection', (socket) => {
         gameState
       });
 
-      callback({ success: true });
+      if (typeof callback === 'function') callback({ success: true });
     } catch (err) {
       console.error('Error marking player ready:', err);
-      callback({ success: false, message: 'Server error' });
+      if (typeof callback === 'function') callback({ success: false, message: 'Server error' });
     }
   });
 
