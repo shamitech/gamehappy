@@ -78,13 +78,27 @@ class SecretSyndicates extends GameManager {
         if (bodyGuardCount) roleList.push('Body Guard');
         for (let i = 0; i < bystanders; i++) roleList.push('Bystander');
 
+        console.log(`[${this.gameCode}] Role assignment for ${totalPlayers} players:`, {
+            syndicateCount,
+            detectiveCount,
+            eyeWitnessCount,
+            bodyGuardCount,
+            bystanders,
+            roleList
+        });
+
         // Shuffle roles
         this.shuffleArray(roleList);
+
+        console.log(`[${this.gameCode}] Roles after shuffle:`, roleList);
 
         // Assign roles to players
         for (let i = 0; i < players.length; i++) {
             this.roles.set(players[i].token, roleList[i]);
+            console.log(`[${this.gameCode}] Assigned ${players[i].name} (${players[i].token}): ${roleList[i]}`);
         }
+
+        console.log(`[${this.gameCode}] Final roles map:`, Array.from(this.roles.entries()).map(([token, role]) => ({ token, role })));
 
         return { success: true, roles: this.roles };
     }
@@ -93,7 +107,11 @@ class SecretSyndicates extends GameManager {
      * Get player's role
      */
     getPlayerRole(playerToken) {
-        return this.roles.get(playerToken);
+        const role = this.roles.get(playerToken);
+        if (!role) {
+            console.warn(`[${this.gameCode}] No role found for player ${playerToken}. Available roles:`, Array.from(this.roles.entries()));
+        }
+        return role;
     }
 
     /**
