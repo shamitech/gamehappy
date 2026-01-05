@@ -343,6 +343,53 @@ io.on('connection', (socket) => {
   });
 });
 
+// TEST ENDPOINT - Creates a pre-populated game for quick testing
+app.get('/test-game', (req, res) => {
+  try {
+    // Create game with 5 pre-populated players
+    const playerNames = ['A', 'B', 'C', 'D', 'E'];
+    const playerTokens = [];
+    
+    // Create the game with player A
+    const createResult = gameServer.createGame('secretsyndicates', 'test-player-1', 'A');
+    if (!createResult.success) {
+      return res.json({ success: false, message: 'Failed to create game' });
+    }
+    
+    const gameCode = createResult.gameCode;
+    const game = gameServer.games.get(gameCode);
+    playerTokens.push('test-player-1');
+    
+    // Add remaining players
+    for (let i = 1; i < playerNames.length; i++) {
+      const token = `test-player-${i + 1}`;
+      gameServer.joinGame(gameCode, token, playerNames[i]);
+      playerTokens.push(token);
+    }
+    
+    // Start the game
+    gameServer.startGame(gameCode, 'test-player-1');
+    
+    console.log(`[TEST] Created game ${gameCode} with 5 players`);
+    
+    // Return game info with player tokens
+    res.json({
+      success: true,
+      gameCode: gameCode,
+      players: [
+        { name: 'A', token: 'test-player-1', color: '#FF6B6B' },
+        { name: 'B', token: 'test-player-2', color: '#4ECDC4' },
+        { name: 'C', token: 'test-player-3', color: '#45B7D1' },
+        { name: 'D', token: 'test-player-4', color: '#FFA07A' },
+        { name: 'E', token: 'test-player-5', color: '#98D8C8' }
+      ]
+    });
+  } catch (err) {
+    console.error('Error creating test game:', err);
+    res.json({ success: false, message: 'Server error' });
+  }
+});
+
 server.listen(8443, () => {
   console.log('Socket.IO server running at wss://gamehappy.app/websocket');
   console.log('Ready to handle: secretsyndicates and future games');

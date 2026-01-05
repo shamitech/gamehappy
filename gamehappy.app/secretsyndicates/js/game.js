@@ -25,7 +25,25 @@ class Game {
 
     init() {
         console.log('Game.init() called');
-        this.loadSession();
+        
+        // Check for test mode
+        const urlParams = new URLSearchParams(window.location.search);
+        const testToken = urlParams.get('test');
+        if (testToken) {
+            // Test mode - use token from URL
+            this.playerToken = testToken;
+            const gameCode = sessionStorage.getItem('testGameCode');
+            const playerName = sessionStorage.getItem('testPlayerName');
+            if (gameCode && playerName) {
+                this.gameCode = gameCode;
+                this.playerName = playerName;
+                console.log(`[TEST MODE] Loaded as ${playerName} (${testToken}) in game ${gameCode}`);
+            }
+        } else {
+            // Normal mode - load from session
+            this.loadSession();
+        }
+        
         this.bindEvents();
         this.connect();
     }
