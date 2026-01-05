@@ -71,8 +71,9 @@ class Game {
         this.updateConnectionStatus('connecting');
 
         try {
-            // Connect to Socket.IO server with player token
-            this.socket = io('wss://gamehappy.app/websocket', {
+            // Connect to Socket.IO server with correct path
+            this.socket = io('wss://gamehappy.app', {
+                path: '/websocket',
                 query: {
                     token: this.playerToken || ''
                 },
