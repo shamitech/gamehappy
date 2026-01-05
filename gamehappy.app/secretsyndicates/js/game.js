@@ -629,6 +629,133 @@ class Game {
         }
     }
 
+    displayRoleIntro(gameState) {
+        console.log('displayRoleIntro called with gameState:', gameState);
+        
+        if (!gameState) {
+            console.error('No gameState provided');
+            return;
+        }
+
+        // Get player's role from gameState
+        const playerRole = gameState.playerRole;
+        console.log('Player role:', playerRole);
+
+        if (!playerRole) {
+            console.error('No playerRole in gameState');
+            return;
+        }
+
+        // Store role
+        this.role = playerRole;
+
+        try {
+            // Set role name
+            const roleEl = document.getElementById('player-role');
+            if (roleEl) {
+                roleEl.textContent = playerRole;
+                roleEl.className = 'role-name ' + playerRole.toLowerCase().replace(/\s+/g, '-');
+            }
+
+            // Set description based on role
+            const descEl = document.getElementById('role-description');
+            if (descEl) {
+                const descriptions = {
+                    'Syndicate': 'You are part of the secret criminal organization. Your goal is to eliminate all innocent citizens without being discovered.',
+                    'Detective': 'You are a skilled investigator working to expose the Syndicate. Use your abilities wisely to uncover the truth.',
+                    'Bystander': 'You are an ordinary citizen caught in the crossfire. Stay vigilant and help identify the Syndicate through observation and deduction.',
+                    'Eye Witness': 'You witnessed a crime and caught a glimpse of the underworld. You see who commits the assassination each round.',
+                    'Body Guard': 'You are a professional protector. Each night, you can choose one player to shield from harm.'
+                };
+                descEl.textContent = descriptions[playerRole] || 'Role description unavailable';
+            }
+
+            // Set abilities based on role
+            const abilitiesList = document.getElementById('role-abilities-list');
+            if (abilitiesList) {
+                abilitiesList.innerHTML = '';
+                const abilities = {
+                    'Syndicate': [
+                        'Vote each night to select a target',
+                        'Know the identity of your fellow Syndicate members',
+                        'Blend in during the day and mislead investigations'
+                    ],
+                    'Detective': [
+                        'Receive a secret keyword each round',
+                        'Share your findings during day discussions',
+                        'Lead the town to vote out Syndicate members'
+                    ],
+                    'Bystander': [
+                        'Vote during the day to eliminate suspected Syndicate',
+                        'Observe player behavior and discussions',
+                        'Form alliances with other players'
+                    ],
+                    'Eye Witness': [
+                        'Learn the assassin\'s identity each round',
+                        'Receive a keyword to signal the Detective',
+                        'Vote during the day like other citizens'
+                    ],
+                    'Body Guard': [
+                        'Protect one player each night from elimination',
+                        'Cannot protect yourself',
+                        'Cannot protect the same player two nights in a row'
+                    ]
+                };
+                
+                const roleAbilities = abilities[playerRole] || [];
+                roleAbilities.forEach(ability => {
+                    const li = document.createElement('li');
+                    li.textContent = ability;
+                    abilitiesList.appendChild(li);
+                });
+            }
+
+            // Set win condition
+            const winEl = document.getElementById('role-win-condition');
+            if (winEl) {
+                const winConditions = {
+                    'Syndicate': 'Eliminate enough players until Syndicate equals or outnumbers the Town',
+                    'Detective': 'Survive and help eliminate all Syndicate members',
+                    'Bystander': 'Survive and help eliminate all Syndicate members',
+                    'Eye Witness': 'Survive and help eliminate all Syndicate members',
+                    'Body Guard': 'Survive and help eliminate all Syndicate members'
+                };
+                winEl.textContent = winConditions[playerRole] || 'Unknown win condition';
+            }
+
+            // Show teammates for Syndicate
+            const teammatesSection = document.getElementById('teammates-section');
+            const teammatesList = document.getElementById('teammates-list');
+            
+            if (playerRole === 'Syndicate' && gameState.syndicate && gameState.syndicate.length > 1) {
+                if (teammatesSection) {
+                    teammatesSection.style.display = 'block';
+                    if (teammatesList) {
+                        teammatesList.innerHTML = '';
+                        // Get teammates (other syndicate members)
+                        const teammates = gameState.syndicate.filter(s => s.name !== this.playerName);
+                        teammates.forEach(teammate => {
+                            const li = document.createElement('li');
+                            li.textContent = teammate.name;
+                            teammatesList.appendChild(li);
+                        });
+                    }
+                }
+            } else if (teammatesSection) {
+                teammatesSection.style.display = 'none';
+            }
+
+            // Update ready status
+            const readyCount = document.getElementById('ready-count');
+            const readyTotal = document.getElementById('ready-total');
+            if (readyCount) readyCount.textContent = gameState.readyCount || 0;
+            if (readyTotal) readyTotal.textContent = gameState.totalPlayers || 0;
+
+        } catch (e) {
+            console.error('Error in displayRoleIntro:', e);
+        }
+    }
+
     onGameJoined(data) {
         this.isHost = false;
         this.gameCode = data.gameCode;
