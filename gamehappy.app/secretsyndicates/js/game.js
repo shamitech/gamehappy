@@ -134,9 +134,9 @@ class Game {
                 this.updateReadyStatus(data.playerCount, data.totalPlayers);
             });
 
-            this.socket.on('phase-advanced', (data) => {
-                console.log('Phase advanced to:', data.newPhase);
-                this.handlePhaseChange(data.newPhase, data.gameState, data.round);
+            this.socket.on('on-phase-start', (data) => {
+                console.log('Phase start received:', data);
+                this.onPhaseStart(data);
             });
 
             this.socket.on('player-left', (data) => {
@@ -953,123 +953,6 @@ class Game {
         
         if (readyCountEl) readyCountEl.textContent = playerCount;
         if (readyTotalEl) readyTotalEl.textContent = totalPlayers;
-    }
-
-    handlePhaseChange(newPhase, gameState, round) {
-        console.log('handlePhaseChange: transitioning to', newPhase);
-        
-        // Store current game state
-        this.currentGameState = gameState;
-        
-        // Handle phase-specific transitions
-        switch(newPhase) {
-            case 'night':
-                console.log('Starting night phase');
-                this.showNightPhase(gameState, round);
-                break;
-            case 'murder':
-                console.log('Starting murder phase');
-                this.showMurderPhase(gameState);
-                break;
-            case 'discussion':
-                console.log('Starting discussion phase');
-                this.showDiscussionPhase(gameState);
-                break;
-            case 'vote':
-                console.log('Starting vote phase');
-                this.showVotePhase(gameState);
-                break;
-            case 'trial':
-                console.log('Starting trial phase');
-                this.showTrialPhase(gameState);
-                break;
-            case 'ended':
-                console.log('Game ended');
-                this.showGameEndScreen(gameState);
-                break;
-            default:
-                console.warn('Unknown phase:', newPhase);
-        }
-    }
-
-    showNightPhase(gameState, round) {
-        // Show night phase UI
-        this.showScreen('night-phase-screen');
-        document.getElementById('current-round').textContent = round || 1;
-        
-        // If player is Syndicate, show voting UI
-        const playerRole = this.currentGameState?.playerRole;
-        if (playerRole === 'Syndicate') {
-            this.showScreen('syndicate-screen'); // or appropriate night screen
-        } else {
-            // Show waiting screen for non-syndicate players
-            const phaseInfo = document.getElementById('phase-info');
-            if (phaseInfo) {
-                phaseInfo.innerHTML = '<h3>Night Phase</h3><p>The Syndicate is making their move...</p>';
-            }
-        }
-    }
-
-    showMurderPhase(gameState) {
-        // Show who was murdered
-        this.showScreen('murder-screen');
-        if (gameState.lastMurderTarget) {
-            const murderInfo = document.getElementById('murder-info');
-            if (murderInfo) {
-                murderInfo.innerHTML = `<h3>A player has been eliminated!</h3><p>The city awakes to a terrible discovery...</p>`;
-            }
-        }
-    }
-
-    showDiscussionPhase(gameState) {
-        // Show discussion phase UI
-        this.showScreen('discussion-screen');
-        const phaseInfo = document.getElementById('phase-info');
-        if (phaseInfo) {
-            phaseInfo.innerHTML = '<h3>Discussion Phase</h3><p>The city discusses who might be the culprit...</p>';
-        }
-    }
-
-    showVotePhase(gameState) {
-        // Show voting UI
-        this.showScreen('vote-screen');
-        const players = gameState.players || [];
-        
-        // Display voting options
-        const voteList = document.getElementById('vote-list');
-        if (voteList) {
-            voteList.innerHTML = players.map(p => 
-                `<button class="vote-btn" data-player="${p.token}">${p.name}</button>`
-            ).join('');
-            
-            // Add click handlers
-            document.querySelectorAll('.vote-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const targetToken = e.target.dataset.player;
-                    this.submitVote(targetToken);
-                });
-            });
-        }
-    }
-
-    showTrialPhase(gameState) {
-        // Show trial/execution phase
-        this.showScreen('trial-screen');
-        const phaseInfo = document.getElementById('phase-info');
-        if (phaseInfo) {
-            phaseInfo.innerHTML = '<h3>Trial Phase</h3><p>The city votes to execute someone...</p>';
-        }
-    }
-
-    showGameEndScreen(gameState) {
-        // Show game over screen with winner info
-        this.showScreen('game-over-screen');
-        if (gameState.winner) {
-            const winnerInfo = document.getElementById('winner-info');
-            if (winnerInfo) {
-                winnerInfo.innerHTML = `<h3>Game Over!</h3><p>Winner: ${gameState.winner}</p>`;
-            }
-        }
     }
 
     onPhaseStart(data) {

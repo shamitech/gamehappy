@@ -365,49 +365,6 @@ class SecretSyndicates extends GameManager {
     }
 
     /**
-     * Advance to next phase if all players are ready
-     */
-    advancePhaseIfReady() {
-        if (!this.allPlayersReady()) {
-            return { success: false, message: 'Not all players ready' };
-        }
-
-        // Check current phase and advance accordingly
-        switch(this.currentPhase) {
-            case 'night':
-                this.executeNightPhase();
-                return { success: true, newPhase: 'murder' };
-            case 'murder':
-                this.currentPhase = 'discussion';
-                this.playersReady.clear();
-                return { success: true, newPhase: 'discussion' };
-            case 'discussion':
-                this.currentPhase = 'vote';
-                this.playersReady.clear();
-                return { success: true, newPhase: 'vote' };
-            case 'vote':
-                this.currentPhase = 'trial';
-                this.playersReady.clear();
-                return { success: true, newPhase: 'trial' };
-            case 'trial':
-                // Check win condition
-                const winResult = this.checkWinCondition();
-                if (winResult.gameOver) {
-                    this.currentPhase = 'ended';
-                    return { success: true, newPhase: 'ended', winner: winResult.winner };
-                } else {
-                    // Start new round
-                    this.currentRound++;
-                    this.currentPhase = 'night';
-                    this.playersReady.clear();
-                    return { success: true, newPhase: 'night' };
-                }
-            default:
-                return { success: false, message: 'Invalid phase for advancement' };
-        }
-    }
-
-    /**
      * Shuffle array helper
      */
     shuffleArray(array) {

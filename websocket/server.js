@@ -231,18 +231,15 @@ io.on('connection', (socket) => {
         gameState
       });
 
-      // Check if all players are ready and advance phase if applicable
-      if (game.allPlayersReady && typeof game.allPlayersReady === 'function') {
-        const phaseResult = game.advancePhaseIfReady();
-        if (phaseResult.success) {
-          // Emit phase change event to all players in game
-          const updatedGameState = gameServer.getGameStateForPlayer(playerToken);
-          io.to(`game-${game.gameCode}`).emit('phase-advanced', {
-            newPhase: phaseResult.newPhase,
-            gameState: updatedGameState,
-            round: game.currentRound || 1
-          });
-        }
+      // Check if all players are ready - if so, emit phase-start event
+      if (game.allPlayersReady && typeof game.allPlayersReady === 'function' && game.allPlayersReady()) {
+        // All players ready - emit phase-start to trigger game flow
+        const updatedGameState = gameServer.getGameStateForPlayer(playerToken);
+        io.to(`game-${game.gameCode}`).emit('on-phase-start', {
+          phase: 1,
+          phaseState: updatedGameState,
+          phaseName: 'Night Phase'
+        });
       }
 
       if (typeof callback === 'function') callback({ success: true });
