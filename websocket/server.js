@@ -224,12 +224,26 @@ io.on('connection', (socket) => {
       game.setPlayerReady(playerToken);
       const gameState = gameServer.getGameStateForPlayer(playerToken);
 
-      // Notify all in game
+      // Notify all in game of ready status update
       io.to(`game-${game.gameCode}`).emit('player-ready-updated', {
         playerCount: gameState.readyCount,
         totalPlayers: gameState.totalPlayers,
         gameState
       });
+
+      // Check if all players are ready and advance phase if applicable
+      if (game.allPlayersReady && typeof game.allPlayersReady === 'function') {
+        const phaseResult = game.advancePhaseIfReady();
+        if (phaseResult.success) {
+          // Emit phase change event to all players in game
+          const updatedGameState = gameServer.getGameStateForPlayer(playerToken);
+          io.to(`game-${game.gameCode}`).emit('phase-advanced', {
+            newPhase: phaseResult.newPhase,
+            gameState: updatedGameState,
+            round: game.currentRound || 1
+          });
+        }
+      }
 
       if (typeof callback === 'function') callback({ success: true });
     } catch (err) {
