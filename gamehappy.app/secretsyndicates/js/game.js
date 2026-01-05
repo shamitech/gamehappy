@@ -5,7 +5,7 @@ console.log('Game.js loaded');
 class Game {
     constructor() {
         console.log('Game constructor called');
-        this.ws = null;
+        this.socket = null;
         this.isHost = false;
         this.gameCode = null;
         this.playerName = null;
@@ -1040,7 +1040,7 @@ class Game {
         }
         
         console.log('Sending Phase 2 ready message:', message);
-        this.ws.send(JSON.stringify(message));
+        this.socket.emit('player-ready', {});
     }
     
     showEyewitnessMessage(eyeData, murderStory) {
@@ -1297,9 +1297,7 @@ class Game {
     }
 
     sendPhase3Ready() {
-        this.ws.send(JSON.stringify({
-            action: 'playerReadyPhase3'
-        }));
+        this.socket.emit('player-ready', {});
     }
 
     // ==================== PHASE 1: DELIBERATIONS ====================
@@ -2109,9 +2107,10 @@ class Game {
     
     playAgain() {
         console.log('Host clicked Play Again');
-        this.ws.send(JSON.stringify({
-            action: 'playAgain'
-        }));
+        this.socket.emit('game-event', {
+            eventName: 'play-again',
+            payload: {}
+        });
     }
     
     onPlayAgain(data) {
