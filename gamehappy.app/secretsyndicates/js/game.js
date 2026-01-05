@@ -264,10 +264,29 @@ class Game {
         });
     }
 
-    // Send message helper
+    // Send message helper - converts old message format to Socket.IO events
     sendMessage(data) {
         console.log('Sending message:', JSON.stringify(data));
-        this.ws.send(JSON.stringify(data));
+        
+        // Map old action-based messages to Socket.IO events
+        if (data.action === 'playerReady') {
+            this.socket.emit('player-ready', {});
+        } else if (data.action === 'nightVote') {
+            this.socket.emit('game-event', {
+                eventName: 'night-vote',
+                payload: { target: data.target }
+            });
+        } else if (data.action === 'dayVote') {
+            this.socket.emit('game-event', {
+                eventName: 'day-vote',
+                payload: { target: data.target }
+            });
+        } else if (data.action === 'trialVote') {
+            this.socket.emit('game-event', {
+                eventName: 'trial-vote',
+                payload: { vote: data.vote }
+            });
+        }
     }
 
     // Screen Management
@@ -432,12 +451,13 @@ class Game {
 
         this.isReady = true;
         const btn = document.getElementById('btn-ready');
-        btn.disabled = true;
-        btn.textContent = '✓ Ready!';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '✓ Ready!';
+        }
 
-        this.sendMessage({
-            action: 'playerReady'
-        });
+        // Emit player-ready event via Socket.IO
+        this.socket.emit('player-ready', {});
     }
 
     // Message Handling
