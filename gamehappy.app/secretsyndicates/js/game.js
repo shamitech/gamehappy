@@ -172,13 +172,14 @@ class Game {
                 this.reconnecting = false;
                 this.updateConnectionStatus('connected');
                 
-                // Restore game state
-                if (data.gameState === 'waiting' || data.gameState === 'created') {
-                    this.updateLobby(data.game);
-                } else if (data.gameState === 'started') {
+                // Restore game state - gameState is now an object with phase/playerRole
+                if (data.gameState && data.gameState.phase >= 1) {
                     // Game is in progress, show role screen
                     this.showScreen('role-screen');
                     this.displayRoleIntro(data.gameState);
+                } else {
+                    // Game hasn't started yet, show lobby
+                    this.updateLobby(data.game);
                 }
             });
 
