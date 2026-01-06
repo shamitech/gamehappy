@@ -177,7 +177,7 @@ class SecretSyndicates extends GameManager {
         this.playersReady.clear();
         this.currentPhaseStory = null;  // Reset story for new phase
         
-        // Advance phase: night -> murder -> trial -> accusation -> night (repeat)
+        // Advance phase: night -> murder -> trial -> accusation -> verdict -> night (repeat)
         switch (this.currentPhase) {
             case 'night':
                 // Execute night votes to determine the victim
@@ -217,8 +217,11 @@ class SecretSyndicates extends GameManager {
                 this.currentPhase = 'accusation';
                 break;
             case 'accusation':
-                // Execute accusation votes before moving to next round
+                // Execute accusation votes to eliminate the guilty party
                 this.executeAccusationVotes();
+                this.currentPhase = 'verdict';
+                break;
+            case 'verdict':
                 this.currentPhase = 'night';
                 this.currentRound++;
                 break;
