@@ -468,9 +468,15 @@ io.on('connection', (socket) => {
                 }
               }
               
-              // Clear elimination trackers after sending events
+              // CRITICAL: Clear tracking for new round
+              // Clear elimination trackers
               game.murderEliminatedPlayer = null;
               game.verdictEliminatedPlayer = null;
+              
+              // Clear playersDone tracker so alive players can mark done for next phase
+              // If we don't clear this, the server will be waiting for eliminated players
+              game.playersDone.clear();
+              console.log(`[${game.gameCode}] Cleared playersDone tracker for new phase`);
             }
           }
         }
