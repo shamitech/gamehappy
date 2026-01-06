@@ -169,16 +169,20 @@ class Game {
 
             this.socket.on('rejoin-accepted', (data) => {
                 console.log('Rejoin accepted, returning to game:', data);
+                console.log('gameState:', data.gameState);
+                console.log('gameState.currentPhase:', data.gameState?.currentPhase);
                 this.reconnecting = false;
                 this.updateConnectionStatus('connected');
                 
-                // Restore game state - gameState is now an object with phase/playerRole
-                if (data.gameState && data.gameState.phase >= 1) {
+                // Restore game state - gameState is an object with gameState, currentPhase, playerRole
+                if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
                     // Game is in progress, show role screen
+                    console.log('Game is in progress, showing role screen');
                     this.showScreen('role-screen');
                     this.displayRoleIntro(data.gameState);
                 } else {
                     // Game hasn't started yet, show lobby
+                    console.log('Game not started, showing lobby');
                     this.updateLobby(data.game);
                 }
             });
