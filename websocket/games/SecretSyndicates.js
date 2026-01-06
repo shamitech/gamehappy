@@ -38,6 +38,9 @@ class SecretSyndicates extends GameManager {
 
         // Phase readiness
         this.playersReady = new Set();
+        
+        // Phase completion tracking
+        this.playersDone = new Set();
     }
 
     /**
@@ -383,6 +386,31 @@ class SecretSyndicates extends GameManager {
     }
 
     /**
+     * Mark player as done with current phase
+     */
+    setPlayerDone(playerToken) {
+        if (this.players.has(playerToken)) {
+            this.playersDone.add(playerToken);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if all players are done
+     */
+    allPlayersDone() {
+        return this.playersDone.size === this.getAlivePlayers().length;
+    }
+
+    /**
+     * Get done count
+     */
+    getDoneCount() {
+        return this.playersDone.size;
+    }
+
+    /**
      * Shuffle array helper
      */
     shuffleArray(array) {
@@ -455,6 +483,9 @@ class SecretSyndicates extends GameManager {
             case 'player-ready':
                 this.setPlayerReady(playerToken);
                 return { success: true };
+            case 'player-done':
+                this.setPlayerDone(playerToken);
+                return { success: true, doneCount: this.getDoneCount() };
             default:
                 return { success: false, message: 'Unknown event' };
         }

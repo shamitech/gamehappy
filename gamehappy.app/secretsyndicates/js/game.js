@@ -335,6 +335,11 @@ class Game {
         // Map old action-based messages to Socket.IO events
         if (data.action === 'playerReady') {
             this.socket.emit('player-ready', {});
+        } else if (data.action === 'playerDone') {
+            this.socket.emit('game-event', {
+                eventName: 'player-done',
+                payload: {}
+            });
         } else if (data.action === 'nightVote') {
             this.socket.emit('game-event', {
                 eventName: 'night-vote',
