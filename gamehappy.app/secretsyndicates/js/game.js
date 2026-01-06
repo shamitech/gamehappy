@@ -3353,6 +3353,8 @@ class Game {
         container.innerHTML = '';
         const myId = this.getMyPlayerId();
         console.log('myId:', myId);
+        
+        let cardCount = 0;
 
         players.forEach((player, index) => {
             // Skip self for most selections, but allow for assassin voting
@@ -3361,8 +3363,11 @@ class Game {
             
             // Completely skip self card unless it's assassin selection
             if (isSelf && !allowSelfSelection) {
+                console.log('buildPlayerGrid: Skipping self player:', player.id);
                 return;
             }
+            
+            console.log('buildPlayerGrid: Creating card for player:', {playerId: player.id, playerName: player.name, index});
             
             const card = document.createElement('div');
             card.className = 'player-select-card';
@@ -3402,10 +3407,12 @@ class Game {
             card.addEventListener('click', () => {
                 this.handlePlayerSelect(type, player.id);
             });
-
+            
+            console.log('buildPlayerGrid: Appending card for player:', player.id);
             container.appendChild(card);
+            cardCount++;
         });
-        console.log('buildPlayerGrid completed:', {containerId, childrenCount: container.children.length});
+        console.log('buildPlayerGrid completed:', {containerId, cardCount, containerChildrenCount: container.children.length});
     }
 
     handlePlayerSelect(type, playerId) {
