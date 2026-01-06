@@ -191,6 +191,7 @@ class SecretSyndicates extends GameManager {
                         this.lastVictim = victim;
                         // Add to eliminated when advancing to murder phase
                         this.eliminatedPlayers.add(this.lastMurderTarget);
+                        this.murderEliminatedPlayer = this.lastMurderTarget;
                         console.log(`[${this.gameCode}] Victim set to: ${victim.name}`);
                         // Generate the story once for this phase
                         this.currentPhaseStory = this.getMurderStory();
@@ -204,6 +205,7 @@ class SecretSyndicates extends GameManager {
                         this.lastMurderTarget = randomVictim.token;
                         this.lastVictim = randomVictim;
                         this.eliminatedPlayers.add(this.lastMurderTarget);
+                        this.murderEliminatedPlayer = this.lastMurderTarget;
                         console.log(`[${this.gameCode}] No votes, auto-selecting: ${randomVictim.name} (${randomVictim.token})`);
                         this.currentPhaseStory = this.getMurderStory();
                     }
@@ -247,9 +249,13 @@ class SecretSyndicates extends GameManager {
                 const totalVotes = this.trialVotes.size;
                 const majorityVotedGuilty = guiltVotes > totalVotes / 2;
                 
+                // Track the newly eliminated player for the verdict phase
+                this.verdictEliminatedPlayer = null;
+                
                 if (majorityVotedGuilty && this.accusedPlayer) {
                     // Majority voted guilty - eliminate the accused player
                     this.eliminatedPlayers.add(this.accusedPlayer);
+                    this.verdictEliminatedPlayer = this.accusedPlayer;
                     console.log(`[${this.gameCode}] Player ${this.accusedPlayer} eliminated by guilty verdict (${guiltVotes}/${totalVotes} votes)`);
                 } else if (this.accusedPlayer) {
                     console.log(`[${this.gameCode}] Player ${this.accusedPlayer} acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);

@@ -327,9 +327,16 @@ io.on('connection', (socket) => {
                                    phaseResult.phase === 'accusation' ? 'Accusation Vote' :
                                    phaseResult.phase === 'verdict' ? 'Verdict Phase' : phaseResult.phase;
                   
-                  // Check if this player is eliminated
-                  if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
-                    // Send elimination event to eliminated players
+                  // Check if this player was just eliminated in this phase transition
+                  let isNewlyEliminated = false;
+                  if (phaseResult.previousPhase === 'night' && game.murderEliminatedPlayer === pToken) {
+                    isNewlyEliminated = true;
+                  } else if (phaseResult.previousPhase === 'accusation' && game.verdictEliminatedPlayer === pToken) {
+                    isNewlyEliminated = true;
+                  }
+                  
+                  if (isNewlyEliminated) {
+                    // Send elimination event to newly eliminated players
                     let reason = 'You were eliminated.';
                     let verdict = 'ELIMINATED';
                     // Use previousPhase to determine elimination reason
@@ -338,7 +345,7 @@ io.on('connection', (socket) => {
                       reason = 'You were assassinated by the Syndicate.';
                       verdict = 'ASSASSINATED';
                     } else if (phaseResult.previousPhase === 'accusation') {
-                      // Eliminated during accusation phase = voted out
+                      // Eliminated during accusation phase = voted guilty
                       reason = 'You were voted guilty and arrested.';
                       verdict = 'GUILTY';
                     }
@@ -410,8 +417,8 @@ io.on('connection', (socket) => {
                                    phaseResult.phase === 'accusation' ? 'Accusation Vote' :
                                    phaseResult.phase === 'verdict' ? 'Verdict Phase' : phaseResult.phase;
                   
-                  // Check if this player was just eliminated by verdict
-                  if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
+                  // Check if this player was just eliminated by verdict (coming from verdict phase)
+                  if (phaseResult.phase === 'night' && phaseResult.previousPhase === 'verdict' && game.verdictEliminatedPlayer === pToken) {
                     let reason = 'You were eliminated.';
                     let verdict = 'ELIMINATED';
                     // Eliminated during verdict phase = voted guilty
@@ -425,7 +432,7 @@ io.on('connection', (socket) => {
                       verdict: verdict,
                       round: pGameState.currentRound
                     });
-                    console.log(`[${game.gameCode}] Sent elimination event to ${pToken}`);
+                    console.log(`[${game.gameCode}] Sent verdict elimination event to ${pToken}`);
                   } else {
                     // Send phase start to alive players
                     const phaseData = {
