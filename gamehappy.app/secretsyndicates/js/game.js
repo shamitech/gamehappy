@@ -1047,7 +1047,7 @@ class Game {
         
         if (data.phase === 1 && phaseState) {
             console.log('onPhaseStart Phase 1 - phaseState.isHost:', phaseState.isHost);
-            // Hide all phase screens
+            // Hide all phase screens using inline styles
             document.getElementById('phase2-screen').style.display = 'none';
             document.getElementById('phase3-screen').style.display = 'none';
             document.getElementById('phase4-screen').style.display = 'none';
@@ -1055,14 +1055,34 @@ class Game {
             this.initPhase1(phaseState);
             this.showScreen('phase-screen');
         } else if (data.phase === 2) {
+            // Hide other phase screens
+            document.getElementById('phase-screen').style.display = 'none';
+            document.getElementById('phase3-screen').style.display = 'none';
+            document.getElementById('phase4-screen').style.display = 'none';
+            document.getElementById('phase5-screen').style.display = 'none';
             this.initPhase2Screen(phaseState);
-            this.showScreen('phase2-screen');
+            document.getElementById('phase2-screen').style.display = 'block';
         } else if (data.phase === 3) {
+            // Hide other phase screens
+            document.getElementById('phase-screen').style.display = 'none';
+            document.getElementById('phase2-screen').style.display = 'none';
+            document.getElementById('phase4-screen').style.display = 'none';
+            document.getElementById('phase5-screen').style.display = 'none';
             this.initPhase3Screen(phaseState);
-            this.showScreen('phase3-screen');
+            document.getElementById('phase3-screen').style.display = 'block';
         } else if (data.phase === 4) {
+            // Hide other phase screens
+            document.getElementById('phase-screen').style.display = 'none';
+            document.getElementById('phase2-screen').style.display = 'none';
+            document.getElementById('phase3-screen').style.display = 'none';
+            document.getElementById('phase5-screen').style.display = 'none';
             this.onPhase4Start(phaseState);
         } else if (data.phase === 5) {
+            // Hide other phase screens
+            document.getElementById('phase-screen').style.display = 'none';
+            document.getElementById('phase2-screen').style.display = 'none';
+            document.getElementById('phase3-screen').style.display = 'none';
+            document.getElementById('phase4-screen').style.display = 'none';
             this.onPhase5Start(phaseState);
         } else {
             console.warn('onPhaseStart: Unhandled phase or missing phaseState', data);
