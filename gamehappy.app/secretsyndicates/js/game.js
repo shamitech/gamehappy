@@ -1020,10 +1020,10 @@ class Game {
             this.initPhase1(phaseState);
             this.showScreen('phase-screen');
         } else if (data.phase === 2) {
-            this.initPhase2Screen(data);
+            this.initPhase2Screen(phaseState);
             this.showScreen('phase2-screen');
         } else if (data.phase === 3) {
-            this.initPhase3Screen(data);
+            this.initPhase3Screen(phaseState);
             this.showScreen('phase3-screen');
         } else {
             console.warn('onPhaseStart: Unhandled phase or missing phaseState', data);
