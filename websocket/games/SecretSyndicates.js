@@ -17,6 +17,7 @@ class SecretSyndicates extends GameManager {
         this.currentPhase = 'waiting'; // waiting, night, murder, discussion, vote, trial, ended
         this.currentRound = 0;
         this.phasesCompleted = 0;
+        this.currentPhaseStory = null;  // Story for current phase (generated once, used for all)
 
         // Night phase data
         this.nightVotes = new Map(); // playerToken -> targetToken
@@ -171,6 +172,7 @@ class SecretSyndicates extends GameManager {
         // Reset done tracking for the new phase
         this.playersDone.clear();
         this.playersReady.clear();
+        this.currentPhaseStory = null;  // Reset story for new phase
         
         // Advance phase: night -> murder -> trial -> night (repeat)
         switch (this.currentPhase) {
@@ -194,6 +196,9 @@ class SecretSyndicates extends GameManager {
                         this.lastVictim = victim;
                         this.eliminatedPlayers.add(this.lastMurderTarget);
                         console.log(`[${this.gameCode}] Victim set to: ${victim.name}`);
+                        // Generate the story once for this phase
+                        this.currentPhaseStory = this.getMurderStory();
+                        console.log(`[${this.gameCode}] Murder story generated: ${this.currentPhaseStory}`);
                     }
                 }
                 break;
@@ -562,6 +567,11 @@ class SecretSyndicates extends GameManager {
      * Generate murder story (which player was assassinated)
      */
     getMurderStory() {
+        // If we already generated a story for this phase, reuse it
+        if (this.currentPhaseStory) {
+            return this.currentPhaseStory;
+        }
+        
         if (!this.lastVictim) {
             return 'Last night, someone was assassinated by the Syndicate.';
         }
