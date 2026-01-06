@@ -356,6 +356,16 @@ class Game {
                 eventName: 'night-vote',
                 payload: { target: data.target }
             });
+        } else if (data.action === 'syndicateRecommend') {
+            this.socket.emit('game-event', {
+                eventName: 'night-vote',
+                payload: { target: data.targetId }
+            });
+        } else if (data.action === 'syndicateLockIn') {
+            this.socket.emit('game-event', {
+                eventName: 'night-lock',
+                payload: {}
+            });
         } else if (data.action === 'dayVote') {
             this.socket.emit('game-event', {
                 eventName: 'day-vote',
