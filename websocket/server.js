@@ -244,7 +244,8 @@ io.on('connection', (socket) => {
                   const pGameState = gameServer.getGameStateForPlayer(pToken);
                   const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
                                    phaseResult.phase === 'murder' ? 'Murder Discovery' :
-                                   phaseResult.phase === 'trial' ? 'Trial Phase' : phaseResult.phase;
+                                   phaseResult.phase === 'trial' ? 'Trial Phase' : 
+                                   phaseResult.phase === 'accusation' ? 'Accusation Vote' : phaseResult.phase;
                   
                   // Check if this player is eliminated
                   if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
@@ -259,7 +260,7 @@ io.on('connection', (socket) => {
                   } else {
                     // Send phase start to alive players
                     playerSocket.emit('on-phase-start', {
-                      phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : 3,
+                      phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : phaseResult.phase === 'trial' ? 3 : 4,
                       phaseState: pGameState,
                       phaseName: phaseName
                     });

@@ -174,7 +174,7 @@ class SecretSyndicates extends GameManager {
         this.playersReady.clear();
         this.currentPhaseStory = null;  // Reset story for new phase
         
-        // Advance phase: night -> murder -> trial -> night (repeat)
+        // Advance phase: night -> murder -> trial -> accusation -> night (repeat)
         switch (this.currentPhase) {
             case 'night':
                 this.currentPhase = 'murder';
@@ -206,6 +206,9 @@ class SecretSyndicates extends GameManager {
                 this.currentPhase = 'trial';
                 break;
             case 'trial':
+                this.currentPhase = 'accusation';
+                break;
+            case 'accusation':
                 this.currentPhase = 'night';
                 this.currentRound++;
                 break;
