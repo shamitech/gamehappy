@@ -1047,6 +1047,10 @@ class Game {
 
     initPhase2Screen(data) {
         console.log('initPhase2Screen called with data:', data);
+        console.log('initPhase2Screen data.murderStory:', data.murderStory);
+        console.log('initPhase2Screen data.isDetective:', data.isDetective);
+        console.log('initPhase2Screen data.isAssassin:', data.isAssassin);
+        console.log('initPhase2Screen data.isEyewitness:', data.isEyewitness);
         
         // Store Phase 2 data for later use (needed to check if player is victim)
         this.phase2Data = data;
@@ -1080,7 +1084,10 @@ class Game {
         // Default behavior - show murder story with I'm Ready button
         const storyEl = document.getElementById('murder-story');
         if (storyEl) {
+            console.log('Setting murder story:', data.murderStory);
             storyEl.textContent = data.murderStory;
+        } else {
+            console.warn('murder-story element not found');
         }
         
         // Initialize the "I'm Ready" button for Phase 2
