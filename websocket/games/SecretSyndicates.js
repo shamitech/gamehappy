@@ -163,6 +163,38 @@ class SecretSyndicates extends GameManager {
     }
 
     /**
+     * Advance to the next phase
+     */
+    advancePhase() {
+        // Reset done tracking for the new phase
+        this.playersDone.clear();
+        this.playersReady.clear();
+        
+        // Advance phase: night -> murder -> trial -> night (repeat)
+        switch (this.currentPhase) {
+            case 'night':
+                this.currentPhase = 'murder';
+                break;
+            case 'murder':
+                this.currentPhase = 'trial';
+                break;
+            case 'trial':
+                this.currentPhase = 'night';
+                this.currentRound++;
+                break;
+            default:
+                this.currentPhase = 'night';
+                break;
+        }
+        
+        return {
+            success: true,
+            phase: this.currentPhase,
+            round: this.currentRound
+        };
+    }
+
+    /**
      * Player votes to lock in night action
      */
     nightVote(playerToken, targetToken) {

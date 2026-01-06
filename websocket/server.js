@@ -225,11 +225,31 @@ io.on('connection', (socket) => {
         // Check if all players are done and advance phase if so
         if (eventName === 'player-done' && game.allPlayersDone && game.allPlayersDone()) {
           console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase`);
-          // TODO: Implement phase advancement logic here
-          // For now, just broadcast that all players are done
-          io.to(`game-${game.gameCode}`).emit('all-players-done', {
-            message: 'All players are done! Advancing to next phase...'
-          });
+          
+          // Advance the phase
+          const phaseResult = game.advancePhase();
+          if (phaseResult.success) {
+            console.log(`[${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
+            
+            // Send on-phase-start event to each player with their individual gameState
+            for (const [socketId, playerSocket] of io.sockets.sockets) {
+              const playerToken = playerSocket.handshake.query.token || socketId;
+              
+              if (game.hasPlayer(playerToken)) {
+                const playerGameState = gameServer.getGameStateForPlayer(playerToken);
+                const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
+                                 phaseResult.phase === 'murder' ? 'Murder Discovery' :
+                                 phaseResult.phase === 'trial' ? 'Trial Phase' : phaseResult.phase;
+                
+                playerSocket.emit('on-phase-start', {
+                  phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : 3,
+                  phaseState: playerGameState,
+                  phaseName: phaseName
+                });
+                console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${playerToken}`);
+              }
+            }
+          }
         }
 
         if (typeof callback === 'function') callback({ success: true, result });
