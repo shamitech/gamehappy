@@ -1874,14 +1874,14 @@ class Game {
         });
         
         // Update vote status
-        document.getElementById('phase4-vote-total').textContent = data.alivePlayers || players.filter(p => p.alive).length;
+        document.getElementById('phase4-vote-total').textContent = (data.alivePlayers ? data.alivePlayers.length : 0) || players.filter(p => p.alive).length;
         document.getElementById('phase4-vote-count').textContent = data.voteCount || 0;
         
         // Show message if already voted
         if (hasVoted) {
             const statusEl = document.getElementById('phase4-vote-status');
             statusEl.innerHTML = `<p>✓ You have voted. Waiting for others...</p>
-                <span id="phase4-vote-count">${data.voteCount || 0}</span>/<span id="phase4-vote-total">${data.alivePlayers || 0}</span> players have voted`;
+                <span id="phase4-vote-count">${data.voteCount || 0}</span>/<span id="phase4-vote-total">${(data.alivePlayers ? data.alivePlayers.length : 0) || 0}</span> players have voted`;
         }
     }
     
