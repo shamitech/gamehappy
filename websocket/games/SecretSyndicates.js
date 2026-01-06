@@ -549,6 +549,11 @@ class SecretSyndicates extends GameManager {
         const playerRole = this.getPlayerRole(playerToken);
         const player = this.players.get(playerToken);
         
+        // Ensure eliminatedPlayers is initialized (for backward compatibility)
+        if (!this.eliminatedPlayers) {
+            this.eliminatedPlayers = new Set();
+        }
+        
         // Transform players array to include id and alive status
         const playersWithStatus = this.getPlayers().map(p => ({
             id: p.token,  // Use token as id for client
