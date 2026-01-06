@@ -1047,10 +1047,6 @@ class Game {
 
     initPhase2Screen(data) {
         console.log('initPhase2Screen called with data:', data);
-        console.log('initPhase2Screen data.murderStory:', data.murderStory);
-        console.log('initPhase2Screen data.isDetective:', data.isDetective);
-        console.log('initPhase2Screen data.isAssassin:', data.isAssassin);
-        console.log('initPhase2Screen data.isEyewitness:', data.isEyewitness);
         
         // Store Phase 2 data for later use (needed to check if player is victim)
         this.phase2Data = data;
@@ -1062,26 +1058,42 @@ class Game {
             murderView.style.display = 'block';
         }
         
-        // Check for special role messages
-        if (data.isEyewitness && data.eyewitnessData) {
-            // Show eyewitness screen
-            this.showEyewitnessMessage(data.eyewitnessData, data.murderStory);
-            return;
-        }
+        // Show special role message at top of screen (not as overlay)
+        const messageContainer = document.createElement('div');
+        messageContainer.id = 'phase2-role-message';
+        messageContainer.style.marginBottom = '20px';
         
         if (data.isDetective && data.detectiveData) {
-            // Show detective screen
-            this.showDetectiveMessage(data.detectiveData, data.murderStory);
-            return;
+            messageContainer.innerHTML = `
+                <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE'S CLUE</h3>
+                    <p style="margin: 10px 0; font-size: 14px;">${data.detectiveData.keyword || 'Pay close attention'}</p>
+                    <p style="margin: 10px 0; font-size: 14px; font-style: italic;">${data.detectiveData.hint || 'Look for clues in what people say'}</p>
+                </div>
+            `;
+        } else if (data.isAssassin && data.assassinData) {
+            messageContainer.innerHTML = `
+                <div style="background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h3 style="color: #e94560; margin-top: 0;">⚠️ WARNING</h3>
+                    <p style="margin: 10px 0; font-size: 14px;">${data.assassinData.warning || 'You performed the assassination. Be careful - someone may have witnessed you!'}</p>
+                </div>
+            `;
+        } else if (data.isEyewitness && data.eyewitnessData) {
+            messageContainer.innerHTML = `
+                <div style="background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h3 style="color: #e94560; margin-top: 0;">🔍 YOU WITNESSED THE ASSASSINATION</h3>
+                    <p style="margin: 10px 0; font-size: 14px;">${data.eyewitnessData.message || 'You know who did it!'}</p>
+                </div>
+            `;
         }
         
-        if (data.isAssassin && data.assassinData) {
-            // Show assassin warning screen
-            this.showAssassinWarning(data.assassinData, data.murderStory);
-            return;
+        // Insert message before the murder story
+        const storyContainer = document.querySelector('.murder-story-container');
+        if (storyContainer && messageContainer.innerHTML) {
+            storyContainer.parentNode.insertBefore(messageContainer, storyContainer);
         }
         
-        // Default behavior - show murder story with I'm Ready button
+        // Show murder story
         const storyEl = document.getElementById('murder-story');
         if (storyEl) {
             console.log('Setting murder story:', data.murderStory);
