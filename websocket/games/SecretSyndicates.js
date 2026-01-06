@@ -261,9 +261,27 @@ class SecretSyndicates extends GameManager {
                     console.log(`[${this.gameCode}] Player ${this.accusedPlayer} acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);
                 }
                 
+                // CRITICAL: Reset ALL round-specific state for new round
                 this.currentPhase = 'night';
                 this.currentRound++;
+                
+                // Clear all voting/action state from previous round
                 this.trialVotes.clear();
+                this.accusationVotes.clear();
+                this.nightVotes.clear();
+                this.nightVotesLocked.clear();
+                this.dayVotes.clear();
+                this.playersDone.clear();
+                this.playersReady.clear();
+                
+                // Clear round-specific tracking
+                this.accusedPlayer = null;
+                this.lastMurderTarget = null;
+                this.lastMurderAssassin = null;
+                this.lastVictim = null;
+                this.currentPhaseStory = null;
+                
+                console.log(`[${this.gameCode}] Reset all round state for round ${this.currentRound}`);
                 break;
             default:
                 this.currentPhase = 'night';

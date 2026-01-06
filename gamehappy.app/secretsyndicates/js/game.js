@@ -1512,9 +1512,20 @@ class Game {
             this.phaseState = state;
             this.role = state.role;
             
-            // Reset phase-specific states for new round
+            // CRITICAL: Reset ALL client-side state for new round
+            // This ensures no stale data from previous rounds affects the UI
             this.phase4Voted = false;
             this.phase5Voted = false;
+            this.playerDone = false;
+            
+            // Clear all role-specific state from previous round
+            this.syndicateState = null;
+            this.syndicateIds = [];
+            this.detectiveState = null;
+            this.bystanderState = null;
+            this.bodyGuardState = null;
+            
+            console.log('initPhase1: Cleared all previous round state');
             
             // Update round display
             const roundEl = document.getElementById('current-round');
@@ -1596,6 +1607,11 @@ class Game {
         const btn = document.getElementById('btn-im-done');
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
+        
+        // Reset button state for new round
+        newBtn.disabled = true; // Will be enabled by checkActionsComplete
+        newBtn.textContent = "I'm Done";
+        document.getElementById('done-hint').textContent = 'Complete your actions first';
         
         newBtn.addEventListener('click', () => this.markDone());
         
@@ -3128,14 +3144,21 @@ class Game {
             
             this.buildPlayerGrid('bystander-player-grid', alivePlayers, 'bystander', false);
             
+            // Reset selection status first
+            const statusEl = document.getElementById('bystander-selection-status');
+            if (statusEl) {
+                statusEl.className = 'selection-status';
+                statusEl.innerHTML = '<p>Select a player you suspect to be Syndicate</p>';
+            }
+            
             // If already voted, show the selection status
             if (this.bystanderState.myVote) {
                 const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
                 if (player) {
-                    const statusEl = document.getElementById('bystander-selection-status');
                     if (statusEl) {
                         statusEl.className = 'selection-status confirmed';
                         statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+                    }
                     }
                 }
             }
