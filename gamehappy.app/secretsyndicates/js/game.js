@@ -994,9 +994,17 @@ class Game {
             return;
         }
         
-        if (data.phase === 1 && data.phaseState) {
-            console.log('onPhaseStart Phase 1 - phaseState.isHost:', data.phaseState.isHost);
-            this.initPhase1(data.phaseState);
+        // Ensure phaseState has all required properties with defaults
+        const phaseState = data.phaseState || {};
+        phaseState.gameNotes = phaseState.gameNotes || [];
+        phaseState.detectiveData = phaseState.detectiveData || {};
+        phaseState.syndicateData = phaseState.syndicateData || {};
+        phaseState.round = phaseState.currentRound || phaseState.round || 1;
+        phaseState.players = phaseState.players || [];
+        
+        if (data.phase === 1 && phaseState) {
+            console.log('onPhaseStart Phase 1 - phaseState.isHost:', phaseState.isHost);
+            this.initPhase1(phaseState);
             this.showScreen('phase-screen');
         } else if (data.phase === 2) {
             this.initPhase2Screen(data);
@@ -2733,9 +2741,10 @@ class Game {
     }
 
     initCaseNotes(state) {
-        this.caseNotes = state.detectiveData.caseNotes || {};
-        const caseNotesPlayers = state.detectiveData.caseNotesPlayers || state.players;
-        const availableRoles = state.detectiveData.availableRoles || [];
+        const detectiveData = state.detectiveData || {};
+        this.caseNotes = detectiveData.caseNotes || {};
+        const caseNotesPlayers = detectiveData.caseNotesPlayers || state.players;
+        const availableRoles = detectiveData.availableRoles || [];
         
         // Hide tag buttons for roles not in the game
         document.querySelectorAll('.tag-btn').forEach(btn => {
