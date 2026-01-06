@@ -30,10 +30,10 @@ class Game {
         const urlParams = new URLSearchParams(window.location.search);
         const testToken = urlParams.get('test');
         if (testToken) {
-            // Test mode - use token from URL
+            // Test mode - use token from URL, and game info from URL params
             this.playerToken = testToken;
-            const gameCode = sessionStorage.getItem('testGameCode');
-            const playerName = sessionStorage.getItem('testPlayerName');
+            const gameCode = urlParams.get('gameCode');
+            const playerName = urlParams.get('playerName');
             if (gameCode && playerName) {
                 this.gameCode = gameCode;
                 this.playerName = playerName;

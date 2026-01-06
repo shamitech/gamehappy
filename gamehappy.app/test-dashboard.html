@@ -110,13 +110,10 @@
                 if (data.success) {
                     // Open 5 tabs with different players
                     data.players.forEach((player, index) => {
-                        sessionStorage.setItem('testGameCode', data.gameCode);
-                        sessionStorage.setItem('testPlayerToken', player.token);
-                        sessionStorage.setItem('testPlayerName', player.name);
-                        
                         const delay = index * 200; // Stagger opening tabs
                         setTimeout(() => {
-                            window.open(`/secretsyndicates/?test=${player.token}`, `player-${player.name}`);
+                            const url = `/secretsyndicates/?test=${player.token}&gameCode=${data.gameCode}&playerName=${player.name}`;
+                            window.open(url, `player-${player.name}`);
                         }, delay);
                     });
                 } else {
