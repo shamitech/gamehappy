@@ -208,7 +208,7 @@ io.on('connection', (socket) => {
       const game = gameServer.getPlayerGame(playerToken);
 
       if (!game) {
-        callback({ success: false, message: 'Player not in a game' });
+        if (typeof callback === 'function') callback({ success: false, message: 'Player not in a game' });
         return;
       }
 
@@ -222,13 +222,13 @@ io.on('connection', (socket) => {
           eventResult: result
         });
 
-        callback({ success: true, result });
+        if (typeof callback === 'function') callback({ success: true, result });
       } else {
-        callback({ success: false, message: result.message });
+        if (typeof callback === 'function') callback({ success: false, message: result.message });
       }
     } catch (err) {
       console.error('Error handling game event:', err);
-      callback({ success: false, message: 'Server error' });
+      if (typeof callback === 'function') callback({ success: false, message: 'Server error' });
     }
   });
 

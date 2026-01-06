@@ -1025,6 +1025,13 @@ class Game {
         }
     }
 
+    handleGameStateUpdate(gameState, eventResult) {
+        console.log('handleGameStateUpdate called with gameState:', gameState);
+        // Update game state based on event result
+        // This is called when game-state-updated is broadcast from server
+        // For now, just log it - can be extended for real-time updates
+    }
+
     initPhase2Screen(data) {
         console.log('initPhase2Screen called with data:', data);
         
