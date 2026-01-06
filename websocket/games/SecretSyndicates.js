@@ -167,6 +167,7 @@ class SecretSyndicates extends GameManager {
      * Advance to the next phase
      */
     advancePhase() {
+        console.log(`[${this.gameCode}] advancePhase() called. Current phase: ${this.currentPhase}, playersDone: ${this.playersDone.size}, alivePlayers: ${this.getAlivePlayers().length}`);
         // Reset done tracking for the new phase
         this.playersDone.clear();
         this.playersReady.clear();
@@ -432,6 +433,7 @@ class SecretSyndicates extends GameManager {
     setPlayerDone(playerToken) {
         if (this.players.has(playerToken)) {
             this.playersDone.add(playerToken);
+            console.log(`[${this.gameCode}] setPlayerDone: ${playerToken}, playersDone size now: ${this.playersDone.size}, alivePlayers: ${this.getAlivePlayers().length}`);
             return true;
         }
         return false;
@@ -441,7 +443,10 @@ class SecretSyndicates extends GameManager {
      * Check if all players are done
      */
     allPlayersDone() {
-        return this.playersDone.size === this.getAlivePlayers().length;
+        const alivePlayers = this.getAlivePlayers().length;
+        const isDone = this.playersDone.size === alivePlayers;
+        console.log(`[${this.gameCode}] allPlayersDone check: playersDone=${this.playersDone.size}, alivePlayers=${alivePlayers}, isDone=${isDone}`);
+        return isDone;
     }
 
     /**

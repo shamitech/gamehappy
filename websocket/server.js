@@ -223,6 +223,7 @@ io.on('connection', (socket) => {
         });
 
         // Check if all players are done and advance phase if so
+        console.log(`[${game.gameCode}] player-done event: eventName=${eventName}, has allPlayersDone=${typeof game.allPlayersDone}, result=${typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : 'N/A'}`);
         if (eventName === 'player-done' && game.allPlayersDone && game.allPlayersDone()) {
           console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase`);
           
