@@ -548,19 +548,6 @@ io.on('connection', (socket) => {
       
       console.log(`Player ${clientToken} found in game ${gameCode}`);
 
-      // Check if game exists
-      const game = gameServer.games.get(gameCode);
-      if (!game) {
-        socket.emit('rejoin-rejected', { message: 'Game not found' });
-        return;
-      }
-
-      // Check if player is in the game
-      if (!game.hasPlayer(clientToken)) {
-        socket.emit('rejoin-rejected', { message: 'Player not in game' });
-        return;
-      }
-
       // Rejoin successful - add socket to game room
       socket.join(`game-${gameCode}`);
       
