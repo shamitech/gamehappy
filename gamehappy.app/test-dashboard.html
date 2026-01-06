@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GameHappy Test Dashboard</title>
+    <title>GameHappy Test</title>
     <style>
         * {
             margin: 0;
@@ -24,120 +24,53 @@
         .container {
             background: white;
             border-radius: 12px;
-            padding: 40px;
-            max-width: 600px;
+            padding: 60px 40px;
+            max-width: 400px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
         }
 
         h1 {
-            text-align: center;
             color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
+            margin-bottom: 20px;
+            font-size: 32px;
         }
 
         .subtitle {
-            text-align: center;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 40px;
+            font-size: 16px;
         }
 
-        .create-btn {
+        .start-btn {
             width: 100%;
-            padding: 14px 20px;
+            padding: 18px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            margin-bottom: 30px;
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .create-btn:hover {
+        .start-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .create-btn:active {
-            transform: translateY(0);
+        .start-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .loading {
-            text-align: center;
             color: #667eea;
             font-weight: 600;
-            display: none;
-        }
-
-        .players-section {
             display: none;
             margin-top: 20px;
-        }
-
-        .game-info {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .game-code {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-            font-family: monospace;
-        }
-
-        .game-label {
-            color: #666;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .players-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .player-card {
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            color: white;
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .player-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        }
-
-        .player-name {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .player-label {
-            font-size: 12px;
-            opacity: 0.9;
         }
 
         .error {
@@ -145,68 +78,47 @@
             color: #c33;
             padding: 12px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-top: 20px;
             display: none;
-        }
-
-        .success-msg {
-            background: #efe;
-            color: #3c3;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 GameHappy Test Dashboard</h1>
-        <p class="subtitle">Quick game setup for testing</p>
+        <h1>🎮 Test Game</h1>
+        <p class="subtitle">Opens 5 players in separate tabs</p>
 
+        <button class="start-btn" id="startBtn">Start Test Game</button>
+        <div class="loading" id="loading">Creating game...</div>
         <div class="error" id="error"></div>
-        <div class="success-msg" id="success"></div>
-        <div class="loading" id="loading">Creating test game...</div>
-
-        <button class="create-btn" id="createBtn">Create Test Game (5 Players)</button>
-
-        <div class="players-section" id="playersSection">
-            <div class="game-info">
-                <div class="game-label">Game Code</div>
-                <div class="game-code" id="gameCode"></div>
-            </div>
-
-            <p style="text-align: center; color: #666; margin-bottom: 15px; font-size: 14px;">
-                Click a player to open their view
-            </p>
-
-            <div class="players-grid" id="playersGrid"></div>
-
-            <button class="create-btn" id="createNewBtn">Create Another Game</button>
-        </div>
     </div>
 
     <script>
-        const createBtn = document.getElementById('createBtn');
-        const createNewBtn = document.getElementById('createNewBtn');
+        const startBtn = document.getElementById('startBtn');
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
-        const playersSection = document.getElementById('playersSection');
-        const gameCodeEl = document.getElementById('gameCode');
-        const playersGrid = document.getElementById('playersGrid');
 
-        async function createTestGame() {
+        async function startTestGame() {
             loading.style.display = 'block';
             error.style.display = 'none';
-            createBtn.disabled = true;
+            startBtn.disabled = true;
 
             try {
                 const response = await fetch('https://gamehappy.app:8443/test-game');
                 const data = await response.json();
 
                 if (data.success) {
-                    displayGame(data.gameCode, data.players);
+                    // Open 5 tabs with different players
+                    data.players.forEach((player, index) => {
+                        sessionStorage.setItem('testGameCode', data.gameCode);
+                        sessionStorage.setItem('testPlayerToken', player.token);
+                        sessionStorage.setItem('testPlayerName', player.name);
+                        
+                        const delay = index * 200; // Stagger opening tabs
+                        setTimeout(() => {
+                            window.open(`/secretsyndicates/?test=${player.token}`, `player-${player.name}`);
+                        }, delay);
+                    });
                 } else {
                     showError(data.message || 'Failed to create game');
                 }
@@ -214,38 +126,8 @@
                 showError('Error: ' + err.message);
             } finally {
                 loading.style.display = 'none';
-                createBtn.disabled = false;
+                startBtn.disabled = false;
             }
-        }
-
-        function displayGame(gameCode, players) {
-            gameCodeEl.textContent = gameCode;
-            playersGrid.innerHTML = '';
-
-            players.forEach((player, index) => {
-                const card = document.createElement('a');
-                card.className = 'player-card';
-                card.style.backgroundColor = player.color;
-                card.href = `javascript:openPlayerView('${gameCode}', '${player.token}', '${player.name}')`;
-                card.innerHTML = `
-                    <div class="player-name">${player.name}</div>
-                    <div class="player-label">Click to Play</div>
-                `;
-                playersGrid.appendChild(card);
-            });
-
-            playersSection.style.display = 'block';
-            createBtn.style.display = 'none';
-        }
-
-        function openPlayerView(gameCode, token, playerName) {
-            // Store player info in sessionStorage
-            sessionStorage.setItem('testGameCode', gameCode);
-            sessionStorage.setItem('testPlayerToken', token);
-            sessionStorage.setItem('testPlayerName', playerName);
-
-            // Open the game in a new tab
-            window.open(`/secretsyndicates/?test=${token}`, `player-${playerName}`);
         }
 
         function showError(msg) {
@@ -253,12 +135,7 @@
             error.style.display = 'block';
         }
 
-        createBtn.addEventListener('click', createTestGame);
-        createNewBtn.addEventListener('click', () => {
-            playersSection.style.display = 'none';
-            createBtn.style.display = 'block';
-            error.style.display = 'none';
-        });
+        startBtn.addEventListener('click', startTestGame);
     </script>
 </body>
 </html>

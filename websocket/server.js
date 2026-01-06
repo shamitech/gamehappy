@@ -302,8 +302,7 @@ io.on('connection', (socket) => {
       socket.emit('rejoin-accepted', {
         gameCode,
         game: gameServer.getGameLobbyInfo(gameCode),
-        gameState: game.gameState,
-        currentPhase: game.currentPhase
+        gameState: gameState
       });
 
       // Notify other players that player reconnected
