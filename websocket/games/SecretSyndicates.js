@@ -177,28 +177,30 @@ class SecretSyndicates extends GameManager {
         // Advance phase: night -> murder -> trial -> accusation -> night (repeat)
         switch (this.currentPhase) {
             case 'night':
+                // Execute night votes to determine the victim
+                this.executeNightPhase();
                 this.currentPhase = 'murder';
-                // Set the victim when transitioning to murder phase
-                if (!this.lastMurderTarget) {
-                    // Auto-select a random alive player as victim if no target was selected
-                    const alivePlayers = this.getAlivePlayers();
-                    if (alivePlayers.length > 0) {
-                        const randomVictim = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
-                        this.lastMurderTarget = randomVictim.token;
-                        console.log(`[${this.gameCode}] No target selected, auto-selecting: ${randomVictim.name} (${randomVictim.token})`);
-                    }
-                }
                 
                 // Now set lastVictim from lastMurderTarget
                 if (this.lastMurderTarget) {
                     const victim = this.players.get(this.lastMurderTarget);
                     if (victim) {
                         this.lastVictim = victim;
-                        this.eliminatedPlayers.add(this.lastMurderTarget);
                         console.log(`[${this.gameCode}] Victim set to: ${victim.name}`);
                         // Generate the story once for this phase
                         this.currentPhaseStory = this.getMurderStory();
                         console.log(`[${this.gameCode}] Murder story generated: ${this.currentPhaseStory}`);
+                    }
+                } else {
+                    // Fallback: Auto-select a random alive player as victim if no target was selected
+                    const alivePlayers = this.getAlivePlayers();
+                    if (alivePlayers.length > 0) {
+                        const randomVictim = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+                        this.lastMurderTarget = randomVictim.token;
+                        this.lastVictim = randomVictim;
+                        this.eliminatedPlayers.add(this.lastMurderTarget);
+                        console.log(`[${this.gameCode}] No votes, auto-selecting: ${randomVictim.name} (${randomVictim.token})`);
+                        this.currentPhaseStory = this.getMurderStory();
                     }
                 }
                 break;
