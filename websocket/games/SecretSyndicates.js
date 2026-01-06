@@ -177,11 +177,23 @@ class SecretSyndicates extends GameManager {
             case 'night':
                 this.currentPhase = 'murder';
                 // Set the victim when transitioning to murder phase
+                if (!this.lastMurderTarget) {
+                    // Auto-select a random alive player as victim if no target was selected
+                    const alivePlayers = this.getAlivePlayers();
+                    if (alivePlayers.length > 0) {
+                        const randomVictim = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+                        this.lastMurderTarget = randomVictim.token;
+                        console.log(`[${this.gameCode}] No target selected, auto-selecting: ${randomVictim.name} (${randomVictim.token})`);
+                    }
+                }
+                
+                // Now set lastVictim from lastMurderTarget
                 if (this.lastMurderTarget) {
                     const victim = this.players.get(this.lastMurderTarget);
                     if (victim) {
                         this.lastVictim = victim;
                         this.eliminatedPlayers.add(this.lastMurderTarget);
+                        console.log(`[${this.gameCode}] Victim set to: ${victim.name}`);
                     }
                 }
                 break;
@@ -550,6 +562,10 @@ class SecretSyndicates extends GameManager {
      * Generate murder story (which player was assassinated)
      */
     getMurderStory() {
+        if (!this.lastVictim) {
+            return 'Last night, someone was assassinated by the Syndicate.';
+        }
+        
         const stories = [
             `🔪 Last night, the Syndicate struck. ${this.lastVictim.name} was found dead in the streets. The killer left no trace.`,
             `⚰️ A scream pierced the night. ${this.lastVictim.name} has been assassinated by the Syndicate.`,
@@ -561,11 +577,8 @@ class SecretSyndicates extends GameManager {
             `🔴 Blood was spilled last night. ${this.lastVictim.name} has been eliminated by the Syndicate.`
         ];
         
-        if (this.lastVictim) {
-            const randomStory = stories[Math.floor(Math.random() * stories.length)];
-            return randomStory;
-        }
-        return 'Last night, someone was assassinated by the Syndicate.';
+        const randomStory = stories[Math.floor(Math.random() * stories.length)];
+        return randomStory;
     }
 
     /**
