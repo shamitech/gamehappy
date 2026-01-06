@@ -212,6 +212,7 @@ io.on('connection', (socket) => {
         return;
       }
 
+      console.log(`[${game.gameCode}] game-event received: eventName=${eventName}, payload=${JSON.stringify(payload)}`);
       const result = gameServer.handleGameEvent(playerToken, eventName, payload);
       const gameState = gameServer.getGameStateForPlayer(playerToken);
 
@@ -223,31 +224,35 @@ io.on('connection', (socket) => {
         });
 
         // Check if all players are done and advance phase if so
-        console.log(`[${game.gameCode}] player-done event: eventName=${eventName}, has allPlayersDone=${typeof game.allPlayersDone}, result=${typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : 'N/A'}`);
-        if (eventName === 'player-done' && game.allPlayersDone && game.allPlayersDone()) {
-          console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase`);
-          
-          // Advance the phase
-          const phaseResult = game.advancePhase();
-          if (phaseResult.success) {
-            console.log(`[${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
+        console.log(`[${game.gameCode}] Checking phase advancement: eventName=${eventName}, has allPlayersDone=${typeof game.allPlayersDone}`);
+        if (eventName === 'player-done') {
+          const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+          console.log(`[${game.gameCode}] player-done check: allPlayersDone=${allDone}`);
+          if (allDone) {
+            console.log(`[${game.gameCode}] ALL PLAYERS DONE! Advancing to next phase`);
             
-            // Send on-phase-start event to each player with their individual gameState
-            for (const [socketId, playerSocket] of io.sockets.sockets) {
-              const playerToken = playerSocket.handshake.query.token || socketId;
+            // Advance the phase
+            const phaseResult = game.advancePhase();
+            if (phaseResult.success) {
+              console.log(`[${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
               
-              if (game.hasPlayer(playerToken)) {
-                const playerGameState = gameServer.getGameStateForPlayer(playerToken);
-                const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
-                                 phaseResult.phase === 'murder' ? 'Murder Discovery' :
-                                 phaseResult.phase === 'trial' ? 'Trial Phase' : phaseResult.phase;
+              // Send on-phase-start event to each player with their individual gameState
+              for (const [socketId, playerSocket] of io.sockets.sockets) {
+                const pToken = playerSocket.handshake.query.token || socketId;
                 
-                playerSocket.emit('on-phase-start', {
-                  phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : 3,
-                  phaseState: playerGameState,
-                  phaseName: phaseName
-                });
-                console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${playerToken}`);
+                if (game.hasPlayer(pToken)) {
+                  const pGameState = gameServer.getGameStateForPlayer(pToken);
+                  const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
+                                   phaseResult.phase === 'murder' ? 'Murder Discovery' :
+                                   phaseResult.phase === 'trial' ? 'Trial Phase' : phaseResult.phase;
+                  
+                  playerSocket.emit('on-phase-start', {
+                    phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : 3,
+                    phaseState: pGameState,
+                    phaseName: phaseName
+                  });
+                  console.log(`[${game.gameCode}] Sent on-phase-start (${phaseResult.phase}) to player ${pToken}`);
+                }
               }
             }
           }
