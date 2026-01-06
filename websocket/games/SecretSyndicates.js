@@ -400,6 +400,26 @@ class SecretSyndicates extends GameManager {
         const playerRole = this.getPlayerRole(playerToken);
         const player = this.players.get(playerToken);
         
+        // Transform players array to include id and alive status
+        const playersWithStatus = this.getPlayers().map(p => ({
+            id: p.token,  // Use token as id for client
+            name: p.name,
+            token: p.token,
+            isHost: p.isHost,
+            alive: !this.eliminatedPlayers.has(p.token),
+            joinedAt: p.joinedAt
+        }));
+        
+        // Transform alive players similarly
+        const alivePlayersWithStatus = this.getAlivePlayers().map(p => ({
+            id: p.token,
+            name: p.name,
+            token: p.token,
+            isHost: p.isHost,
+            alive: true,
+            joinedAt: p.joinedAt
+        }));
+        
         return {
             gameCode: this.gameCode,
             gameType: this.gameType,
@@ -409,13 +429,13 @@ class SecretSyndicates extends GameManager {
             playerRole: playerRole,
             role: playerRole,  // Alias for client compatibility
             isHost: player && player.isHost ? true : false,
-            players: this.getPlayers(),
-            alivePlayers: this.getAlivePlayers(),
+            players: playersWithStatus,
+            alivePlayers: alivePlayersWithStatus,
             eliminated: Array.from(this.eliminatedPlayers),
             syndicate: this.getSyndicateMembers(),
             readyCount: this.playersReady.size,
             totalPlayers: this.getPlayerCount(),
-            alivePlayers: this.getAlivePlayers().length
+            alivePlayerCount: alivePlayersWithStatus.length
         };
     }
 
