@@ -1034,9 +1034,15 @@ class Game {
         console.log('handleGameStateUpdate called with gameState:', gameState);
         // Update done count if available
         if (gameState && gameState.doneCount !== undefined) {
+            // Update phase 1 counter
             const countEl = document.getElementById('done-count');
             if (countEl) {
                 countEl.textContent = gameState.doneCount;
+            }
+            // Update phase 2 counter
+            const phase2CountEl = document.getElementById('phase2-ready-count');
+            if (phase2CountEl) {
+                phase2CountEl.textContent = gameState.doneCount;
             }
         }
         // Auto-mark as done if actions are complete
