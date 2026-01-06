@@ -2006,7 +2006,7 @@ class Game {
         }
         
         this.sendMessage({
-            action: 'castTrialVote',
+            action: 'trialVote',
             vote: vote
         });
     }

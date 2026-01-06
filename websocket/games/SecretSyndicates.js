@@ -217,13 +217,47 @@ class SecretSyndicates extends GameManager {
                 this.currentPhase = 'accusation';
                 break;
             case 'accusation':
-                // Execute accusation votes to eliminate the guilty party
-                this.executeAccusationVotes();
+                // Count accusations and determine who was accused
+                if (this.accusationVotes.size > 0) {
+                    const voteCounts = new Map();
+                    for (const targetToken of this.accusationVotes.values()) {
+                        voteCounts.set(targetToken, (voteCounts.get(targetToken) || 0) + 1);
+                    }
+                    
+                    let mostAccused = null;
+                    let maxVotes = 0;
+                    for (const [targetToken, count] of voteCounts) {
+                        if (count > maxVotes) {
+                            maxVotes = count;
+                            mostAccused = targetToken;
+                        }
+                    }
+                    
+                    this.accusedPlayer = mostAccused;
+                    console.log(`[${this.gameCode}] Most accused player: ${mostAccused} with ${maxVotes} votes`);
+                }
+                
+                // Clear votes and advance to verdict phase
+                this.accusationVotes.clear();
                 this.currentPhase = 'verdict';
                 break;
             case 'verdict':
+                // Execute verdict votes: check if majority voted guilty
+                const guiltVotes = Array.from(this.trialVotes.values()).filter(v => v === 'guilty').length;
+                const totalVotes = this.trialVotes.size;
+                const majorityVotedGuilty = guiltVotes > totalVotes / 2;
+                
+                if (majorityVotedGuilty && this.accusedPlayer) {
+                    // Majority voted guilty - eliminate the accused player
+                    this.eliminatedPlayers.add(this.accusedPlayer);
+                    console.log(`[${this.gameCode}] Player ${this.accusedPlayer} eliminated by guilty verdict (${guiltVotes}/${totalVotes} votes)`);
+                } else if (this.accusedPlayer) {
+                    console.log(`[${this.gameCode}] Player ${this.accusedPlayer} acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);
+                }
+                
                 this.currentPhase = 'night';
                 this.currentRound++;
+                this.trialVotes.clear();
                 break;
             default:
                 this.currentPhase = 'night';
@@ -641,6 +675,15 @@ class SecretSyndicates extends GameManager {
         // Add accusation phase data
         if (this.currentPhase === 'accusation') {
             gameState.voteCount = this.accusationVotes.size;
+        }
+
+        // Add verdict phase data
+        if (this.currentPhase === 'verdict' && this.accusedPlayer) {
+            const accusedPlayerObj = this.players.get(this.accusedPlayer);
+            gameState.accusedName = accusedPlayerObj ? accusedPlayerObj.name : 'Unknown';
+            gameState.accusedToken = this.accusedPlayer;
+            gameState.guiltyVotes = Array.from(this.trialVotes.values()).filter(v => v === 'guilty').length;
+            gameState.notGuiltyVotes = Array.from(this.trialVotes.values()).filter(v => v === 'notguilty').length;
         }
 
         return gameState;
