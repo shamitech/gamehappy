@@ -545,8 +545,20 @@ class SecretSyndicates extends GameManager {
      * Generate murder story (which player was assassinated)
      */
     getMurderStory() {
+        const stories = [
+            `🔪 Last night, the Syndicate struck. ${this.lastVictim.name} was found dead in the streets. The killer left no trace.`,
+            `⚰️ A scream pierced the night. ${this.lastVictim.name} has been assassinated by the Syndicate.`,
+            `🌑 In the darkness of night, ${this.lastVictim.name} was silently eliminated by the Syndicate.`,
+            `💀 Morning brought terrible news. ${this.lastVictim.name} was found murdered. The Syndicate has struck again.`,
+            `🗡️ The Syndicate made their move. ${this.lastVictim.name} is dead.`,
+            `🕷️ In the shadows of the night, the Syndicate claimed another victim: ${this.lastVictim.name}.`,
+            `🌙 Under cover of darkness, the Syndicate assassinated ${this.lastVictim.name}.`,
+            `🔴 Blood was spilled last night. ${this.lastVictim.name} has been eliminated by the Syndicate.`
+        ];
+        
         if (this.lastVictim) {
-            return `Last night, ${this.lastVictim.name} was assassinated by the Syndicate.`;
+            const randomStory = stories[Math.floor(Math.random() * stories.length)];
+            return randomStory;
         }
         return 'Last night, someone was assassinated by the Syndicate.';
     }

@@ -1144,18 +1144,10 @@ class Game {
             document.getElementById('phase2-ready-hint').textContent = 'Waiting for other players...';
         }
         
-        const message = {
-            action: 'playerReadyPhase2'
-        };
-        
-        // For test games, include player ID and game code
-        if (this.isTestGame && this.currentTestPlayerId) {
-            message.testPlayerId = this.currentTestPlayerId;
-            message.gameCode = this.gameCode;
-        }
-        
-        console.log('Sending Phase 2 ready message:', message);
-        this.socket.emit('player-ready', {});
+        // Emit player-done event to mark phase 2 completion
+        this.socket.emit('game-event', {
+            eventName: 'player-done'
+        });
     }
     
     showEyewitnessMessage(eyeData, murderStory) {
