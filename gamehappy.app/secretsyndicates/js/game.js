@@ -1019,8 +1019,7 @@ class Game {
         const phaseState = data.phaseState || {};
         phaseState.role = phaseState.role || phaseState.playerRole || this.role;
         phaseState.gameNotes = phaseState.gameNotes || [];
-        phaseState.detectiveData = phaseState.detectiveData || {};
-        phaseState.syndicateData = phaseState.syndicateData || {};
+        // Don't default detectiveData/syndicateData to empty objects - only use if provided by server
         phaseState.round = phaseState.currentRound || phaseState.round || 1;
         phaseState.players = phaseState.players || [];
         
