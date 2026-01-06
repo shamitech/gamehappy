@@ -1026,72 +1026,100 @@ class Game {
     }
 
     onPhaseStart(data) {
-        console.log('onPhaseStart received:', data);
-        console.log('onPhaseStart phase:', data.phase, 'type:', typeof data.phase);
-        console.log('onPhaseStart phaseName:', data.phaseName);
-        console.log('onPhaseStart phaseState:', data.phaseState, 'type:', typeof data.phaseState);
-        console.log('onPhaseStart condition check: data.phase === 1?', data.phase === 1, 'data.phaseState?', !!data.phaseState);
-        
-        document.getElementById('current-phase').textContent = data.phase;
-        document.getElementById('phase-name').textContent = data.phaseName || '';
-        
-        // If player is eliminated, always show elimination screen
-        if (this.isEliminated) {
-            this.showEliminationScreen(this.eliminationData);
-            return;
-        }
-        
-        // Ensure phaseState has all required properties with defaults
-        const phaseState = data.phaseState || {};
-        phaseState.role = phaseState.role || phaseState.playerRole || this.role;
-        phaseState.gameNotes = phaseState.gameNotes || [];
-        // Don't default detectiveData/syndicateData to empty objects - only use if provided by server
-        phaseState.round = phaseState.currentRound || phaseState.round || 1;
-        phaseState.players = phaseState.players || [];
-        
-        console.log('onPhaseStart setting phaseState.role to:', phaseState.role);
-        
-        if (data.phase === 1 && phaseState) {
-            console.log('onPhaseStart Phase 1 - phaseState.isHost:', phaseState.isHost);
-            // Hide all phase screens using inline styles
-            document.getElementById('phase2-screen').style.display = 'none';
-            document.getElementById('phase3-screen').style.display = 'none';
-            document.getElementById('phase4-screen').style.display = 'none';
-            document.getElementById('phase5-screen').style.display = 'none';
-            this.initPhase1(phaseState);
-            this.showScreen('phase-screen');
-        } else if (data.phase === 2) {
-            // Hide other phase screens
-            document.getElementById('phase-screen').style.display = 'none';
-            document.getElementById('phase3-screen').style.display = 'none';
-            document.getElementById('phase4-screen').style.display = 'none';
-            document.getElementById('phase5-screen').style.display = 'none';
-            this.initPhase2Screen(phaseState);
-            document.getElementById('phase2-screen').style.display = 'block';
-        } else if (data.phase === 3) {
-            // Hide other phase screens
-            document.getElementById('phase-screen').style.display = 'none';
-            document.getElementById('phase2-screen').style.display = 'none';
-            document.getElementById('phase4-screen').style.display = 'none';
-            document.getElementById('phase5-screen').style.display = 'none';
-            this.initPhase3Screen(phaseState);
-            document.getElementById('phase3-screen').style.display = 'block';
-        } else if (data.phase === 4) {
-            // Hide other phase screens
-            document.getElementById('phase-screen').style.display = 'none';
-            document.getElementById('phase2-screen').style.display = 'none';
-            document.getElementById('phase3-screen').style.display = 'none';
-            document.getElementById('phase5-screen').style.display = 'none';
-            this.onPhase4Start(phaseState);
-        } else if (data.phase === 5) {
-            // Hide other phase screens
-            document.getElementById('phase-screen').style.display = 'none';
-            document.getElementById('phase2-screen').style.display = 'none';
-            document.getElementById('phase3-screen').style.display = 'none';
-            document.getElementById('phase4-screen').style.display = 'none';
-            this.onPhase5Start(phaseState);
-        } else {
-            console.warn('onPhaseStart: Unhandled phase or missing phaseState', data);
+        try {
+            console.log('onPhaseStart received:', data);
+            console.log('onPhaseStart phase:', data.phase, 'type:', typeof data.phase);
+            console.log('onPhaseStart phaseName:', data.phaseName);
+            console.log('onPhaseStart phaseState:', data.phaseState, 'type:', typeof data.phaseState);
+            console.log('onPhaseStart condition check: data.phase === 1?', data.phase === 1, 'data.phaseState?', !!data.phaseState);
+            
+            document.getElementById('current-phase').textContent = data.phase;
+            document.getElementById('phase-name').textContent = data.phaseName || '';
+            
+            // If player is eliminated, always show elimination screen
+            if (this.isEliminated) {
+                this.showEliminationScreen(this.eliminationData);
+                return;
+            }
+            
+            // Ensure phaseState has all required properties with defaults
+            const phaseState = data.phaseState || {};
+            phaseState.role = phaseState.role || phaseState.playerRole || this.role;
+            phaseState.gameNotes = phaseState.gameNotes || [];
+            // Don't default detectiveData/syndicateData to empty objects - only use if provided by server
+            phaseState.round = phaseState.currentRound || phaseState.round || 1;
+            phaseState.players = phaseState.players || [];
+            
+            console.log('onPhaseStart setting phaseState.role to:', phaseState.role);
+            
+            if (data.phase === 1 && phaseState) {
+                console.log('onPhaseStart Phase 1 - phaseState.isHost:', phaseState.isHost);
+                // Hide all phase screens using inline styles
+                const phase2 = document.getElementById('phase2-screen');
+                const phase3 = document.getElementById('phase3-screen');
+                const phase4 = document.getElementById('phase4-screen');
+                const phase5 = document.getElementById('phase5-screen');
+                if (phase2) phase2.style.display = 'none';
+                if (phase3) phase3.style.display = 'none';
+                if (phase4) phase4.style.display = 'none';
+                if (phase5) phase5.style.display = 'none';
+                this.initPhase1(phaseState);
+                this.showScreen('phase-screen');
+            } else if (data.phase === 2) {
+                // Hide other phase screens
+                const phaseScreen = document.getElementById('phase-screen');
+                const phase3 = document.getElementById('phase3-screen');
+                const phase4 = document.getElementById('phase4-screen');
+                const phase5 = document.getElementById('phase5-screen');
+                if (phaseScreen) phaseScreen.style.display = 'none';
+                if (phase3) phase3.style.display = 'none';
+                if (phase4) phase4.style.display = 'none';
+                if (phase5) phase5.style.display = 'none';
+                this.initPhase2Screen(phaseState);
+                const phase2 = document.getElementById('phase2-screen');
+                if (phase2) phase2.style.display = 'block';
+            } else if (data.phase === 3) {
+                // Hide other phase screens
+                const phaseScreen = document.getElementById('phase-screen');
+                const phase2 = document.getElementById('phase2-screen');
+                const phase4 = document.getElementById('phase4-screen');
+                const phase5 = document.getElementById('phase5-screen');
+                if (phaseScreen) phaseScreen.style.display = 'none';
+                if (phase2) phase2.style.display = 'none';
+                if (phase4) phase4.style.display = 'none';
+                if (phase5) phase5.style.display = 'none';
+                this.initPhase3Screen(phaseState);
+                const phase3 = document.getElementById('phase3-screen');
+                if (phase3) phase3.style.display = 'block';
+            } else if (data.phase === 4) {
+                // Hide other phase screens
+                const phaseScreen = document.getElementById('phase-screen');
+                const phase2 = document.getElementById('phase2-screen');
+                const phase3 = document.getElementById('phase3-screen');
+                const phase5 = document.getElementById('phase5-screen');
+                if (phaseScreen) phaseScreen.style.display = 'none';
+                if (phase2) phase2.style.display = 'none';
+                if (phase3) phase3.style.display = 'none';
+                if (phase5) phase5.style.display = 'none';
+                this.onPhase4Start(phaseState);
+            } else if (data.phase === 5) {
+                // Hide other phase screens
+                const phaseScreen = document.getElementById('phase-screen');
+                const phase2 = document.getElementById('phase2-screen');
+                const phase3 = document.getElementById('phase3-screen');
+                const phase4 = document.getElementById('phase4-screen');
+                if (phaseScreen) phaseScreen.style.display = 'none';
+                if (phase2) phase2.style.display = 'none';
+                if (phase3) phase3.style.display = 'none';
+                if (phase4) phase4.style.display = 'none';
+                this.onPhase5Start(phaseState);
+            } else {
+                console.warn('onPhaseStart: Unhandled phase or missing phaseState', data);
+            }
+        } catch (error) {
+            console.error('CRITICAL ERROR in onPhaseStart:', error);
+            console.error('Stack:', error.stack);
+            console.error('data:', data);
         }
     }
 
