@@ -462,6 +462,7 @@ class SecretSyndicates extends GameManager {
             eliminated: Array.from(this.eliminatedPlayers),
             syndicate: this.getSyndicateMembers(),
             readyCount: this.playersReady.size,
+            doneCount: this.playersDone.size,
             totalPlayers: this.getPlayerCount(),
             alivePlayerCount: alivePlayersWithStatus.length
         };

@@ -1027,9 +1027,17 @@ class Game {
 
     handleGameStateUpdate(gameState, eventResult) {
         console.log('handleGameStateUpdate called with gameState:', gameState);
-        // Update game state based on event result
-        // This is called when game-state-updated is broadcast from server
-        // For now, just log it - can be extended for real-time updates
+        // Update done count if available
+        if (gameState && gameState.doneCount !== undefined) {
+            const countEl = document.getElementById('done-count');
+            if (countEl) {
+                countEl.textContent = gameState.doneCount;
+            }
+        }
+        // Auto-mark as done if actions are complete
+        if (!this.playerDone && eventResult && eventResult.doneCount !== undefined) {
+            this.checkActionsComplete();
+        }
     }
 
     initPhase2Screen(data) {
@@ -2499,6 +2507,9 @@ class Game {
         document.getElementById('btn-syndicate-lock').disabled = true;
         document.getElementById('btn-syndicate-lock').textContent = '✓ Locked In';
         document.getElementById('syndicate-lock-status').textContent = 'Waiting for other Syndicate members...';
+        
+        // Check if actions are complete and auto-mark done if so
+        this.checkActionsComplete();
     }
 
     updateSyndicateRecommendations() {
