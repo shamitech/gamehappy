@@ -250,10 +250,17 @@ io.on('connection', (socket) => {
                   // Check if this player is eliminated
                   if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
                     // Send elimination event to eliminated players
+                    let reason = 'You were eliminated.';
+                    if (phaseResult.phase === 'murder') {
+                      reason = 'You were assassinated by the Syndicate.';
+                    } else if (phaseResult.phase === 'night') {
+                      // If moving to night from accusation, they were voted out
+                      reason = 'You were voted guilty and arrested.';
+                    }
                     playerSocket.emit('player-eliminated', {
                       playerName: pGameState.players.find(p => p.token === pToken)?.name || 'Unknown',
                       role: pGameState.playerRole,
-                      reason: phaseResult.phase === 'murder' ? 'You were assassinated by the Syndicate.' : 'You were voted guilty and eliminated.',
+                      reason: reason,
                       round: pGameState.currentRound
                     });
                     console.log(`[${game.gameCode}] Sent elimination event to ${pToken}`);

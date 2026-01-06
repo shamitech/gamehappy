@@ -209,6 +209,8 @@ class SecretSyndicates extends GameManager {
                 this.currentPhase = 'accusation';
                 break;
             case 'accusation':
+                // Execute accusation votes before moving to next round
+                this.executeAccusationVotes();
                 this.currentPhase = 'night';
                 this.currentRound++;
                 break;
@@ -379,6 +381,44 @@ class SecretSyndicates extends GameManager {
         this.accusationVotes.set(playerToken, targetToken);
         console.log(`[${this.gameCode}] Accusation vote recorded: ${playerToken} -> ${targetToken}, total votes: ${this.accusationVotes.size}`);
         return { success: true, voteCount: this.accusationVotes.size };
+    }
+
+    /**
+     * Execute accusation votes and eliminate the most voted player
+     */
+    executeAccusationVotes() {
+        if (this.accusationVotes.size === 0) {
+            console.log(`[${this.gameCode}] No accusation votes cast`);
+            return null;
+        }
+
+        // Count votes for each target
+        const voteCounts = new Map();
+        for (const targetToken of this.accusationVotes.values()) {
+            voteCounts.set(targetToken, (voteCounts.get(targetToken) || 0) + 1);
+        }
+
+        // Find player with most votes
+        let mostVoted = null;
+        let maxVotes = 0;
+        for (const [targetToken, count] of voteCounts) {
+            console.log(`[${this.gameCode}] Accusation vote count for ${targetToken}: ${count}`);
+            if (count > maxVotes) {
+                maxVotes = count;
+                mostVoted = targetToken;
+            }
+        }
+
+        console.log(`[${this.gameCode}] Most voted player: ${mostVoted} with ${maxVotes} votes`);
+
+        if (mostVoted) {
+            this.eliminatedPlayers.add(mostVoted);
+            const victim = this.players.get(mostVoted);
+            console.log(`[${this.gameCode}] Eliminated by accusation: ${victim?.name || mostVoted}`);
+        }
+
+        this.accusationVotes.clear();
+        return mostVoted;
     }
 
     /**
