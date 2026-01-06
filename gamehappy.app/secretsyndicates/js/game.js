@@ -996,11 +996,14 @@ class Game {
         
         // Ensure phaseState has all required properties with defaults
         const phaseState = data.phaseState || {};
+        phaseState.role = phaseState.role || phaseState.playerRole || this.role;
         phaseState.gameNotes = phaseState.gameNotes || [];
         phaseState.detectiveData = phaseState.detectiveData || {};
         phaseState.syndicateData = phaseState.syndicateData || {};
         phaseState.round = phaseState.currentRound || phaseState.round || 1;
         phaseState.players = phaseState.players || [];
+        
+        console.log('onPhaseStart setting phaseState.role to:', phaseState.role);
         
         if (data.phase === 1 && phaseState) {
             console.log('onPhaseStart Phase 1 - phaseState.isHost:', phaseState.isHost);
