@@ -1186,9 +1186,12 @@ class Game {
         messageContainer.style.marginBottom = '20px';
         
         if (data.isDetective && data.detectiveData) {
+            console.log(`[PHASE2] Detective detected. detectiveData:`, data.detectiveData);
+            console.log(`[PHASE2] Has investigationResults: ${!!data.detectiveData.investigationResults}`);
             // Check if there are investigation results to display
             if (data.detectiveData.investigationResults) {
                 const results = data.detectiveData.investigationResults;
+                console.log(`[PHASE2] Displaying investigation results:`, results);
                 messageContainer.innerHTML = `
                     <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                         <h3 style="color: #4ecdc4; margin-top: 0;">🔍 INVESTIGATION RESULT</h3>
@@ -1201,6 +1204,7 @@ class Game {
                     </div>
                 `;
             } else {
+                console.log(`[PHASE2] No investigation results, showing default clue`);
                 messageContainer.innerHTML = `
                     <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                         <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE'S CLUE</h3>

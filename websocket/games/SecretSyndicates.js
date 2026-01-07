@@ -651,10 +651,12 @@ class SecretSyndicates extends GameManager {
 
         // Only add investigation results in the phase after they were locked in
         const investigation = this.detectiveInvestigations.get(detectiveToken);
+        console.log(`[${this.gameCode}] buildDetectiveData: detective=${detectiveToken}, hasInvestigation=${!!investigation}, displayed=${investigation?.displayed}`);
         if (investigation && investigation.results && !investigation.displayed) {
             // Results should only be shown once in the next phase
             investigation.displayed = true;
             detectiveData.investigationResults = investigation.results;
+            console.log(`[${this.gameCode}] buildDetectiveData: INCLUDING investigation results for ${investigation.results.targetName}`);
         }
 
         return detectiveData;
