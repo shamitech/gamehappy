@@ -43,6 +43,9 @@ class SecretSyndicates extends GameManager {
         
         // Phase completion tracking
         this.playersDone = new Set();
+        
+        // Detective case notes - persists across rounds and phases
+        this.detectiveCaseNotes = {}; // playerToken -> Map of targetToken -> Set of tags
     }
 
     /**
@@ -751,7 +754,7 @@ class SecretSyndicates extends GameManager {
                     investigation: null,
                     lockedIn: false,
                     canInvestigate: this.currentRound >= 2,
-                    caseNotes: {},
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
                     caseNotesPlayers: alivePlayersWithStatus,
                     availableRoles: this.getAvailableRoles()
                 };
@@ -838,10 +841,35 @@ class SecretSyndicates extends GameManager {
             case 'player-done':
                 this.setPlayerDone(playerToken);
                 return { success: true, doneCount: this.getDoneCount() };
+            case 'update-case-notes':
+                return this.updateDetectiveCaseNotes(playerToken, payload);
             default:
                 return { success: false, message: 'Unknown event' };
         }
     }
-}
 
-module.exports = SecretSyndicates;
+    /**
+     * Update detective case notes (tags on players)
+     */
+    updateDetectiveCaseNotes(detectiveToken, payload) {
+        const role = this.getPlayerRole(detectiveToken);
+        if (role !== 'Detective') {
+            return { success: false, message: 'Only detectives can update case notes' };
+        }
+
+        const { targetId, notes } = payload;
+        if (!targetId || !Array.isArray(notes)) {
+            return { success: false, message: 'Invalid case notes data' };
+        }
+
+        // Initialize detective's notes if not exists
+        if (!this.detectiveCaseNotes[detectiveToken]) {
+            this.detectiveCaseNotes[detectiveToken] = {};
+        }
+
+        // Store the notes (replace completely)
+        this.detectiveCaseNotes[detectiveToken][targetId] = notes;
+        
+        console.log(`[${this.gameCode}] Detective ${detectiveToken} updated case notes for ${targetId}:`, notes);
+        return { success: true };
+    }

@@ -397,6 +397,11 @@ class Game {
                 eventName: 'accusation-vote',
                 payload: { target: data.targetId }
             });
+        } else if (data.action === 'updateCaseNotes') {
+            this.socket.emit('game-event', {
+                eventName: 'update-case-notes',
+                payload: { targetId: data.targetId, notes: data.notes }
+            });
         }
     }
 
