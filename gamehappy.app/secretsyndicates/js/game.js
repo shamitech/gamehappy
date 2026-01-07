@@ -2458,16 +2458,35 @@ class Game {
     }
 
     buildPlayersTable(container, allPlayers, playerRole) {
+        // Count number of rounds from voting history
+        let maxRounds = 0;
+        Object.values(this.votingHistory).forEach(history => {
+            if (history.accusationVotes && history.accusationVotes.length > maxRounds) {
+                maxRounds = history.accusationVotes.length;
+            }
+        });
+        maxRounds = Math.max(maxRounds, 1); // At least 1 round
+
         const playerStats = allPlayers.map(player => {
             // Get this player's voting history
             const history = this.votingHistory[player.token] || { accusationVotes: [], trialVotes: [] };
             
-            // Get latest accusation (who they accused last)
-            let lastAccusation = '-';
-            if (history.accusationVotes && history.accusationVotes.length > 0) {
-                const targetToken = history.accusationVotes[history.accusationVotes.length - 1];
-                const targetPlayer = allPlayers.find(p => p.token === targetToken);
-                lastAccusation = targetPlayer ? targetPlayer.name : 'Unknown';
+            // Build accusations for each round
+            const accusations = [];
+            if (history.accusationVotes) {
+                for (let i = 0; i < maxRounds; i++) {
+                    if (i < history.accusationVotes.length) {
+                        const targetToken = history.accusationVotes[i];
+                        const targetPlayer = allPlayers.find(p => p.token === targetToken);
+                        accusations.push(targetPlayer ? targetPlayer.name : '?');
+                    } else {
+                        accusations.push('-');
+                    }
+                }
+            } else {
+                for (let i = 0; i < maxRounds; i++) {
+                    accusations.push('-');
+                }
             }
             
             // Count guilty votes
@@ -2477,13 +2496,19 @@ class Game {
                 name: player.name,
                 role: player.role || 'Hidden',
                 alive: player.alive,
-                lastAccusation: lastAccusation,
+                accusations: accusations,
                 guiltyVotes: guiltyVotes
             };
         });
 
         // Sort by name
         playerStats.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Build table headers with rounds
+        const roundHeaders = [];
+        for (let i = 1; i <= maxRounds; i++) {
+            roundHeaders.push(`<th>Round ${i}</th>`);
+        }
 
         const tableHTML = `
             <div class="players-stats-section">
@@ -2495,7 +2520,7 @@ class Game {
                                 <th>Player</th>
                                 <th>Role</th>
                                 <th>Status</th>
-                                <th>Last Accusation</th>
+                                ${roundHeaders.join('')}
                                 <th>Guilty Votes</th>
                             </tr>
                         </thead>
@@ -2511,7 +2536,7 @@ class Game {
                                     <td class="status-badge ${player.alive ? 'alive' : 'dead'}">
                                         ${player.alive ? 'Alive' : 'Out'}
                                     </td>
-                                    <td class="accusation">${player.lastAccusation}</td>
+                                    ${player.accusations.map(acc => `<td class="accusation">${acc}</td>`).join('')}
                                     <td class="guilty-votes">${player.guiltyVotes}</td>
                                 </tr>
                             `).join('')}
