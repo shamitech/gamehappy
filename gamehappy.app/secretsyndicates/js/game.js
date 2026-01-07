@@ -2509,7 +2509,7 @@ class Game {
                                         </span>
                                     </td>
                                     <td class="status-badge ${player.alive ? 'alive' : 'dead'}">
-                                        ${player.alive ? '✓ Alive' : '✗ Out'}
+                                        ${player.alive ? 'Alive' : 'Out'}
                                     </td>
                                     <td class="accusation">${player.lastAccusation}</td>
                                     <td class="guilty-votes">${player.guiltyVotes}</td>
