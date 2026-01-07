@@ -75,15 +75,6 @@ class Game {
             { name: 'E', token: 'test-player-5', role: 'Bystander', alive: true }
         ];
         
-        // Create suspicion levels that vary based on voting patterns
-        const playerSuspicionLevels = {
-            'test-player-1': { level: 'Suspicious', score: 72, reasons: ['3 players voted to accuse them', 'Voted not guilty multiple times'] },
-            'test-player-2': { level: 'Clear', score: 5, reasons: ['Clean voting record - consistently accurate'] },
-            'test-player-3': { level: 'Very Suspicious', score: 85, reasons: ['2 players voted to accuse them', 'Frequently voted not guilty - defensive'] },
-            'test-player-4': { level: 'Moderate', score: 45, reasons: ['Accused 2 times across rounds', 'Mixed voting pattern'] },
-            'test-player-5': { level: 'Low', score: 25, reasons: ['1 player voted to accuse them'] }
-        };
-        
         // Create voting history with new per-round structure
         const votingHistory = {
             'test-player-1': { roundVotes: { 1: { accused: 'test-player-2', verdict: 'guilty' }, 2: { accused: 'test-player-3', verdict: 'not-guilty' }, 3: { accused: 'test-player-4', verdict: 'not-guilty' } } },
@@ -92,6 +83,97 @@ class Game {
             'test-player-4': { roundVotes: { 1: { accused: 'test-player-5', verdict: 'guilty' }, 2: { accused: 'test-player-2', verdict: 'not-guilty' }, 3: { accused: 'test-player-3', verdict: 'guilty' } } },
             'test-player-5': { roundVotes: { 1: { accused: 'test-player-3', verdict: 'guilty' }, 2: { accused: 'test-player-4', verdict: 'guilty' }, 3: { accused: 'test-player-1', verdict: 'guilty' } } }
         };
+        
+        // Calculate suspicion levels from voting history (same logic as server)
+        const calculateSuspicionFromHistory = (targetToken) => {
+            const targetPlayer = mockPlayers.find(p => p.token === targetToken);
+            if (!targetPlayer) {
+                return { level: 'Unknown', score: 0, reasons: [] };
+            }
+
+            let suspicionScore = 0;
+            let reasons = [];
+
+            // Get voting history for this player
+            const targetHistory = votingHistory[targetToken] || { roundVotes: {} };
+
+            // Count how many rounds they were accused
+            let timesAccused = 0;
+            let timesVotedGuilty = 0;
+            let timesVotedNotGuilty = 0;
+            
+            // Analyze voting history across all rounds
+            if (targetHistory.roundVotes) {
+                Object.entries(targetHistory.roundVotes).forEach(([round, voteData]) => {
+                    // Count how they voted
+                    if (voteData.verdict) {
+                        if (voteData.verdict === 'guilty') {
+                            timesVotedGuilty++;
+                        } else {
+                            timesVotedNotGuilty++;
+                        }
+                    }
+                });
+            }
+            
+            // Also count votes AGAINST the target from other players
+            let votesAgainstCount = 0;
+            Object.entries(votingHistory).forEach(([voterToken, voterHistory]) => {
+                if (voterToken !== targetToken && voterHistory.roundVotes) {
+                    Object.entries(voterHistory.roundVotes).forEach(([round, voteData]) => {
+                        if (voteData.accused === targetToken) {
+                            votesAgainstCount++;
+                        }
+                    });
+                }
+            });
+
+            // ==================== INCOMING SUSPICION (votes/accusations against them) ====================
+            
+            // High votes against them indicates they are a suspect
+            if (votesAgainstCount >= 2) {
+                suspicionScore += (votesAgainstCount * 15);  // +15 per accusation vote
+                reasons.push(`${votesAgainstCount} players voted to accuse them`);
+            }
+
+            // ==================== OUTGOING SUSPICION (their voting patterns) ====================
+            
+            // Voting guilty a lot could indicate they're suspicious
+            if (timesVotedGuilty >= 3) {
+                suspicionScore += (timesVotedGuilty * 10);  // +10 per guilty vote
+                reasons.push(`Voted guilty ${timesVotedGuilty} times`);
+            }
+
+            // High not-guilty votes suggests they're defensive or protecting someone
+            if (timesVotedNotGuilty >= 2) {
+                suspicionScore += (timesVotedNotGuilty * 5);  // +5 per not-guilty vote
+                reasons.push(`Voted not guilty ${timesVotedNotGuilty} times (defensive)`);
+            }
+
+            // Convert score to level
+            let level = 'Clear';
+            if (suspicionScore >= 90) {
+                level = 'Very Suspicious';
+            } else if (suspicionScore >= 65) {
+                level = 'Suspicious';
+            } else if (suspicionScore >= 40) {
+                level = 'Moderate';
+            } else if (suspicionScore >= 15) {
+                level = 'Low';
+            }
+
+            return {
+                level: level,
+                score: Math.min(suspicionScore, 100),  // Cap at 100
+                reasons: reasons.length > 0 ? reasons : ['No suspicious activity detected']
+            };
+        };
+
+        // Calculate suspicion for all players
+        const playerSuspicionLevels = {};
+        mockPlayers.forEach(player => {
+            playerSuspicionLevels[player.token] = calculateSuspicionFromHistory(player.token);
+        });
         
         // Simulate game-ended event
         this.handleGameEnded({
