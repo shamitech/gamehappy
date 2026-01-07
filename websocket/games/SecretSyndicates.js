@@ -640,17 +640,20 @@ class SecretSyndicates extends GameManager {
 
     /**
      * Build detective data object with case notes and investigation results
+     * Only includes investigation results if this is the first phase after investigation was locked
      */
-    buildDetectiveData(detectiveToken, alivePlayersWithStatus) {
+    buildDetectiveData(detectiveToken, alivePlayersWithStatus, currentPhase = null) {
         const detectiveData = {
             caseNotes: this.detectiveCaseNotes[detectiveToken] || {},
             caseNotesPlayers: alivePlayersWithStatus,
             availableRoles: this.getAvailableRoles()
         };
 
-        // Add investigation results if locked in
+        // Only add investigation results in the phase after they were locked in
         const investigation = this.detectiveInvestigations.get(detectiveToken);
-        if (investigation && investigation.results) {
+        if (investigation && investigation.results && !investigation.displayed) {
+            // Results should only be shown once in the next phase
+            investigation.displayed = true;
             detectiveData.investigationResults = investigation.results;
         }
 
@@ -1019,7 +1022,8 @@ class SecretSyndicates extends GameManager {
             targetToken,
             targetName: investigationResults.targetName,
             round: this.currentRound,
-            results: investigationResults
+            results: investigationResults,
+            displayed: false  // Mark as not yet displayed
         });
 
         console.log(`[${this.gameCode}] Detective ${detectiveToken} locked investigation on ${investigationResults.targetName} - Suspicion: ${investigationResults.level}`);

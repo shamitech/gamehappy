@@ -1170,6 +1170,12 @@ class Game {
         }
         
         // Show special role message at top of screen (not as overlay)
+        // First, remove any existing role message from a previous phase
+        const existingMessage = document.getElementById('phase2-role-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+        
         const messageContainer = document.createElement('div');
         messageContainer.id = 'phase2-role-message';
         messageContainer.style.marginBottom = '20px';
