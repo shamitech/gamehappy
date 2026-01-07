@@ -665,6 +665,10 @@ class SecretSyndicates extends GameManager {
      * Get alive players
      */
     getAlivePlayers() {
+        // Ensure eliminatedPlayers is initialized
+        if (!this.eliminatedPlayers) {
+            this.eliminatedPlayers = new Set();
+        }
         return this.getPlayers().filter(p => !this.eliminatedPlayers.has(p.token));
     }
 
