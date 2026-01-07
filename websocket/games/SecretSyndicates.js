@@ -54,8 +54,9 @@ class SecretSyndicates extends GameManager {
         // Detective case notes - persists across rounds and phases
         this.detectiveCaseNotes = {}; // playerToken -> Map of targetToken -> Set of tags
         
-        // Voting history - persists across entire game for detective suspicion calculations
-        this.votingHistory = {}; // playerToken -> { accusationVotes: [], trialVotes: [], dayVotes: [] }
+        // Voting history - persists across entire game for results display
+        // Structure: playerToken -> { roundVotes: { roundNumber -> { accused: targetToken, verdict: 'guilty'|'not-guilty' } } }
+        this.votingHistory = {}; // Will be populated during game play
         
         // Game notes for all players
         this.gameNotes = [];
@@ -538,33 +539,14 @@ class SecretSyndicates extends GameManager {
         this.trialVotes.set(playerToken, normalizedVote);
         console.log(`[${this.gameCode}] Trial vote recorded: ${playerToken} -> ${normalizedVote}. Total votes: ${this.trialVotes.size}`);
         
-        // Track voting history - record voter's own voting pattern
+        // Track voting history - record voter's verdict (guilty/not-guilty) in this round
         if (!this.votingHistory[playerToken]) {
-            this.votingHistory[playerToken] = { accusationVotes: [], trialVotes: [], dayVotes: [] };
+            this.votingHistory[playerToken] = { roundVotes: {} };
         }
-        this.votingHistory[playerToken].trialVotes.push(normalizedVote);
-        
-        // Also track guilt votes AGAINST the accused player (for suspicion calculation)
-        if (this.accusedPlayer && normalizedVote === 'guilty') {
-            if (!this.votingHistory[this.accusedPlayer]) {
-                this.votingHistory[this.accusedPlayer] = { accusationVotes: [], trialVotes: [], dayVotes: [] };
-            }
-            // Use a format like "guilty-from-X" to track who voted guilty for them
-            if (!this.votingHistory[this.accusedPlayer].verdictGuiltyVotes) {
-                this.votingHistory[this.accusedPlayer].verdictGuiltyVotes = [];
-            }
-            this.votingHistory[this.accusedPlayer].verdictGuiltyVotes.push(playerToken);
-            
-            // Also track if a player voted guilty for an innocent (they voted wrong)
-            const accusedRole = this.getPlayerRole(this.accusedPlayer);
-            if (accusedRole !== 'Syndicate') {
-                // They voted guilty for an innocent player
-                if (!this.votingHistory[playerToken].innocentGuiltyVotes) {
-                    this.votingHistory[playerToken].innocentGuiltyVotes = [];
-                }
-                this.votingHistory[playerToken].innocentGuiltyVotes.push(this.accusedPlayer);
-            }
+        if (!this.votingHistory[playerToken].roundVotes[this.currentRound]) {
+            this.votingHistory[playerToken].roundVotes[this.currentRound] = {};
         }
+        this.votingHistory[playerToken].roundVotes[this.currentRound].verdict = normalizedVote;
         
         return { success: true };
     }
@@ -581,22 +563,16 @@ class SecretSyndicates extends GameManager {
 
         this.accusationVotes.set(playerToken, targetToken);
         
-        // Track voting history - record that this player made an accusation
+        // Track voting history - record that this player accused someone in this round
         if (!this.votingHistory[playerToken]) {
-            this.votingHistory[playerToken] = { accusationVotes: [], trialVotes: [], dayVotes: [] };
+            this.votingHistory[playerToken] = { roundVotes: {} };
         }
-        this.votingHistory[playerToken].accusationVotes.push(targetToken);
+        if (!this.votingHistory[playerToken].roundVotes[this.currentRound]) {
+            this.votingHistory[playerToken].roundVotes[this.currentRound] = {};
+        }
+        this.votingHistory[playerToken].roundVotes[this.currentRound].accused = targetToken;
         
-        // Track if they accused an innocent player (for suspicion calculation)
         const targetRole = this.getPlayerRole(targetToken);
-        if (targetRole !== 'Syndicate') {
-            // They accused an innocent player
-            if (!this.votingHistory[playerToken].innocentAccusations) {
-                this.votingHistory[playerToken].innocentAccusations = [];
-            }
-            this.votingHistory[playerToken].innocentAccusations.push(targetToken);
-        }
-        
         console.log(`[${this.gameCode}] Accusation vote recorded: ${playerToken} -> ${targetToken} (${targetRole}), total votes: ${this.accusationVotes.size}`);
         return { success: true, voteCount: this.accusationVotes.size };
     }

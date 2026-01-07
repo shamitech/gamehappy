@@ -99,6 +99,15 @@ class Game {
             'test-player-5': generateRandomSuspicion()
         };
         
+        // Create voting history with new per-round structure
+        const votingHistory = {
+            'test-player-1': { roundVotes: { 1: { accused: 'test-player-2', verdict: 'guilty' }, 2: { accused: 'test-player-3', verdict: 'guilty' }, 3: { accused: 'test-player-4', verdict: 'guilty' } } },
+            'test-player-2': { roundVotes: { 1: { accused: 'test-player-1', verdict: 'guilty' }, 2: { accused: 'test-player-1', verdict: 'guilty' }, 3: { accused: 'test-player-5', verdict: 'guilty' } } },
+            'test-player-3': { roundVotes: { 1: { accused: 'test-player-4', verdict: 'not-guilty' }, 2: { accused: 'test-player-1', verdict: 'guilty' }, 3: { accused: 'test-player-2', verdict: 'guilty' } } },
+            'test-player-4': { roundVotes: { 1: { accused: 'test-player-5', verdict: 'guilty' }, 2: { accused: 'test-player-2', verdict: 'guilty' }, 3: { accused: 'test-player-3', verdict: 'guilty' } } },
+            'test-player-5': { roundVotes: { 1: { accused: 'test-player-3', verdict: 'guilty' }, 2: { accused: 'test-player-4', verdict: 'guilty' }, 3: { accused: 'test-player-1', verdict: 'guilty' } } }
+        };
+        
         // Simulate game-ended event
         this.handleGameEnded({
             winner: winner,
@@ -111,13 +120,7 @@ class Game {
             finalRound: 3,
             playerRole: 'Bystander',
             allPlayers: mockPlayers,
-            votingHistory: {
-                'test-player-1': { accusationVotes: ['test-player-2', 'test-player-3'], trialVotes: ['guilty', 'guilty', 'guilty'] },
-                'test-player-2': { accusationVotes: ['test-player-1', 'test-player-1'], trialVotes: ['guilty', 'guilty', 'guilty'] },
-                'test-player-3': { accusationVotes: ['test-player-4', 'test-player-1'], trialVotes: ['not-guilty', 'guilty', 'guilty'] },
-                'test-player-4': { accusationVotes: ['test-player-5', 'test-player-2'], trialVotes: ['guilty', 'guilty', 'guilty'] },
-                'test-player-5': { accusationVotes: ['test-player-3', 'test-player-4'], trialVotes: ['guilty', 'guilty', 'guilty'] }
-            },
+            votingHistory: votingHistory,
             playerSuspicionLevels: playerSuspicionLevels
         });
     }
@@ -2482,62 +2485,99 @@ class Game {
         
         // Build and display player stats table
         if (data.allPlayers && data.allPlayers.length > 0) {
-            this.buildPlayersTable(playersTableContainer, data.allPlayers, data.playerRole, data.playerSuspicionLevels);
+            this.buildPlayersTable(playersTableContainer, data.allPlayers, data.playerRole, data.playerSuspicionLevels, data.votingHistory);
         }
     }
 
-    buildPlayersTable(container, allPlayers, playerRole, playerSuspicionLevels = {}) {
+    buildPlayersTable(container, allPlayers, playerRole, playerSuspicionLevels = {}, votingHistory = {}) {
+        // Use the votingHistory passed from server, or fallback to this.votingHistory
+        const history = Object.keys(votingHistory).length > 0 ? votingHistory : this.votingHistory;
+        
         // Count number of rounds from voting history
         let maxRounds = 0;
-        Object.values(this.votingHistory).forEach(history => {
-            if (history.accusationVotes && history.accusationVotes.length > maxRounds) {
-                maxRounds = history.accusationVotes.length;
+        Object.values(history).forEach(playerHistory => {
+            if (playerHistory.roundVotes) {
+                const rounds = Object.keys(playerHistory.roundVotes).map(Number);
+                const maxRound = Math.max(...rounds);
+                if (maxRound > maxRounds) {
+                    maxRounds = maxRound;
+                }
             }
         });
         maxRounds = Math.max(maxRounds, 1); // At least 1 round
 
-        // Calculate suspicion for each player (how many times they were accused)
-        const suspicionMap = {};
-        allPlayers.forEach(player => {
-            suspicionMap[player.token] = 0;
-        });
-        
-        Object.values(this.votingHistory).forEach(history => {
-            if (history.accusationVotes) {
-                history.accusationVotes.forEach(accusedToken => {
-                    if (suspicionMap.hasOwnProperty(accusedToken)) {
-                        suspicionMap[accusedToken]++;
+        // Build per-round data structure to show who was most accused in each round
+        const roundData = {};
+        for (let round = 1; round <= maxRounds; round++) {
+            roundData[round] = {
+                accused: null,
+                accusationCount: {},
+                mostAccused: null
+            };
+        }
+
+        // Count accusations per round to find most accused
+        Object.entries(history).forEach(([playerToken, playerHistory]) => {
+            if (playerHistory.roundVotes) {
+                Object.entries(playerHistory.roundVotes).forEach(([round, voteData]) => {
+                    const roundNum = Number(round);
+                    if (voteData.accused) {
+                        if (!roundData[roundNum].accusationCount[voteData.accused]) {
+                            roundData[roundNum].accusationCount[voteData.accused] = 0;
+                        }
+                        roundData[roundNum].accusationCount[voteData.accused]++;
                     }
                 });
             }
         });
 
+        // Find most accused for each round
+        Object.entries(roundData).forEach(([round, data]) => {
+            let maxVotes = 0;
+            let mostAccused = null;
+            Object.entries(data.accusationCount).forEach(([token, count]) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    mostAccused = token;
+                }
+            });
+            data.mostAccused = mostAccused;
+        });
+
+        // Build player stats
         const playerStats = allPlayers.map(player => {
-            // Get this player's voting history
-            const history = this.votingHistory[player.token] || { accusationVotes: [], trialVotes: [] };
+            const playerHistory = history[player.token] || { roundVotes: {} };
             
-            // Build accusations for each round
-            const accusations = [];
-            if (history.accusationVotes) {
-                for (let i = 0; i < maxRounds; i++) {
-                    if (i < history.accusationVotes.length) {
-                        const targetToken = history.accusationVotes[i];
-                        const targetPlayer = allPlayers.find(p => p.token === targetToken);
-                        accusations.push(targetPlayer ? targetPlayer.name : '?');
-                    } else {
-                        accusations.push('-');
-                    }
+            // Build data for each round
+            const roundCells = [];
+            for (let round = 1; round <= maxRounds; round++) {
+                const voteData = playerHistory.roundVotes[round] || {};
+                const accused = voteData.accused;
+                const verdict = voteData.verdict;
+                const mostAccused = roundData[round].mostAccused;
+                
+                // Determine who was accused and how they voted
+                const accusedPlayer = accused ? allPlayers.find(p => p.token === accused) : null;
+                const accusedName = accusedPlayer ? accusedPlayer.name.charAt(0) : '-';
+                
+                // Determine verdict display
+                let verdictDisplay = '-';
+                if (verdict && mostAccused === accused) {
+                    // They voted on the most accused player
+                    verdictDisplay = verdict === 'guilty' ? '✓G' : '✗G';
+                } else if (verdict) {
+                    // They voted but not on the most accused
+                    verdictDisplay = verdict === 'guilty' ? 'G' : 'N';
                 }
-            } else {
-                for (let i = 0; i < maxRounds; i++) {
-                    accusations.push('-');
-                }
+                
+                roundCells.push({
+                    accused: accusedName,
+                    verdict: verdictDisplay,
+                    display: `${accusedName} ${verdictDisplay}`
+                });
             }
             
-            // Count guilty votes
-            const guiltyVotes = history.trialVotes ? history.trialVotes.filter(v => v === 'guilty').length : 0;
-            
-            // Get suspicion level from server (if available), otherwise fallback to local calculation
+            // Get suspicion level from server
             let suspicionLevel = 'low';
             let suspicionDisplay = 'Low';
             let suspicionScore = 0;
@@ -2558,27 +2598,14 @@ class Game {
                 } else {
                     suspicionLevel = 'clear';
                 }
-            } else {
-                // Fallback to old method for backward compatibility
-                const suspicionCount = suspicionMap[player.token] || 0;
-                if (suspicionCount >= 3) {
-                    suspicionLevel = 'high';
-                    suspicionDisplay = 'High';
-                } else if (suspicionCount >= 2) {
-                    suspicionLevel = 'medium';
-                    suspicionDisplay = 'Medium';
-                } else {
-                    suspicionLevel = 'low';
-                    suspicionDisplay = 'Low';
-                }
             }
             
             return {
+                token: player.token,
                 name: player.name,
                 role: player.role || 'Hidden',
                 alive: player.alive,
-                accusations: accusations,
-                guiltyVotes: guiltyVotes,
+                roundCells: roundCells,
                 suspicionLevel: suspicionLevel,
                 suspicionDisplay: suspicionDisplay,
                 suspicionScore: suspicionScore
@@ -2591,12 +2618,15 @@ class Game {
         // Build table headers with rounds
         const roundHeaders = [];
         for (let i = 1; i <= maxRounds; i++) {
-            roundHeaders.push(`<th>Round ${i}</th>`);
+            roundHeaders.push(`<th colspan="2" style="text-align: center;">Round ${i}</th>`);
         }
 
         const tableHTML = `
             <div class="players-stats-section">
                 <h3 style="margin-bottom: 15px;">📊 Final Results</h3>
+                <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px;">
+                    Legend: First letter = most accused player | ✓G = voted guilty | ✗G = voted not guilty | G = voted guilty (different target) | N = voted not guilty
+                </p>
                 <div class="table-wrapper">
                     <table class="players-stats-table">
                         <thead>
@@ -2605,7 +2635,6 @@ class Game {
                                 <th>Role</th>
                                 <th>Status</th>
                                 ${roundHeaders.join('')}
-                                <th>Guilty Votes</th>
                                 <th>Suspicion</th>
                             </tr>
                         </thead>
@@ -2623,8 +2652,7 @@ class Game {
                                             ${player.alive ? 'Alive' : 'Out'}
                                         </span>
                                     </td>
-                                    ${player.accusations.map(acc => `<td class="accusation">${acc}</td>`).join('')}
-                                    <td class="guilty-votes">${player.guiltyVotes}</td>
+                                    ${player.roundCells.map(cell => `<td class="round-data" title="${cell.display}">${cell.display}</td>`).join('')}
                                     <td class="suspicion-cell">
                                         <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionDisplay}</span>
                                     </td>
