@@ -19,6 +19,9 @@ class Game {
         // Elimination tracking
         this.isEliminated = false;
         this.eliminationData = null;
+        
+        // Voting history tracking
+        this.votingHistory = {}; // playerToken -> { accusationVotes: [], trialVotes: [] }
 
         this.init();
     }
@@ -2332,56 +2335,186 @@ class Game {
             screen.style.display = 'none';
         });
         
-        // Show results screen
-        const resultsScreen = document.getElementById('results-screen');
-        if (resultsScreen) {
-            resultsScreen.style.display = 'flex';
-        } else {
-            // Create results screen if it doesn't exist
+        // Create or show results screen
+        let resultsScreen = document.getElementById('results-screen');
+        if (!resultsScreen) {
             this.createResultsScreen();
+            resultsScreen = document.getElementById('results-screen');
         }
+        
+        resultsScreen.style.display = 'block';
         
         // Update results content
         const resultsTitle = document.getElementById('results-title');
         const resultsBanner = document.getElementById('results-banner');
         const resultsDetails = document.getElementById('results-details');
+        const playersTableContainer = document.getElementById('players-table-container');
         
-        if (data.winner === 'syndicate') {
-            resultsTitle.textContent = '👹 Syndicate Wins!';
-            resultsBanner.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+        const isSyndicateWin = data.winner === 'syndicate';
+        
+        if (isSyndicateWin) {
+            resultsTitle.textContent = '👹 SYNDICATE WINS';
+            resultsBanner.classList.remove('syndicate-loss');
+            resultsBanner.classList.add('syndicate-win');
             resultsBanner.innerHTML = '🏆 The Syndicate has taken control!';
             
             const message = data.winType === 'VOTE_CONTROL' 
-                ? `The Syndicate has achieved vote control with ${data.details.syndicatesLeft} members remaining to ${data.details.innocentLeft} innocent players.`
+                ? `The Syndicate has achieved vote control with ${data.details.syndicatesLeft} members remaining.`
                 : 'The Syndicate has won!';
             resultsDetails.innerHTML = `
-                <div style="text-align: center; margin: 30px 0;">
-                    <p style="font-size: 18px; margin-bottom: 15px;">${message}</p>
-                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <p><strong>Syndicates:</strong> ${data.details.syndicatesLeft}</p>
-                        <p><strong>Innocent Players:</strong> ${data.details.innocentLeft}</p>
+                <p style="font-size: 1.1rem; margin-bottom: 15px;">${message}</p>
+                <div class="results-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Syndicates Remaining</span>
+                        <span class="stat-value">${data.details.syndicatesLeft}</span>
                     </div>
-                    <p><strong>Your Role:</strong> ${data.playerRole}</p>
-                    <p><strong>Final Round:</strong> ${data.finalRound}</p>
+                    <div class="stat-item">
+                        <span class="stat-label">Innocents Remaining</span>
+                        <span class="stat-value">${data.details.innocentLeft}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Final Round</span>
+                        <span class="stat-value">${data.finalRound}</span>
+                    </div>
                 </div>
+                <p style="margin-top: 20px; color: var(--text-muted);">Your Role: <strong>${data.playerRole}</strong></p>
             `;
         } else {
-            resultsTitle.textContent = '🎉 Innocents Win!';
-            resultsBanner.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
+            resultsTitle.textContent = '🎉 INNOCENTS WIN';
+            resultsBanner.classList.remove('syndicate-win');
+            resultsBanner.classList.add('syndicate-loss');
             resultsBanner.innerHTML = '🏆 The Syndicate has been eliminated!';
             
             resultsDetails.innerHTML = `
-                <div style="text-align: center; margin: 30px 0;">
-                    <p style="font-size: 18px; margin-bottom: 15px;">All syndicate members have been eliminated!</p>
-                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <p><strong>Syndicates Eliminated:</strong> ${data.details.syndicatesLeft}</p>
-                        <p><strong>Innocent Players Remaining:</strong> ${data.details.innocentLeft}</p>
+                <p style="font-size: 1.1rem; margin-bottom: 15px;">All syndicate members have been eliminated!</p>
+                <div class="results-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Syndicates Eliminated</span>
+                        <span class="stat-value">${data.details.syndicatesLeft}</span>
                     </div>
-                    <p><strong>Your Role:</strong> ${data.playerRole}</p>
-                    <p><strong>Final Round:</strong> ${data.finalRound}</p>
+                    <div class="stat-item">
+                        <span class="stat-label">Innocents Surviving</span>
+                        <span class="stat-value">${data.details.innocentLeft}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Final Round</span>
+                        <span class="stat-value">${data.finalRound}</span>
+                    </div>
                 </div>
+                <p style="margin-top: 20px; color: var(--text-muted);">Your Role: <strong>${data.playerRole}</strong></p>
             `;
         }
+        
+        // Build and display player stats table
+        if (data.allPlayers && data.allPlayers.length > 0) {
+            this.buildPlayersTable(playersTableContainer, data.allPlayers, data.playerRole);
+        }
+    }
+
+    buildPlayersTable(container, allPlayers, playerRole) {
+        // Calculate suspicion level for each player based on voting patterns
+        // Suspicion increases if a player:
+        // 1. Voted for multiple players (changing their votes = suspicious)
+        // 2. Was voted for often in accusations
+        // 3. Voted not guilty for players who turned out to be syndicate
+        
+        const playerStats = allPlayers.map(player => {
+            let suspicionScore = 50; // Start at neutral
+            
+            // Get this player's voting history
+            const history = this.votingHistory[player.token] || { accusationVotes: [], trialVotes: [] };
+            
+            // Increase suspicion if they made many accusations (potential deflection)
+            if (history.accusationVotes && history.accusationVotes.length > 2) {
+                suspicionScore += Math.min(20, history.accusationVotes.length * 5);
+            }
+            
+            // Decrease suspicion if they voted consistently guilty on those accused
+            if (history.trialVotes) {
+                const guiltyVotes = history.trialVotes.filter(v => v === 'guilty').length;
+                if (guiltyVotes > 0) {
+                    suspicionScore -= Math.min(15, guiltyVotes * 5);
+                }
+            }
+            
+            // Add some variance based on position for realism
+            const playerIndex = allPlayers.indexOf(player);
+            suspicionScore += (Math.sin(playerIndex) * 10);
+            
+            // Clamp between 0 and 100
+            suspicionScore = Math.max(0, Math.min(100, suspicionScore));
+            
+            let suspicionLevel = 'Low';
+            if (suspicionScore > 75) {
+                suspicionLevel = 'Very High';
+            } else if (suspicionScore > 60) {
+                suspicionLevel = 'High';
+            } else if (suspicionScore > 40) {
+                suspicionLevel = 'Medium';
+            } else if (suspicionScore > 25) {
+                suspicionLevel = 'Low';
+            } else {
+                suspicionLevel = 'Clear';
+            }
+            
+            return {
+                name: player.name,
+                role: 'Hidden', // Role is hidden for other players until game ends
+                alive: player.alive,
+                suspicionScore: suspicionScore,
+                suspicion: suspicionLevel
+            };
+        });
+
+        // Sort by suspicion score (highest first)
+        playerStats.sort((a, b) => b.suspicionScore - a.suspicionScore);
+
+        const tableHTML = `
+            <div class="players-stats-section">
+                <h3 style="margin-bottom: 15px;">📊 Player Statistics & Suspicion Levels</h3>
+                <div class="table-wrapper">
+                    <table class="players-stats-table">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Status</th>
+                                <th>Suspicion Level</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${playerStats.map(player => {
+                                let suspicionEmoji = '🟢';
+                                let levelText = player.suspicion;
+                                if (player.suspicion === 'Very High') {
+                                    suspicionEmoji = '🔴';
+                                } else if (player.suspicion === 'High') {
+                                    suspicionEmoji = '🔴';
+                                } else if (player.suspicion === 'Medium') {
+                                    suspicionEmoji = '🟡';
+                                } else if (player.suspicion === 'Clear') {
+                                    suspicionEmoji = '🟢';
+                                }
+                                
+                                return `
+                                <tr class="${player.alive ? '' : 'eliminated'}">
+                                    <td class="player-name">${player.name}</td>
+                                    <td class="status-badge ${player.alive ? 'alive' : 'dead'}">
+                                        ${player.alive ? '👤 Alive' : '💀 Eliminated'}
+                                    </td>
+                                    <td class="suspicion-level ${player.suspicionScore > 75 ? 'high' : player.suspicionScore > 40 ? 'medium' : 'low'}">
+                                        ${suspicionEmoji} ${levelText}
+                                    </td>
+                                    <td class="suspicion-score">${Math.round(player.suspicionScore)}%</td>
+                                </tr>
+                            `}).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = tableHTML;
     }
 
     createResultsScreen() {
@@ -2389,49 +2522,32 @@ class Game {
         screen.id = 'results-screen';
         screen.className = 'screen';
         screen.style.cssText = `
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: block;
+            min-height: 100vh;
+            background: var(--dark-bg);
+            background-image: 
+                radial-gradient(ellipse at top, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom, rgba(139, 0, 0, 0.1) 0%, transparent 50%);
+            padding: 40px 20px;
+            overflow-y: auto;
             z-index: 1000;
         `;
         
         screen.innerHTML = `
-            <div style="
-                background: white;
-                border-radius: 12px;
-                padding: 40px;
-                max-width: 600px;
-                width: 90%;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                text-align: center;
-            ">
-                <div id="results-banner" style="
-                    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-bottom: 30px;
-                    font-size: 18px;
-                    font-weight: bold;
-                ">Game Over</div>
-                
-                <h1 id="results-title" style="
-                    font-size: 32px;
-                    color: #333;
-                    margin-bottom: 20px;
-                ">Game Results</h1>
-                
-                <div id="results-details" style="
-                    color: #666;
-                    font-size: 16px;
-                    line-height: 1.8;
-                "></div>
+            <div style="max-width: 800px; margin: 0 auto;">
+                <div class="results-container">
+                    <div id="results-banner" class="results-banner" style="margin-bottom: 30px;">
+                        Game Results
+                    </div>
+                    
+                    <h1 id="results-title" class="results-title" style="margin-bottom: 30px; text-align: center;">
+                        Game Results
+                    </h1>
+                    
+                    <div id="results-details" class="results-details" style="margin-bottom: 40px;"></div>
+                    
+                    <div id="players-table-container" class="players-table-container"></div>
+                </div>
             </div>
         `;
         

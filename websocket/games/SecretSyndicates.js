@@ -329,6 +329,21 @@ class SecretSyndicates extends GameManager {
                     console.log(`[${this.gameCode}] Player ${this.accusedPlayer} acquitted (${guiltVotes}/${totalVotes} votes for guilty)`);
                 }
                 
+                // Check win conditions after verdict elimination
+                const winResult = this.checkWinConditions();
+                if (winResult) {
+                    console.log(`[${this.gameCode}] Game ended after verdict: ${winResult.winner} wins via ${winResult.winType}`);
+                    this.currentPhase = 'ended';
+                    return {
+                        success: true,
+                        phase: this.currentPhase,
+                        previousPhase: previousPhase,
+                        round: this.currentRound,
+                        gameEnded: true,
+                        winCondition: winResult
+                    };
+                }
+                
                 // CRITICAL: Reset ALL round-specific state for new round
                 this.currentPhase = 'night';
                 this.currentRound++;
