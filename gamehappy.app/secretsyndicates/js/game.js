@@ -311,6 +311,17 @@ class Game {
                 this.onPhase5VoteUpdate(data);
             });
 
+            // Syndicate real-time updates
+            this.socket.on('syndicate-recommendations-update', (data) => {
+                console.log('Syndicate recommendations update received:', data);
+                this.onSyndicateRecommendationsUpdate(data);
+            });
+
+            this.socket.on('syndicate-lock-update', (data) => {
+                console.log('Syndicate lock update received:', data);
+                this.onSyndicateLockInUpdate(data);
+            });
+
             this.socket.on('all-players-done', (data) => {
                 console.log('All players done, advancing to next phase:', data);
                 // Server will handle phase advancement, just wait for next on-phase-start event
@@ -3240,17 +3251,24 @@ class Game {
         list.innerHTML = '';
 
         if (data.recommendations && data.recommendations.recommendations) {
-            // Build a map of targetId -> array of voter names
+            // Build a map of targetId -> array of voter info (name + locked status)
             const votersByTarget = {};
+            const lockedInList = data.recommendations.lockedIn || [];
+            
             data.recommendations.recommendations.forEach(rec => {
                 if (!votersByTarget[rec.targetId]) {
                     votersByTarget[rec.targetId] = [];
                 }
-                votersByTarget[rec.targetId].push(rec.voterName);
+                const isLocked = lockedInList.includes(rec.voterId);
+                votersByTarget[rec.targetId].push({
+                    name: rec.voterName,
+                    locked: isLocked
+                });
                 
-                // Also add to the list display
+                // Also add to the list display with lock indicator
                 const li = document.createElement('li');
-                li.innerHTML = `<span class="voter">${this.escapeHtml(rec.voterName)}</span> → ${this.escapeHtml(rec.targetName)}`;
+                const lockIcon = isLocked ? '🔒 ' : '';
+                li.innerHTML = `<span class="voter">${lockIcon}${this.escapeHtml(rec.voterName)}</span> → ${this.escapeHtml(rec.targetName)}`;
                 list.appendChild(li);
             });
 
@@ -3277,7 +3295,7 @@ class Game {
                     card.classList.remove('recommended');
                 }
 
-                // Add/update voter name tags
+                // Add/update voter name tags with lock indicator
                 let tagsContainer = card.querySelector('.voter-tags');
                 if (!tagsContainer) {
                     tagsContainer = document.createElement('div');
@@ -3286,10 +3304,20 @@ class Game {
                 }
                 
                 const voters = votersByTarget[playerId] || [];
-                tagsContainer.innerHTML = voters.map(name => 
-                    `<span class="voter-tag">${this.escapeHtml(name)}</span>`
+                tagsContainer.innerHTML = voters.map(voter => 
+                    `<span class="voter-tag ${voter.locked ? 'locked' : ''}">${voter.locked ? '🔒 ' : ''}${this.escapeHtml(voter.name)}</span>`
                 ).join('');
             });
+            
+            // Update lock status count if available
+            const status = document.getElementById('syndicate-lock-status');
+            if (status && data.recommendations.lockedInCount !== undefined) {
+                const lockedCount = data.recommendations.lockedInCount;
+                const totalCount = data.recommendations.totalSyndicates;
+                if (lockedCount > 0 && lockedCount < totalCount) {
+                    status.textContent = `${lockedCount}/${totalCount} Syndicate members locked in`;
+                }
+            }
         }
     }
 
@@ -3302,10 +3330,14 @@ class Game {
     }
 
     onSyndicateLockInUpdate(data) {
-        // Update lock-in status display if needed
+        // Update lock-in status display
         const status = document.getElementById('syndicate-lock-status');
-        if (status && data.lockedInCount < data.totalSyndicates) {
-            status.textContent = `${data.lockedInCount}/${data.totalSyndicates} Syndicate members locked in`;
+        if (status) {
+            if (data.allLocked) {
+                status.textContent = 'All Syndicate members locked in! Determining target...';
+            } else {
+                status.textContent = `${data.lockedInCount}/${data.totalSyndicates} Syndicate members locked in`;
+            }
         }
     }
 

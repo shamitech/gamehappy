@@ -267,11 +267,20 @@ class SecretSyndicates extends GameManager {
         switch (this.currentPhase) {
             case 'night':
                 // Execute night votes to determine the victim
-                this.executeNightPhase();
+                const nightResult = this.executeNightPhase();
                 this.currentPhase = 'murder';
                 
-                // Now set lastVictim from lastMurderTarget
-                if (this.lastMurderTarget) {
+                // Check if there was a tie vote (no elimination)
+                if (nightResult.isTie) {
+                    console.log(`[${this.gameCode}] Syndicate vote tied - no victim this round`);
+                    this.lastVictim = null;
+                    this.lastMurderTarget = null;
+                    this.murderEliminatedPlayer = null;
+                    // Generate the tie story
+                    this.currentPhaseStory = this.getMurderStory();
+                    console.log(`[${this.gameCode}] Tie story generated: ${this.currentPhaseStory}`);
+                } else if (this.lastMurderTarget) {
+                    // Now set lastVictim from lastMurderTarget
                     const victim = this.players.get(this.lastMurderTarget);
                     if (victim) {
                         this.lastVictim = victim;
@@ -284,17 +293,12 @@ class SecretSyndicates extends GameManager {
                         console.log(`[${this.gameCode}] Murder story generated: ${this.currentPhaseStory}`);
                     }
                 } else {
-                    // Fallback: Auto-select a random alive player as victim if no target was selected
-                    const alivePlayers = this.getAlivePlayers();
-                    if (alivePlayers.length > 0) {
-                        const randomVictim = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
-                        this.lastMurderTarget = randomVictim.token;
-                        this.lastVictim = randomVictim;
-                        this.eliminatedPlayers.add(this.lastMurderTarget);
-                        this.murderEliminatedPlayer = this.lastMurderTarget;
-                        console.log(`[${this.gameCode}] No votes, auto-selecting: ${randomVictim.name} (${randomVictim.token})`);
-                        this.currentPhaseStory = this.getMurderStory();
-                    }
+                    // No votes at all - this shouldn't happen in normal gameplay
+                    // but handle gracefully by just not having a victim
+                    console.log(`[${this.gameCode}] No syndicate votes cast - no victim this round`);
+                    this.lastVictim = null;
+                    this.murderEliminatedPlayer = null;
+                    this.currentPhaseStory = this.getMurderStory();
                 }
                 this.playersReady.clear();
                 break;
@@ -411,7 +415,57 @@ class SecretSyndicates extends GameManager {
         }
 
         this.nightVotes.set(playerToken, targetToken);
-        return { success: true, message: 'Vote recorded' };
+        
+        // Return syndicate recommendations for real-time updates
+        return { 
+            success: true, 
+            message: 'Vote recorded',
+            syndicateUpdate: true,
+            recommendations: this.getSyndicateRecommendations()
+        };
+    }
+
+    /**
+     * Get current syndicate recommendations for real-time display
+     */
+    getSyndicateRecommendations() {
+        const recommendations = [];
+        const voteCounts = {};
+        const lockedIn = [];
+        
+        // Get all syndicate members
+        const syndicateMembers = this.getSyndicateMembers();
+        
+        for (const [voterToken, targetToken] of this.nightVotes) {
+            const voter = this.players.get(voterToken);
+            const target = this.players.get(targetToken);
+            
+            if (voter && target) {
+                recommendations.push({
+                    voterId: voterToken,
+                    voterName: voter.name,
+                    targetId: targetToken,
+                    targetName: target.name
+                });
+                
+                voteCounts[targetToken] = (voteCounts[targetToken] || 0) + 1;
+            }
+        }
+        
+        // Track who has locked in
+        for (const [token, locked] of this.nightVotesLocked) {
+            if (locked) {
+                lockedIn.push(token);
+            }
+        }
+        
+        return {
+            recommendations,
+            voteCounts,
+            lockedIn,
+            totalSyndicates: syndicateMembers.length,
+            lockedInCount: lockedIn.length
+        };
     }
 
     /**
@@ -423,7 +477,15 @@ class SecretSyndicates extends GameManager {
         }
 
         this.nightVotesLocked.set(playerToken, true);
-        return { success: true };
+        
+        // Return syndicate update info
+        const recommendations = this.getSyndicateRecommendations();
+        return { 
+            success: true,
+            syndicateUpdate: true,
+            recommendations: recommendations,
+            allLocked: this.allSyndicateLocked()
+        };
     }
 
     /**
@@ -446,17 +508,31 @@ class SecretSyndicates extends GameManager {
             votes.set(target, count + 1);
         }
 
-        // Find target with most votes
+        // Find target with most votes and check for ties
         let target = null;
         let maxVotes = 0;
+        let tiedTargets = [];
+        
         for (const [playerToken, voteCount] of votes) {
             if (voteCount > maxVotes) {
                 maxVotes = voteCount;
                 target = playerToken;
+                tiedTargets = [playerToken];
+            } else if (voteCount === maxVotes) {
+                tiedTargets.push(playerToken);
             }
         }
 
-        if (target) {
+        // Check for tie - if more than one target has the max votes, no elimination
+        const isTie = tiedTargets.length > 1;
+        
+        if (isTie) {
+            // Tie vote - no one is eliminated
+            console.log(`[${this.gameCode}] Syndicate vote tied between ${tiedTargets.length} targets - no elimination this round`);
+            target = null;
+            this.lastMurderTarget = null;
+            this.lastMurderAssassin = null;
+        } else if (target) {
             this.lastMurderTarget = target;
             this.lastMurderAssassin = this.findAssassinForTarget(target);
         }
@@ -464,7 +540,13 @@ class SecretSyndicates extends GameManager {
         this.nightVotes.clear();
         this.nightVotesLocked.clear();
 
-        return { success: true, target: target, assassin: this.lastMurderAssassin };
+        return { 
+            success: true, 
+            target: target, 
+            assassin: this.lastMurderAssassin,
+            isTie: isTie,
+            tiedTargets: isTie ? tiedTargets : []
+        };
     }
 
     /**
@@ -910,12 +992,16 @@ class SecretSyndicates extends GameManager {
         if (this.currentPhase === 'night') {
             // Add syndicate data
             if (playerRole === 'Syndicate') {
+                const currentRecommendations = this.getSyndicateRecommendations();
+                const myVote = this.nightVotes.get(playerToken);
+                const isLockedIn = this.nightVotesLocked.has(playerToken);
+                
                 gameState.syndicateData = {
                     syndicateIds: this.getSyndicateMembers().map(m => m.token),
                     stage: 'target',
-                    recommendations: { recommendations: [], voteCounts: {}, lockedIn: [] },
-                    myRecommendation: null,
-                    lockedIn: false,
+                    recommendations: currentRecommendations,
+                    myRecommendation: myVote || null,
+                    lockedIn: isLockedIn,
                     complete: false
                 };
             }
@@ -976,6 +1062,18 @@ class SecretSyndicates extends GameManager {
         // If we already generated a story for this phase, reuse it
         if (this.currentPhaseStory) {
             return this.currentPhaseStory;
+        }
+        
+        // Handle case where syndicate couldn't agree (tie vote)
+        if (!this.lastVictim && this.lastMurderTarget === null) {
+            const tieStories = [
+                '🌙 The night passed quietly. The Syndicate could not agree on a target, and no one was harmed.',
+                '😮‍💨 Morning arrived with relief - no assassination took place last night. The Syndicate was divided.',
+                '🌅 A peaceful night for once. Internal disagreement within the Syndicate spared everyone.',
+                '✨ Against all odds, everyone survived the night. The Syndicate failed to coordinate.',
+                '🤝 Rumors suggest the Syndicate couldn\'t reach a consensus. All citizens wake safely.'
+            ];
+            return tieStories[Math.floor(Math.random() * tieStories.length)];
         }
         
         if (!this.lastVictim) {

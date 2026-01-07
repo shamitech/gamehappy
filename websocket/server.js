@@ -223,6 +223,43 @@ io.on('connection', (socket) => {
           eventResult: result
         });
 
+        // Handle syndicate real-time updates (night-vote or night-lock)
+        if (result.syndicateUpdate && (eventName === 'night-vote' || eventName === 'night-lock')) {
+          console.log(`[${game.gameCode}] Broadcasting syndicate update to syndicate members`);
+          
+          // Get all syndicate members
+          const syndicateMembers = game.getSyndicateMembers ? game.getSyndicateMembers() : [];
+          
+          // Broadcast to all syndicate members
+          for (const [socketId, playerSocket] of io.sockets.sockets) {
+            const pToken = playerSocket.handshake.query.token || socketId;
+            if (syndicateMembers.some(m => m.token === pToken)) {
+              playerSocket.emit('syndicate-recommendations-update', {
+                action: 'syndicateRecommendationsUpdate',
+                recommendations: result.recommendations,
+                stage: 'target'
+              });
+              console.log(`[${game.gameCode}] Sent syndicate update to ${pToken}`);
+            }
+          }
+          
+          // If all syndicates have locked in, broadcast lock status
+          if (result.allLocked) {
+            console.log(`[${game.gameCode}] All syndicates locked in`);
+            for (const [socketId, playerSocket] of io.sockets.sockets) {
+              const pToken = playerSocket.handshake.query.token || socketId;
+              if (syndicateMembers.some(m => m.token === pToken)) {
+                playerSocket.emit('syndicate-lock-update', {
+                  action: 'syndicateLockInUpdate',
+                  lockedInCount: result.recommendations.lockedInCount,
+                  totalSyndicates: result.recommendations.totalSyndicates,
+                  allLocked: true
+                });
+              }
+            }
+          }
+        }
+
         // Check if all players are done and advance phase if so
         console.log(`[${game.gameCode}] Checking phase advancement: eventName=${eventName}, has allPlayersDone=${typeof game.allPlayersDone}`);
         if (eventName === 'player-done') {
