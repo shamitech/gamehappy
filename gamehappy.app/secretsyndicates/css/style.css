@@ -2341,7 +2341,7 @@ h3 {
     background: var(--darker-bg);
     border-radius: 8px;
     overflow: hidden;
-    table-layout: fixed;
+    table-layout: auto;
 }
 
 .players-stats-table thead {
