@@ -813,11 +813,12 @@ app.get('/test-game', (req, res) => {
     const enableEyeWitness = req.query.enableEyeWitness !== 'false'; // Default true
     const enableBodyGuard = req.query.enableBodyGuard !== 'false'; // Default true
     
-    // Create player names based on count
-    const playerNames = Array.from({ length: playerCount }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, etc.
+    // Create player names - real names instead of A, B, C
+    const nameOptions = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Henry', 'Iris', 'Jack'];
+    const playerNames = nameOptions.slice(0, playerCount);
     const playerTokens = [];
     
-    // Create the game with player A
+    // Create the game with first player
     const createResult = gameServer.createGame('secretsyndicates', 'test-player-1', playerNames[0]);
     if (!createResult.success) {
       return res.json({ success: false, message: 'Failed to create game' });

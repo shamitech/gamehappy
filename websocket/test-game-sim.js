@@ -8,11 +8,11 @@ const SecretSyndicates = require('./games/SecretSyndicates');
 const game = new SecretSyndicates('TEST002');
 
 const players = [
-    { token: 'p1', name: 'Player 1' },
-    { token: 'p2', name: 'Player 2' },
-    { token: 'p3', name: 'Player 3' },
-    { token: 'p4', name: 'Player 4' },
-    { token: 'p5', name: 'Player 5' }
+    { token: 'p1', name: 'Alice' },
+    { token: 'p2', name: 'Bob' },
+    { token: 'p3', name: 'Charlie' },
+    { token: 'p4', name: 'Diana' },
+    { token: 'p5', name: 'Eve' }
 ];
 
 console.log('[TEST] Creating game with 5 players...');

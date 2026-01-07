@@ -9,11 +9,11 @@ const game = new SecretSyndicates('TEST001');
 
 // Add 5 test players
 const players = [
-    { token: 'player1', name: 'Player 1' },
-    { token: 'player2', name: 'Player 2' },
-    { token: 'player3', name: 'Player 3' },
-    { token: 'player4', name: 'Player 4' },
-    { token: 'player5', name: 'Player 5' }
+    { token: 'player1', name: 'Alice' },
+    { token: 'player2', name: 'Bob' },
+    { token: 'player3', name: 'Charlie' },
+    { token: 'player4', name: 'Diana' },
+    { token: 'player5', name: 'Eve' }
 ];
 
 console.log('[TEST] Adding players...');
