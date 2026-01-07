@@ -649,11 +649,16 @@ class SecretSyndicates extends GameManager {
             availableRoles: this.getAvailableRoles()
         };
 
-        // Only add investigation results in the phase after they were locked in
+        // Only add investigation results in the murder phase (phase 2) after they were locked in during night
         const investigation = this.detectiveInvestigations.get(detectiveToken);
-        console.log(`[${this.gameCode}] buildDetectiveData: detective=${detectiveToken}, hasInvestigation=${!!investigation}, displayed=${investigation?.displayed}`);
-        if (investigation && investigation.results && !investigation.displayed) {
-            // Results should only be shown once in the next phase
+        console.log(`[${this.gameCode}] buildDetectiveData: detective=${detectiveToken}, hasInvestigation=${!!investigation}, displayed=${investigation?.displayed}, currentPhase=${this.currentPhase}`);
+        
+        // Include results only if:
+        // 1. Investigation exists and has results
+        // 2. NOT already displayed
+        // 3. We are in murder phase (the phase where results should be shown)
+        if (investigation && investigation.results && !investigation.displayed && this.currentPhase === 'murder') {
+            // Results should only be shown once in the murder phase
             investigation.displayed = true;
             detectiveData.investigationResults = investigation.results;
             console.log(`[${this.gameCode}] buildDetectiveData: INCLUDING investigation results for ${investigation.results.targetName}`);
