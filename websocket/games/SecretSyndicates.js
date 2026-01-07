@@ -701,11 +701,18 @@ class SecretSyndicates extends GameManager {
             if (gameState.isDetective && this.settings.enableEyeWitness) {
                 gameState.detectiveData = {
                     keyword: 'Look for hesitation',
-                    hint: 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.'
+                    hint: 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.',
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
+                    caseNotesPlayers: alivePlayersWithStatus
                 };
                 console.log(`[${this.gameCode}] Sending detective data (eyewitness enabled)`);
             } else if (gameState.isDetective) {
-                console.log(`[${this.gameCode}] NOT sending detective data (eyewitness disabled)`);
+                // Add case notes even if eyewitness is disabled
+                gameState.detectiveData = {
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
+                    caseNotesPlayers: alivePlayersWithStatus
+                };
+                console.log(`[${this.gameCode}] Sending case notes to detective`);
             }
             
             // Check if player is syndicate/assassin (only show special warning if eyewitness is enabled)
@@ -742,6 +749,28 @@ class SecretSyndicates extends GameManager {
             gameState.notGuiltyVotes = Array.from(this.trialVotes.values()).filter(v => v === 'notguilty').length;
             
             // Add detective case notes
+            if (playerRole === 'Detective') {
+                gameState.detectiveData = {
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
+                    caseNotesPlayers: alivePlayersWithStatus
+                };
+            }
+        }
+
+        // Add trial phase data
+        if (this.currentPhase === 'trial') {
+            // Add detective case notes for trial phase
+            if (playerRole === 'Detective') {
+                gameState.detectiveData = {
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
+                    caseNotesPlayers: alivePlayersWithStatus
+                };
+            }
+        }
+
+        // Add discussion phase data
+        if (this.currentPhase === 'discussion') {
+            // Add detective case notes for discussion phase
             if (playerRole === 'Detective') {
                 gameState.detectiveData = {
                     caseNotes: this.detectiveCaseNotes[playerToken] || {},
