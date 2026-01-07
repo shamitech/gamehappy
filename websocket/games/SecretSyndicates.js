@@ -740,6 +740,14 @@ class SecretSyndicates extends GameManager {
             gameState.accusedToken = this.accusedPlayer;
             gameState.guiltyVotes = Array.from(this.trialVotes.values()).filter(v => v === 'guilty').length;
             gameState.notGuiltyVotes = Array.from(this.trialVotes.values()).filter(v => v === 'notguilty').length;
+            
+            // Add detective case notes
+            if (playerRole === 'Detective') {
+                gameState.detectiveData = {
+                    caseNotes: this.detectiveCaseNotes[playerToken] || {},
+                    caseNotesPlayers: alivePlayersWithStatus
+                };
+            }
         }
 
         // Add night phase (phase 1) data
