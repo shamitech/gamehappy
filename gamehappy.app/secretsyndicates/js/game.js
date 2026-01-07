@@ -3262,7 +3262,7 @@ class Game {
 
         caseNotesGridContainer.innerHTML = '';
 
-        // Create case notes grid HTML
+        // Create case notes grid HTML using exact same structure as original
         const gridHtml = caseNotesPlayers
             .filter(p => p.id !== this.getMyPlayerId())
             .map(player => {
@@ -3285,23 +3285,21 @@ class Game {
             .join('');
 
         caseNotesGridContainer.innerHTML = `
-            <div class="case-notes-compact">
-                <div class="case-notes-grid-compact">
-                    ${gridHtml}
-                </div>
-                <div class="case-notes-tags-compact" style="display: none;">
-                    <h4>Add Tags to <span class="selected-player-name">Player</span></h4>
-                    <div class="tag-buttons-compact">
-                        ${allAvailableTags
-                            .filter(tag => tagsToShow.includes(tag))
-                            .map(tag => `<button class="tag-btn-compact" data-tag="${tag}">${tag}</button>`)
-                            .join('')}
-                    </div>
+            <div class="case-notes-grid">
+                ${gridHtml}
+            </div>
+            <div class="case-notes-tags" style="display: none;">
+                <h4>Add Tags to <span class="selected-player-name">Player</span></h4>
+                <div class="tag-buttons">
+                    ${allAvailableTags
+                        .filter(tag => tagsToShow.includes(tag))
+                        .map(tag => `<button class="tag-btn" data-tag="${tag}">${tag}</button>`)
+                        .join('')}
                 </div>
             </div>
         `;
 
-        // Bind case notes compact events
+        // Bind case notes events
         this.bindPersistentCaseNotesEvents(caseNotesContainer);
     }
 
@@ -3309,8 +3307,8 @@ class Game {
         // Clear the flag each time to allow re-binding when container is recreated
         container.dataset.eventsbound = 'false';
 
-        const grid = container.querySelector('.case-notes-grid-compact');
-        const tagsSection = container.querySelector('.case-notes-tags-compact');
+        const grid = container.querySelector('.case-notes-grid');
+        const tagsSection = container.querySelector('.case-notes-tags');
         const playerNameEl = container.querySelector('.selected-player-name');
 
         // Card selection handler
@@ -3334,7 +3332,7 @@ class Game {
 
                         // Update tag button states
                         const playerNotes = this.caseNotes[playerId] || [];
-                        tagsSection.querySelectorAll('.tag-btn-compact').forEach(btn => {
+                        tagsSection.querySelectorAll('.tag-btn').forEach(btn => {
                             btn.classList.toggle('active', playerNotes.includes(btn.dataset.tag));
                         });
                     }
@@ -3344,7 +3342,7 @@ class Game {
 
         // Tag button handler
         if (tagsSection) {
-            tagsSection.querySelectorAll('.tag-btn-compact').forEach(btn => {
+            tagsSection.querySelectorAll('.tag-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     
