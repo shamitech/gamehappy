@@ -301,30 +301,11 @@ class SecretSyndicates extends GameManager {
                 this.currentPhase = 'accusation';
                 break;
             case 'accusation':
-                // Count accusations and determine who was accused
-                if (this.accusationVotes.size > 0) {
-                    const voteCounts = new Map();
-                    for (const targetToken of this.accusationVotes.values()) {
-                        voteCounts.set(targetToken, (voteCounts.get(targetToken) || 0) + 1);
-                    }
-                    
-                    let mostAccused = null;
-                    let maxVotes = 0;
-                    for (const [targetToken, count] of voteCounts) {
-                        if (count > maxVotes) {
-                            maxVotes = count;
-                            mostAccused = targetToken;
-                        }
-                    }
-                    
-                    this.accusedPlayer = mostAccused;
-                    console.log(`[${this.gameCode}] Most accused player: ${mostAccused} with ${maxVotes} votes - NOW ADVANCING TO VERDICT`);
-                } else {
-                    console.log(`[${this.gameCode}] No accusation votes - accusedPlayer will be: ${this.accusedPlayer}`);
-                }
+                // Execute accusation votes (counts votes, generates rumors for 2+ accusations, returns most voted)
+                this.accusedPlayer = this.executeAccusationVotes();
+                console.log(`[${this.gameCode}] Accusation phase complete - accusedPlayer: ${this.accusedPlayer}`);
                 
-                // Clear votes and advance to verdict phase
-                this.accusationVotes.clear();
+                // Advance to verdict phase
                 this.currentPhase = 'verdict';
                 break;
             case 'verdict':
@@ -622,13 +603,6 @@ class SecretSyndicates extends GameManager {
             }
         }
 
-        if (mostVoted) {
-            this.eliminatedPlayers.add(mostVoted);
-            const victim = this.players.get(mostVoted);
-            console.log(`[${this.gameCode}] Eliminated by accusation: ${victim?.name || mostVoted}`);
-        }
-
-        this.accusationVotes.clear();
         return mostVoted;
     }
 
