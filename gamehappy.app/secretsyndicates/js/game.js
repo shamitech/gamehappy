@@ -3006,13 +3006,26 @@ class Game {
         const detectiveData = state.detectiveData || {};
         this.caseNotes = detectiveData.caseNotes || {};
         const caseNotesPlayers = detectiveData.caseNotesPlayers || state.players;
-        const availableRoles = detectiveData.availableRoles || [];
+        let availableRoles = detectiveData.availableRoles || [];
         
-        // Hide tag buttons for roles not in the game
+        // If availableRoles is empty, show all role tags
+        if (availableRoles.length === 0) {
+            availableRoles = ['Syndicate', 'Detective', 'Bystander', 'Eye Witness', 'Body Guard', 'Innocent', 'Suspicious'];
+        }
+        
+        console.log('initCaseNotes: availableRoles =', availableRoles);
+        
+        // Show/hide tag buttons based on available roles
         document.querySelectorAll('.tag-btn').forEach(btn => {
             const tag = btn.dataset.tag;
-            btn.style.display = availableRoles.includes(tag) ? 'block' : 'none';
+            btn.style.display = availableRoles.includes(tag) ? 'inline-block' : 'none';
         });
+        
+        // Ensure case notes tags container is visible
+        const tagsSection = document.getElementById('case-notes-tags');
+        if (tagsSection) {
+            tagsSection.style.display = 'block';
+        }
         
         this.renderCaseNotesGrid(caseNotesPlayers);
         this.bindCaseNotesEvents();
@@ -3065,10 +3078,15 @@ class Game {
 
         // Show tags panel
         const tagsSection = document.getElementById('case-notes-tags');
-        tagsSection.style.display = 'block';
-        document.getElementById('selected-player-name').textContent = player ? this.escapeHtml(player.name) : 'Player';
+        if (tagsSection) {
+            tagsSection.style.display = 'block';
+        }
+        const playerNameEl = document.getElementById('selected-player-name');
+        if (playerNameEl) {
+            playerNameEl.textContent = player ? this.escapeHtml(player.name) : 'Player';
+        }
 
-        // Update tag button states
+        // Update tag button states - make sure all visible tags are accessible
         const playerNotes = this.caseNotes[playerId] || [];
         document.querySelectorAll('.tag-btn').forEach(btn => {
             btn.classList.toggle('active', playerNotes.includes(btn.dataset.tag));
