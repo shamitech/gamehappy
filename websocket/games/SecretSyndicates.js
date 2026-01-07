@@ -63,6 +63,27 @@ class SecretSyndicates extends GameManager {
         
         // Game notes for all players
         this.gameNotes = [];
+        
+        // Body Guard protection tracking
+        this.bodyGuardProtection = null; // playerToken of protected player
+        this.lastProtectedPlayer = null; // Track who was protected last round
+        this.lastWasSaved = false; // Track if someone was saved this round
+        
+        // Assassin voting for syndicate (who performs the kill)
+        this.assassinVotes = new Map(); // playerToken -> assassinToken
+        this.assassinVotesLocked = new Map(); // playerToken -> isLocked
+        this.chosenAssassin = null; // Token of the chosen assassin for this round
+        
+        // Secret word/action system for Eye Witness and Detective
+        this.secretWords = [
+            'Scratches their nose', 'Clears their throat', 'Says "honestly"',
+            'Looks at their hands', 'Takes a deep breath', 'Says "you know"',
+            'Crosses their arms', 'Touches their ear', 'Says "actually"',
+            'Taps the table', 'Looks up', 'Says "believe me"',
+            'Adjusts glasses', 'Rubs their chin', 'Says "trust me"',
+            'Shifts in seat', 'Looks away briefly', 'Says "obviously"'
+        ];
+        this.currentSecretWord = null; // The secret word for current round
     }
 
     /**
@@ -270,8 +291,17 @@ class SecretSyndicates extends GameManager {
                 const nightResult = this.executeNightPhase();
                 this.currentPhase = 'murder';
                 
+                // Check if someone was saved by body guard
+                if (nightResult.wasSaved) {
+                    console.log(`[${this.gameCode}] Body Guard saved the target - no victim this round`);
+                    this.lastVictim = null;
+                    this.murderEliminatedPlayer = null;
+                    // Generate the saved story
+                    this.currentPhaseStory = this.getMurderStory();
+                    console.log(`[${this.gameCode}] Saved story generated: ${this.currentPhaseStory}`);
+                }
                 // Check if there was a tie vote (no elimination)
-                if (nightResult.isTie) {
+                else if (nightResult.isTie) {
                     console.log(`[${this.gameCode}] Syndicate vote tied - no victim this round`);
                     this.lastVictim = null;
                     this.lastMurderTarget = null;
@@ -526,26 +556,52 @@ class SecretSyndicates extends GameManager {
         // Check for tie - if more than one target has the max votes, no elimination
         const isTie = tiedTargets.length > 1;
         
+        // Reset saved status
+        this.lastWasSaved = false;
+        this.lastProtectedPlayer = this.bodyGuardProtection;
+        
         if (isTie) {
             // Tie vote - no one is eliminated
             console.log(`[${this.gameCode}] Syndicate vote tied between ${tiedTargets.length} targets - no elimination this round`);
             target = null;
             this.lastMurderTarget = null;
             this.lastMurderAssassin = null;
+            this.chosenAssassin = null;
         } else if (target) {
-            this.lastMurderTarget = target;
-            this.lastMurderAssassin = this.findAssassinForTarget(target);
+            // Determine the assassin from votes (or random if single syndicate)
+            this.determineAssassin();
+            
+            // Check if target is protected by body guard
+            if (this.bodyGuardProtection && this.bodyGuardProtection === target) {
+                // Target was saved!
+                console.log(`[${this.gameCode}] Body Guard saved ${this.players.get(target).name} from assassination!`);
+                this.lastWasSaved = true;
+                this.lastMurderTarget = null; // No one dies
+                this.lastMurderAssassin = this.chosenAssassin;
+            } else {
+                this.lastMurderTarget = target;
+                this.lastMurderAssassin = this.chosenAssassin;
+            }
         }
-
+        
+        // Generate secret word for eye witness / detective system
+        this.generateSecretWord();
+        
+        // Clear night phase data
         this.nightVotes.clear();
         this.nightVotesLocked.clear();
+        this.assassinVotes.clear();
+        this.assassinVotesLocked.clear();
+        this.bodyGuardProtection = null; // Reset for next round
 
         return { 
             success: true, 
-            target: target, 
+            target: this.lastMurderTarget,
             assassin: this.lastMurderAssassin,
             isTie: isTie,
-            tiedTargets: isTie ? tiedTargets : []
+            tiedTargets: isTie ? tiedTargets : [],
+            wasSaved: this.lastWasSaved,
+            protectedPlayer: this.lastProtectedPlayer
         };
     }
 
@@ -557,6 +613,174 @@ class SecretSyndicates extends GameManager {
             if (voted === target) return voter;
         }
         return null;
+    }
+
+    /**
+     * Body Guard sets protection for a player
+     */
+    setBodyGuardProtection(playerToken, targetToken) {
+        const role = this.getPlayerRole(playerToken);
+        if (role !== 'Body Guard') {
+            return { success: false, message: 'Only Body Guard can protect players' };
+        }
+        
+        if (!this.players.has(targetToken)) {
+            return { success: false, message: 'Invalid target' };
+        }
+        
+        // Can't protect yourself
+        if (targetToken === playerToken) {
+            return { success: false, message: 'Cannot protect yourself' };
+        }
+        
+        this.bodyGuardProtection = targetToken;
+        const targetPlayer = this.players.get(targetToken);
+        console.log(`[${this.gameCode}] Body Guard ${playerToken} is protecting ${targetPlayer.name}`);
+        
+        return { success: true, message: `Protecting ${targetPlayer.name}` };
+    }
+
+    /**
+     * Syndicate votes for assassin (who performs the kill)
+     */
+    assassinVote(playerToken, assassinToken) {
+        const role = this.getPlayerRole(playerToken);
+        if (role !== 'Syndicate') {
+            return { success: false, message: 'Only Syndicate can vote for assassin' };
+        }
+        
+        // Assassin must be a syndicate member
+        const assassinRole = this.getPlayerRole(assassinToken);
+        if (assassinRole !== 'Syndicate') {
+            return { success: false, message: 'Assassin must be a Syndicate member' };
+        }
+        
+        this.assassinVotes.set(playerToken, assassinToken);
+        
+        return { 
+            success: true, 
+            message: 'Assassin vote recorded',
+            assassinUpdate: true,
+            assassinRecommendations: this.getAssassinRecommendations()
+        };
+    }
+
+    /**
+     * Get current assassin vote recommendations
+     */
+    getAssassinRecommendations() {
+        const recommendations = [];
+        const voteCounts = {};
+        const lockedIn = [];
+        
+        const syndicateMembers = this.getSyndicateMembers();
+        
+        for (const [voterToken, assassinToken] of this.assassinVotes) {
+            const voter = this.players.get(voterToken);
+            const assassin = this.players.get(assassinToken);
+            
+            if (voter && assassin) {
+                recommendations.push({
+                    voterId: voterToken,
+                    voterName: voter.name,
+                    targetId: assassinToken,
+                    targetName: assassin.name
+                });
+                
+                voteCounts[assassinToken] = (voteCounts[assassinToken] || 0) + 1;
+            }
+        }
+        
+        for (const [token, locked] of this.assassinVotesLocked) {
+            if (locked) lockedIn.push(token);
+        }
+        
+        return {
+            recommendations,
+            voteCounts,
+            lockedIn,
+            totalSyndicates: syndicateMembers.length,
+            lockedInCount: lockedIn.length
+        };
+    }
+
+    /**
+     * Lock in assassin vote
+     */
+    lockAssassinVote(playerToken) {
+        if (this.getPlayerRole(playerToken) !== 'Syndicate') {
+            return { success: false, message: 'Only Syndicate can lock assassin votes' };
+        }
+        
+        this.assassinVotesLocked.set(playerToken, true);
+        
+        const recommendations = this.getAssassinRecommendations();
+        return {
+            success: true,
+            assassinUpdate: true,
+            assassinRecommendations: recommendations,
+            allLocked: this.allAssassinVotesLocked()
+        };
+    }
+
+    /**
+     * Check if all syndicate members locked assassin votes
+     */
+    allAssassinVotesLocked() {
+        const syndicate = this.getSyndicateMembers();
+        return syndicate.every(s => this.assassinVotesLocked.has(s.token));
+    }
+
+    /**
+     * Determine the chosen assassin from votes
+     */
+    determineAssassin() {
+        const votes = new Map();
+        
+        for (const [voter, assassin] of this.assassinVotes) {
+            const count = votes.get(assassin) || 0;
+            votes.set(assassin, count + 1);
+        }
+        
+        // Find assassin with most votes
+        let chosenAssassin = null;
+        let maxVotes = 0;
+        let tiedAssassins = [];
+        
+        for (const [assassinToken, voteCount] of votes) {
+            if (voteCount > maxVotes) {
+                maxVotes = voteCount;
+                chosenAssassin = assassinToken;
+                tiedAssassins = [assassinToken];
+            } else if (voteCount === maxVotes) {
+                tiedAssassins.push(assassinToken);
+            }
+        }
+        
+        // If tie, pick random from tied
+        if (tiedAssassins.length > 1) {
+            chosenAssassin = tiedAssassins[Math.floor(Math.random() * tiedAssassins.length)];
+        }
+        
+        // If no votes, pick random syndicate member
+        if (!chosenAssassin) {
+            const syndicates = this.getSyndicateMembers();
+            if (syndicates.length > 0) {
+                chosenAssassin = syndicates[Math.floor(Math.random() * syndicates.length)].token;
+            }
+        }
+        
+        this.chosenAssassin = chosenAssassin;
+        return chosenAssassin;
+    }
+
+    /**
+     * Generate a secret word/action for the round
+     */
+    generateSecretWord() {
+        const randomIndex = Math.floor(Math.random() * this.secretWords.length);
+        this.currentSecretWord = this.secretWords[randomIndex];
+        return this.currentSecretWord;
     }
 
     /**
@@ -914,37 +1138,54 @@ class SecretSyndicates extends GameManager {
         if (this.currentPhase === 'murder') {
             // Phase 2: Murder Discovery - include story and role-specific data
             gameState.murderStory = this.getMurderStory();
+            gameState.wasSaved = this.lastWasSaved;
             
-            // Check if player is eyewitness
+            // Check if player is eyewitness - show them the assassin and secret word
             gameState.isEyewitness = playerRole === 'Eye Witness';
-            if (gameState.isEyewitness) {
+            if (gameState.isEyewitness && this.settings.enableEyeWitness) {
+                const assassinPlayer = this.chosenAssassin ? this.players.get(this.chosenAssassin) : null;
                 gameState.eyewitnessData = {
-                    message: 'You witnessed the assassination! You know who did it.'
+                    message: 'You witnessed the assassination! You know who did it.',
+                    assassinName: assassinPlayer ? assassinPlayer.name : 'Unknown',
+                    assassinToken: this.chosenAssassin,
+                    secretWord: this.currentSecretWord,
+                    instruction: `During the discussion, use the secret action: "${this.currentSecretWord}" to signal the Detective without revealing yourself.`
+                };
+                console.log(`[${this.gameCode}] Eye Witness sees assassin: ${assassinPlayer?.name}, secret word: ${this.currentSecretWord}`);
+            } else if (gameState.isEyewitness) {
+                gameState.eyewitnessData = {
+                    message: 'You witnessed what happened last night.',
+                    secretWord: null
                 };
             }
             
-            // Check if player is detective (only show special info if eyewitness is enabled)
+            // Check if player is detective - give them the secret word to look for
             gameState.isDetective = playerRole === 'Detective';
             if (gameState.isDetective && this.settings.enableEyeWitness) {
                 gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
-                gameState.detectiveData.keyword = 'Look for hesitation';
-                gameState.detectiveData.hint = 'The person who knows something will give themselves away. Watch for nervous behavior or unusual pauses.';
-                console.log(`[${this.gameCode}] Sending detective data (eyewitness enabled)`);
+                gameState.detectiveData.secretWordKeyword = this.currentSecretWord;
+                gameState.detectiveData.hint = `Watch for someone who: "${this.currentSecretWord}". The Eye Witness will use this action to signal you about the assassin.`;
+                console.log(`[${this.gameCode}] Detective looking for secret word: ${this.currentSecretWord}`);
             } else if (gameState.isDetective) {
                 // Add case notes even if eyewitness is disabled
                 gameState.detectiveData = this.buildDetectiveData(playerToken, alivePlayersWithStatus);
                 console.log(`[${this.gameCode}] Sending case notes to detective`);
             }
             
-            // Check if player is syndicate/assassin (only show special warning if eyewitness is enabled)
-            gameState.isAssassin = playerRole === 'Syndicate';
-            if (gameState.isAssassin && this.settings.enableEyeWitness) {
+            // Check if player is the chosen assassin - warn them about eye witness
+            const isChosenAssassin = playerRole === 'Syndicate' && playerToken === this.chosenAssassin;
+            gameState.isAssassin = isChosenAssassin;
+            if (isChosenAssassin && this.settings.enableEyeWitness) {
                 gameState.assassinData = {
-                    warning: 'You performed the assassination. Be careful - someone may have witnessed you!'
+                    warning: 'You performed the assassination. Be careful - someone may have witnessed you!',
+                    youAreTheAssassin: true
                 };
-                console.log(`[${this.gameCode}] Sending assassin data (eyewitness enabled)`);
-            } else if (gameState.isAssassin) {
-                console.log(`[${this.gameCode}] NOT sending assassin data (eyewitness disabled)`);
+                console.log(`[${this.gameCode}] Sending assassin warning to ${playerToken}`);
+            } else if (playerRole === 'Syndicate') {
+                // Other syndicates know the kill happened but aren't the assassin
+                gameState.syndicateInfo = {
+                    message: 'The assassination was carried out by your team.'
+                };
             }
         }
 
@@ -1064,8 +1305,23 @@ class SecretSyndicates extends GameManager {
             return this.currentPhaseStory;
         }
         
+        // Handle case where someone was saved by the body guard
+        if (this.lastWasSaved && this.lastProtectedPlayer) {
+            const protectedPlayer = this.players.get(this.lastProtectedPlayer);
+            const protectedName = protectedPlayer ? protectedPlayer.name : 'someone';
+            
+            const savedStories = [
+                `🛡️ The Syndicate tried to strike last night, but ${protectedName} was mysteriously protected! Someone is watching over the innocent.`,
+                `✨ A guardian angel watched over ${protectedName} last night. The Syndicate's assassination attempt failed!`,
+                `🛡️ ${protectedName} narrowly escaped death! An unknown protector thwarted the Syndicate's plans.`,
+                `🌟 The Syndicate's blade found no victim. ${protectedName} was saved by a mysterious guardian.`,
+                `🔰 Against all odds, ${protectedName} survived the night. The Syndicate's plan was foiled by an unseen hero.`
+            ];
+            return savedStories[Math.floor(Math.random() * savedStories.length)];
+        }
+        
         // Handle case where syndicate couldn't agree (tie vote)
-        if (!this.lastVictim && this.lastMurderTarget === null) {
+        if (!this.lastVictim && this.lastMurderTarget === null && !this.lastWasSaved) {
             const tieStories = [
                 '🌙 The night passed quietly. The Syndicate could not agree on a target, and no one was harmed.',
                 '😮‍💨 Morning arrived with relief - no assassination took place last night. The Syndicate was divided.',
@@ -1243,9 +1499,86 @@ class SecretSyndicates extends GameManager {
                 return { success: true, doneCount: this.getDoneCount() };
             case 'update-case-notes':
                 return this.updateDetectiveCaseNotes(playerToken, data);
+            case 'bodyguard-protect':
+                return this.handleBodyGuardProtect(playerToken, data);
+            case 'assassin-vote':
+                return this.handleAssassinVote(playerToken, data);
+            case 'assassin-lock':
+                return this.handleAssassinLock(playerToken);
             default:
                 return { success: false, message: 'Unknown event' };
         }
+    }
+    
+    /**
+     * Handle body guard protection choice
+     */
+    handleBodyGuardProtect(playerToken, data) {
+        const role = this.getPlayerRole(playerToken);
+        if (role !== 'Body Guard') {
+            return { success: false, message: 'Only Body Guard can protect' };
+        }
+        
+        const { targetToken } = data || {};
+        if (!targetToken) {
+            return { success: false, message: 'No protection target provided' };
+        }
+        
+        // Can't protect the same person twice in a row
+        if (targetToken === this.lastProtectedPlayer) {
+            return { success: false, message: 'Cannot protect the same person two nights in a row' };
+        }
+        
+        // Can't protect yourself
+        if (targetToken === playerToken) {
+            return { success: false, message: 'Cannot protect yourself' };
+        }
+        
+        const result = this.setBodyGuardProtection(targetToken);
+        console.log(`[${this.gameCode}] Body Guard ${playerToken} protecting ${targetToken}`);
+        
+        return result;
+    }
+    
+    /**
+     * Handle assassin vote from syndicate
+     */
+    handleAssassinVote(playerToken, data) {
+        const role = this.getPlayerRole(playerToken);
+        if (role !== 'Syndicate') {
+            return { success: false, message: 'Only Syndicate can vote for assassin' };
+        }
+        
+        const { targetToken } = data || {};
+        if (!targetToken) {
+            return { success: false, message: 'No assassin vote provided' };
+        }
+        
+        // Target must be a syndicate member
+        const targetRole = this.getPlayerRole(targetToken);
+        if (targetRole !== 'Syndicate') {
+            return { success: false, message: 'Can only vote for syndicate members as assassin' };
+        }
+        
+        const result = this.assassinVote(playerToken, targetToken);
+        console.log(`[${this.gameCode}] Syndicate ${playerToken} voted for ${targetToken} as assassin`);
+        
+        return result;
+    }
+    
+    /**
+     * Handle assassin lock from syndicate
+     */
+    handleAssassinLock(playerToken) {
+        const role = this.getPlayerRole(playerToken);
+        if (role !== 'Syndicate') {
+            return { success: false, message: 'Only Syndicate can lock assassin vote' };
+        }
+        
+        const result = this.lockAssassinVote(playerToken);
+        console.log(`[${this.gameCode}] Syndicate ${playerToken} locked assassin vote`);
+        
+        return result;
     }
 
     /**

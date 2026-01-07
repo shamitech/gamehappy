@@ -243,21 +243,54 @@ io.on('connection', (socket) => {
             }
           }
           
-          // If all syndicates have locked in, broadcast lock status
+          // If all syndicates have locked in, broadcast lock status and move to assassin voting
           if (result.allLocked) {
-            console.log(`[${game.gameCode}] All syndicates locked in`);
+            console.log(`[${game.gameCode}] All syndicates locked in on target - moving to assassin voting`);
             for (const [socketId, playerSocket] of io.sockets.sockets) {
               const pToken = playerSocket.handshake.query.token || socketId;
               if (syndicateMembers.some(m => m.token === pToken)) {
+                // Get assassin recommendations for initial display
+                const assassinRecs = game.getAssassinRecommendations ? game.getAssassinRecommendations() : null;
                 playerSocket.emit('syndicate-lock-update', {
                   action: 'syndicateLockInUpdate',
                   lockedInCount: result.recommendations.lockedInCount,
                   totalSyndicates: result.recommendations.totalSyndicates,
-                  allLocked: true
+                  allLocked: true,
+                  stage: 'assassin',
+                  target: result.recommendations.consensus,
+                  assassinRecommendations: assassinRecs
                 });
               }
             }
           }
+        }
+        
+        // Handle assassin voting updates (assassin-vote or assassin-lock)
+        if (result.success && (eventName === 'assassin-vote' || eventName === 'assassin-lock')) {
+          console.log(`[${game.gameCode}] Broadcasting assassin vote update to syndicate members`);
+          
+          // Get all syndicate members
+          const syndicateMembers = game.getSyndicateMembers ? game.getSyndicateMembers() : [];
+          const assassinRecs = game.getAssassinRecommendations ? game.getAssassinRecommendations() : null;
+          
+          // Broadcast to all syndicate members
+          for (const [socketId, playerSocket] of io.sockets.sockets) {
+            const pToken = playerSocket.handshake.query.token || socketId;
+            if (syndicateMembers.some(m => m.token === pToken)) {
+              playerSocket.emit('assassin-recommendations-update', {
+                action: 'assassinRecommendationsUpdate',
+                recommendations: assassinRecs,
+                allLocked: result.allLocked || false
+              });
+              console.log(`[${game.gameCode}] Sent assassin vote update to ${pToken}`);
+            }
+          }
+        }
+        
+        // Handle body guard protection updates
+        if (result.success && eventName === 'bodyguard-protect') {
+          console.log(`[${game.gameCode}] Body Guard protection set`);
+          // No need to broadcast - protection is secret
         }
 
         // Check if all players are done and advance phase if so

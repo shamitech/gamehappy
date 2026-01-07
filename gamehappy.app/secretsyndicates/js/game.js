@@ -321,6 +321,11 @@ class Game {
                 console.log('Syndicate lock update received:', data);
                 this.onSyndicateLockInUpdate(data);
             });
+            
+            this.socket.on('assassin-recommendations-update', (data) => {
+                console.log('Assassin recommendations update received:', data);
+                this.onAssassinRecommendationsUpdate(data);
+            });
 
             this.socket.on('all-players-done', (data) => {
                 console.log('All players done, advancing to next phase:', data);
@@ -566,6 +571,11 @@ class Game {
             this.socket.emit('game-event', {
                 eventName: 'update-case-notes',
                 payload: { targetId: data.targetId, notes: data.notes }
+            });
+        } else if (data.action === 'bodyGuardProtect') {
+            this.socket.emit('game-event', {
+                eventName: 'bodyguard-protect',
+                payload: { targetToken: data.targetId }
             });
         }
     }
@@ -1352,11 +1362,14 @@ class Game {
         if (data.isDetective && data.detectiveData) {
             console.log(`[PHASE2] Detective detected. detectiveData:`, data.detectiveData);
             console.log(`[PHASE2] Has investigationResults: ${!!data.detectiveData.investigationResults}`);
+            
+            let detectiveContent = '';
+            
             // Check if there are investigation results to display
             if (data.detectiveData.investigationResults) {
                 const results = data.detectiveData.investigationResults;
                 console.log(`[PHASE2] Displaying investigation results:`, results);
-                messageContainer.innerHTML = `
+                detectiveContent += `
                     <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                         <h3 style="color: #4ecdc4; margin-top: 0;">🔍 INVESTIGATION RESULT</h3>
                         <div style="background: rgba(78, 205, 196, 0.05); padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #4ecdc4;">
@@ -1367,16 +1380,36 @@ class Game {
                         <p style="margin: 10px 0; font-size: 13px; color: #aaa; font-style: italic;">Based on voting patterns and behavior analysis</p>
                     </div>
                 `;
-            } else {
-                console.log(`[PHASE2] No investigation results, showing default clue`);
-                messageContainer.innerHTML = `
-                    <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                        <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE'S CLUE</h3>
-                        <p style="margin: 10px 0; font-size: 14px;">${data.detectiveData.keyword || 'Pay close attention'}</p>
-                        <p style="margin: 10px 0; font-size: 14px; font-style: italic;">${data.detectiveData.hint || 'Look for clues in what people say'}</p>
+            }
+            
+            // Show secret word hint if available (from Eye Witness system)
+            if (data.detectiveData.secretWordKeyword) {
+                detectiveContent += `
+                    <div class="detective-secret-hint">
+                        <div class="detective-hint-header">
+                            <span>🔍</span>
+                            <h3>Intelligence Report</h3>
+                        </div>
+                        <div class="detective-hint-content">
+                            <p>The Eye Witness has been given a signal keyword:</p>
+                            <p class="detective-keyword">"${this.escapeHtml(data.detectiveData.secretWordKeyword)}"</p>
+                            <p class="detective-hint-instruction">${this.escapeHtml(data.detectiveData.hint || 'Watch for players who use this word or perform a related gesture during discussions.')}</p>
+                        </div>
                     </div>
                 `;
             }
+            
+            // Fallback if nothing to show
+            if (!detectiveContent) {
+                detectiveContent = `
+                    <div style="background: rgba(78, 205, 196, 0.1); border: 2px solid #4ecdc4; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <h3 style="color: #4ecdc4; margin-top: 0;">🔍 DETECTIVE</h3>
+                        <p style="margin: 10px 0; font-size: 14px;">Pay close attention to the discussions.</p>
+                    </div>
+                `;
+            }
+            
+            messageContainer.innerHTML = detectiveContent;
         } else if (data.isAssassin && data.assassinData) {
             messageContainer.innerHTML = `
                 <div style="background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
@@ -1385,12 +1418,41 @@ class Game {
                 </div>
             `;
         } else if (data.isEyewitness && data.eyewitnessData) {
-            messageContainer.innerHTML = `
-                <div style="background: rgba(233, 69, 96, 0.1); border: 2px solid #e94560; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                    <h3 style="color: #e94560; margin-top: 0;">🔍 YOU WITNESSED THE ASSASSINATION</h3>
-                    <p style="margin: 10px 0; font-size: 14px;">${data.eyewitnessData.message || 'You know who did it!'}</p>
-                </div>
-            `;
+            const eyeData = data.eyewitnessData;
+            let eyewitnessContent = `
+                <div class="eyewitness-special-info">
+                    <div class="eyewitness-header">
+                        <span class="eyewitness-icon">👁️</span>
+                        <h3>Eye Witness Vision</h3>
+                    </div>
+                    <div class="eyewitness-content">
+                        <div class="assassin-reveal">
+                            <p>${eyeData.message || 'You witnessed the assassination!'}</p>`;
+            
+            // Show assassin name if available
+            if (eyeData.assassinName) {
+                eyewitnessContent += `
+                            <p class="assassin-name">The assassin was: <strong>${this.escapeHtml(eyeData.assassinName)}</strong></p>`;
+            }
+            
+            eyewitnessContent += `
+                        </div>`;
+            
+            // Show secret word if available
+            if (eyeData.secretWord) {
+                eyewitnessContent += `
+                        <div class="secret-word-section">
+                            <p class="secret-word-label">Your secret signal:</p>
+                            <p class="secret-word">"${this.escapeHtml(eyeData.secretWord)}"</p>
+                            <p class="secret-word-instruction">${this.escapeHtml(eyeData.instruction || 'Use this signal during discussions to communicate with the Detective!')}</p>
+                        </div>`;
+            }
+            
+            eyewitnessContent += `
+                    </div>
+                </div>`;
+            
+            messageContainer.innerHTML = eyewitnessContent;
         }
         
         // Insert message before the murder story
@@ -1815,7 +1877,11 @@ class Game {
                     console.log('initPhase1: Calling initBodyGuardView');
                     this.initBodyGuardView(state);
                     break;
-                default: // Bystander, Eye Witness
+                case 'Eye Witness':
+                    console.log('initPhase1: Calling initEyeWitnessView');
+                    this.initEyeWitnessView(state);
+                    break;
+                default: // Bystander
                     console.log('initPhase1: Calling initBystanderView');
                     this.initBystanderView(state);
                     break;
@@ -3186,22 +3252,34 @@ class Game {
         if (stage === 'target') {
             titleEl.textContent = 'Choose Your Target';
             descEl.textContent = 'Select a player to eliminate. You can see your fellow Syndicate members\' choices.';
+            this.updateSyndicateRecommendations();
         } else {
             titleEl.textContent = 'Choose the Assassin';
             descEl.textContent = 'Select which Syndicate member will carry out the hit.';
-            // Rebuild grid for assassin selection (show all syndicates including self)
+            
+            // Rebuild grid for assassin selection (show only alive syndicates)
             const syndicatePlayers = this.phaseState.players.filter(p => 
-                this.syndicateIds.includes(p.id)
+                this.syndicateIds.includes(p.id) && !p.eliminated
             );
             this.buildPlayerGrid('syndicate-player-grid', syndicatePlayers, 'syndicate-assassin', false);
+            
+            // Re-bind click events for assassin selection
+            document.querySelectorAll('#syndicate-player-grid .player-select-card').forEach(card => {
+                card.onclick = () => this.assassinSelectPlayer(card.dataset.playerId);
+            });
+            
+            this.updateAssassinRecommendations();
         }
-
-        this.updateSyndicateRecommendations();
     }
 
     bindSyndicateEvents() {
         document.getElementById('btn-syndicate-lock').addEventListener('click', () => {
-            this.syndicateLockIn();
+            // Check which stage we're in
+            if (this.syndicateState && this.syndicateState.stage === 'assassin') {
+                this.assassinLockIn();
+            } else {
+                this.syndicateLockIn();
+            }
         });
     }
 
@@ -3334,7 +3412,31 @@ class Game {
         const status = document.getElementById('syndicate-lock-status');
         if (status) {
             if (data.allLocked) {
-                status.textContent = 'All Syndicate members locked in! Determining target...';
+                // Check if we're transitioning to assassin stage
+                if (data.stage === 'assassin') {
+                    status.textContent = 'Target locked! Now vote on who performs the assassination...';
+                    
+                    // Transition to assassin voting stage
+                    if (this.syndicateState) {
+                        this.syndicateState.stage = 'assassin';
+                        this.syndicateState.target = data.target?.targetId || data.target;
+                        this.syndicateState.myAssassinVote = null;
+                        this.syndicateState.assassinLockedIn = false;
+                        this.syndicateState.assassinRecommendations = data.assassinRecommendations || { recommendations: [], voteCounts: {}, lockedIn: [] };
+                        
+                        // Reset lock button for assassin voting
+                        const lockBtn = document.getElementById('btn-syndicate-lock');
+                        if (lockBtn) {
+                            lockBtn.disabled = true;
+                            lockBtn.textContent = 'Lock In Assassin';
+                        }
+                        
+                        // Update the UI for assassin selection
+                        this.updateSyndicateStage();
+                    }
+                } else {
+                    status.textContent = 'All Syndicate members locked in! Determining target...';
+                }
             } else {
                 status.textContent = `${data.lockedInCount}/${data.totalSyndicates} Syndicate members locked in`;
             }
@@ -3421,6 +3523,134 @@ class Game {
         this.syndicateState.assassin = data.assassinId;
         this.checkActionsComplete();
     }
+    
+    onAssassinRecommendationsUpdate(data) {
+        if (!this.syndicateState || this.syndicateState.stage !== 'assassin') return;
+        
+        this.syndicateState.assassinRecommendations = data.recommendations;
+        this.updateAssassinRecommendations();
+        
+        // Check if all assassin votes are locked
+        if (data.allLocked) {
+            document.getElementById('syndicate-lock-status').textContent = 'All Syndicate members locked in! Assassin chosen...';
+            this.syndicateState.complete = true;
+            this.checkActionsComplete();
+        }
+    }
+    
+    updateAssassinRecommendations() {
+        const data = this.syndicateState.assassinRecommendations || {};
+        const list = document.getElementById('syndicate-recommendations-list');
+        list.innerHTML = '';
+        
+        if (data.recommendations) {
+            // Build a map of targetId -> array of voter info (name + locked status)
+            const votersByTarget = {};
+            const lockedInList = data.lockedIn || [];
+            
+            data.recommendations.forEach(rec => {
+                if (!votersByTarget[rec.targetId]) {
+                    votersByTarget[rec.targetId] = [];
+                }
+                const isLocked = lockedInList.includes(rec.voterId);
+                votersByTarget[rec.targetId].push({
+                    name: rec.voterName,
+                    locked: isLocked
+                });
+                
+                // Also add to the list display with lock indicator
+                const li = document.createElement('li');
+                const lockIcon = isLocked ? '🔒 ' : '';
+                li.innerHTML = `<span class="voter">${lockIcon}${this.escapeHtml(rec.voterName)}</span> → ${this.escapeHtml(rec.targetName)} (assassin)`;
+                list.appendChild(li);
+            });
+            
+            // Update vote counts and voter tags on player cards
+            const voteCounts = data.voteCounts || {};
+            document.querySelectorAll('#syndicate-player-grid .player-select-card').forEach(card => {
+                const playerId = card.dataset.playerId;
+                const count = voteCounts[playerId] || 0;
+                const countEl = card.querySelector('.vote-count');
+                
+                // Update vote count badge
+                if (count > 1) {
+                    card.classList.add('has-votes');
+                    if (countEl) countEl.textContent = count;
+                } else {
+                    card.classList.remove('has-votes');
+                    if (countEl) countEl.textContent = '0';
+                }
+                
+                // Highlight recommended players
+                if (count > 0) {
+                    card.classList.add('recommended');
+                } else {
+                    card.classList.remove('recommended');
+                }
+                
+                // Add/update voter name tags with lock indicator
+                let tagsContainer = card.querySelector('.voter-tags');
+                if (!tagsContainer) {
+                    tagsContainer = document.createElement('div');
+                    tagsContainer.className = 'voter-tags';
+                    card.appendChild(tagsContainer);
+                }
+                
+                const voters = votersByTarget[playerId] || [];
+                tagsContainer.innerHTML = voters.map(voter => 
+                    `<span class="voter-tag ${voter.locked ? 'locked' : ''}">${voter.locked ? '🔒 ' : ''}${this.escapeHtml(voter.name)}</span>`
+                ).join('');
+            });
+            
+            // Update lock status count if available
+            const status = document.getElementById('syndicate-lock-status');
+            if (status && data.lockedInCount !== undefined) {
+                const lockedCount = data.lockedInCount;
+                const totalCount = data.totalSyndicates;
+                if (lockedCount > 0 && lockedCount < totalCount) {
+                    status.textContent = `Assassin vote: ${lockedCount}/${totalCount} locked in`;
+                }
+            }
+        }
+    }
+    
+    assassinSelectPlayer(playerId) {
+        if (this.syndicateState.assassinLockedIn) return;
+        
+        this.syndicateState.myAssassinVote = playerId;
+        
+        // Update UI
+        document.querySelectorAll('#syndicate-player-grid .player-select-card').forEach(card => {
+            card.classList.remove('selected');
+            if (card.dataset.playerId === playerId) {
+                card.classList.add('selected');
+            }
+        });
+        
+        // Enable lock button
+        document.getElementById('btn-syndicate-lock').disabled = false;
+        document.getElementById('syndicate-lock-status').textContent = 'Ready to lock in assassin choice';
+        
+        // Send to server
+        this.socket.emit('game-event', {
+            eventName: 'assassin-vote',
+            payload: { targetToken: playerId }
+        });
+    }
+    
+    assassinLockIn() {
+        if (!this.syndicateState.myAssassinVote) return;
+        
+        this.socket.emit('game-event', {
+            eventName: 'assassin-lock',
+            payload: {}
+        });
+        
+        this.syndicateState.assassinLockedIn = true;
+        document.getElementById('btn-syndicate-lock').disabled = true;
+        document.getElementById('btn-syndicate-lock').textContent = '✓ Assassin Locked';
+        document.getElementById('syndicate-lock-status').textContent = 'Waiting for other Syndicate members...';
+    }
 
     // ---- Detective Functions ----
     initDetectiveView(state) {
@@ -3494,12 +3724,53 @@ class Game {
             
             this.bindDetectiveEvents();
             this.initCaseNotes(state);
+            
+            // Display secret word hint from Eye Witness (if available)
+            this.displayDetectiveSecretHint(state.detectiveData);
+            
             console.log('initDetectiveView: completed successfully');
         } catch (error) {
             console.error('ERROR in initDetectiveView:', error);
             console.error('Stack:', error.stack);
             console.error('state.detectiveData:', state.detectiveData);
         }
+    }
+    
+    displayDetectiveSecretHint(detectiveData) {
+        // Remove any existing hint panel
+        const existingPanel = document.getElementById('detective-secret-hint-panel');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
+        
+        // Only show if we have secret word data
+        if (!detectiveData || !detectiveData.secretWordKeyword) {
+            console.log('displayDetectiveSecretHint: No secret word data yet');
+            return;
+        }
+        
+        // Create the detective hint panel
+        const panel = document.createElement('div');
+        panel.id = 'detective-secret-hint-panel';
+        panel.className = 'detective-secret-hint';
+        panel.innerHTML = `
+            <div class="detective-hint-header">
+                <span>🔍</span>
+                <h3>Intelligence Report</h3>
+            </div>
+            <div class="detective-hint-content">
+                <p>The Eye Witness has been given a signal keyword:</p>
+                <p class="detective-keyword">"${this.escapeHtml(detectiveData.secretWordKeyword)}"</p>
+                <p class="detective-hint-instruction">${this.escapeHtml(detectiveData.hint || 'Watch for players who use this word or perform a related gesture during discussions. They may be trying to communicate with you!')}</p>
+            </div>
+        `;
+        
+        // Insert after the view title
+        const view = document.getElementById('detective-view');
+        const title = view.querySelector('h3') || view.firstChild;
+        title.parentNode.insertBefore(panel, title.nextSibling);
+        
+        console.log('displayDetectiveSecretHint: Panel added with keyword:', detectiveData.secretWordKeyword);
     }
 
     bindDetectiveEvents() {
@@ -4027,6 +4298,96 @@ class Game {
         });
         
         this.checkActionsComplete();
+    }
+    
+    // ---- Eye Witness Functions ----
+    initEyeWitnessView(state) {
+        try {
+            console.log('initEyeWitnessView: Starting');
+            console.log('initEyeWitnessView: eyewitnessData =', state.eyewitnessData);
+            
+            // Use bystander view as base, but add eye witness special information
+            const view = document.getElementById('bystander-view');
+            if (!view) {
+                console.error('bystander-view element not found!');
+                return;
+            }
+            view.style.display = 'block';
+            
+            this.bystanderState = state.bystanderData || {};
+            this.eyewitnessState = state.eyewitnessData || {};
+            
+            // Filter out dead players
+            const alivePlayers = state.players.filter(p => p.alive !== false);
+            this.buildPlayerGrid('bystander-player-grid', alivePlayers, 'bystander', false);
+            
+            // Reset selection status
+            const statusEl = document.getElementById('bystander-selection-status');
+            if (statusEl) {
+                statusEl.className = 'selection-status';
+                statusEl.innerHTML = '<p>Select a player you suspect to be Syndicate</p>';
+            }
+            
+            // If already voted, show the selection status
+            if (this.bystanderState.myVote) {
+                const player = alivePlayers.find(p => p.id === this.bystanderState.myVote);
+                if (player && statusEl) {
+                    statusEl.className = 'selection-status confirmed';
+                    statusEl.innerHTML = `<p>You selected ${this.escapeHtml(player.name)}</p>`;
+                }
+            }
+            
+            // Add Eye Witness special information panel
+            this.displayEyeWitnessInfo(state.eyewitnessData);
+            
+            console.log('initEyeWitnessView: completed successfully');
+        } catch (error) {
+            console.error('ERROR in initEyeWitnessView:', error);
+            console.error('Stack:', error.stack);
+        }
+    }
+    
+    displayEyeWitnessInfo(eyewitnessData) {
+        // Remove any existing eye witness panel
+        const existingPanel = document.getElementById('eyewitness-info-panel');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
+        
+        // Only show if we have assassin data
+        if (!eyewitnessData || !eyewitnessData.assassinName) {
+            console.log('displayEyeWitnessInfo: No assassin data yet');
+            return;
+        }
+        
+        // Create the eye witness information panel
+        const panel = document.createElement('div');
+        panel.id = 'eyewitness-info-panel';
+        panel.className = 'eyewitness-special-info';
+        panel.innerHTML = `
+            <div class="eyewitness-header">
+                <span class="eyewitness-icon">👁️</span>
+                <h3>Eye Witness Vision</h3>
+            </div>
+            <div class="eyewitness-content">
+                <div class="assassin-reveal">
+                    <p>You witnessed the assassination!</p>
+                    <p class="assassin-name">The assassin was: <strong>${this.escapeHtml(eyewitnessData.assassinName)}</strong></p>
+                </div>
+                <div class="secret-word-section">
+                    <p class="secret-word-label">Your secret signal:</p>
+                    <p class="secret-word">"${this.escapeHtml(eyewitnessData.secretWord)}"</p>
+                    <p class="secret-word-instruction">${this.escapeHtml(eyewitnessData.instruction || 'Use this signal during discussions to communicate with the Detective!')}</p>
+                </div>
+            </div>
+        `;
+        
+        // Insert after the view title
+        const view = document.getElementById('bystander-view');
+        const title = view.querySelector('h3') || view.firstChild;
+        title.parentNode.insertBefore(panel, title.nextSibling);
+        
+        console.log('displayEyeWitnessInfo: Panel added with assassin:', eyewitnessData.assassinName);
     }
 
     // ---- Body Guard Functions ----
