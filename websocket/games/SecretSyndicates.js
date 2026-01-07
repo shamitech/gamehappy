@@ -872,4 +872,6 @@ class SecretSyndicates extends GameManager {
         
         console.log(`[${this.gameCode}] Detective ${detectiveToken} updated case notes for ${targetId}:`, notes);
         return { success: true };
-    }
+    }}
+
+module.exports = SecretSyndicates;
