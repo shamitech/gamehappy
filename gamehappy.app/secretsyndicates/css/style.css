@@ -2335,58 +2335,22 @@ h3 {
     overflow-x: auto;
 }
 
-.flex-table-wrapper {
-    overflow-x: auto;
+.players-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--darker-bg);
     border-radius: 8px;
-    background: var(--darker-bg);
+    overflow: hidden;
+    table-layout: fixed;
 }
 
-.flex-table {
-    display: flex;
-    flex-direction: column;
-    width: fit-content;
-    min-width: 100%;
-    background: var(--darker-bg);
-}
-
-.flex-row {
-    display: flex;
-    border-bottom: 1px solid #222;
-    transition: background 0.2s ease;
-}
-
-.flex-row.flex-data:hover {
-    background: rgba(212, 175, 55, 0.05);
-}
-
-.flex-row.flex-data.eliminated {
-    opacity: 0.7;
-}
-
-.flex-header {
+.players-stats-table thead {
     background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1));
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
-.flex-cell {
-    padding: 10px;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    border-right: 1px solid #333;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    flex: 1;
-}
-
-.flex-cell:last-child {
-    border-right: none;
-}
-
-.flex-header .flex-cell {
+.players-stats-table th {
     padding: 12px 10px;
+    text-align: left;
     color: var(--primary-gold);
     font-family: 'Cinzel', serif;
     font-size: 0.85rem;
@@ -2397,33 +2361,41 @@ h3 {
     font-weight: 700;
 }
 
-.flex-header .flex-cell:last-child {
+.players-stats-table th:last-child {
     border-right: none;
 }
 
-.flex-cell-player {
+.players-stats-table tbody tr {
+    border-bottom: 1px solid #222;
+    transition: background 0.2s ease;
 }
 
-.flex-cell-role {
+.players-stats-table tbody tr:hover {
+    background: rgba(212, 175, 55, 0.05);
 }
 
-.flex-cell-status {
-    justify-content: center;
+.players-stats-table tbody tr.eliminated {
+    opacity: 0.7;
 }
 
-.flex-cell-round {
+.players-stats-table td {
+    padding: 10px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    vertical-align: middle;
+    border-right: 1px solid #333;
+}
+
+.players-stats-table td:last-child {
+    border-right: none;
+}
+
+.status-cell {
     text-align: center;
-    justify-content: center;
 }
 
-.flex-cell-guilty {
+.suspicion-cell {
     text-align: center;
-    justify-content: center;
-}
-
-.flex-cell-suspicion {
-    text-align: center;
-    justify-content: center;
 }
 
 .player-name {
