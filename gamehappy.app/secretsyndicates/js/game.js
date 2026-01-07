@@ -3065,13 +3065,16 @@ class Game {
         
         console.log('initCaseNotes: tagsToShow =', tagsToShow);
         
-        // Show/hide tag buttons based on available roles
-        document.querySelectorAll('.tag-btn').forEach(btn => {
-            const tag = btn.dataset.tag;
-            btn.style.display = tagsToShow.includes(tag) ? 'inline-block' : 'none';
-        });
+        // Show/hide tag buttons based on available roles (if they exist)
+        const tagButtons = document.querySelectorAll('.tag-btn');
+        if (tagButtons.length > 0) {
+            tagButtons.forEach(btn => {
+                const tag = btn.dataset.tag;
+                btn.style.display = tagsToShow.includes(tag) ? 'inline-block' : 'none';
+            });
+        }
         
-        // Ensure case notes tags container is visible
+        // Ensure case notes tags container is visible (if it exists)
         const tagsSection = document.getElementById('case-notes-tags');
         if (tagsSection) {
             tagsSection.style.display = 'block';
@@ -3083,6 +3086,13 @@ class Game {
 
     renderCaseNotesGrid(players) {
         const grid = document.getElementById('case-notes-grid');
+        
+        // If case notes grid doesn't exist (not in detective view), return early
+        if (!grid) {
+            console.log('renderCaseNotesGrid: case-notes-grid element not found, skipping grid render');
+            return;
+        }
+        
         grid.innerHTML = '';
 
         players.forEach(player => {
@@ -3146,9 +3156,17 @@ class Game {
     bindCaseNotesEvents() {
         // Prevent duplicate event listeners by using a flag
         if (this.caseNotesEventsBound) return;
+        
+        // Only bind events if case notes elements exist
+        const tagButtons = document.querySelectorAll('.tag-btn');
+        if (tagButtons.length === 0) {
+            console.log('bindCaseNotesEvents: No case notes tag buttons found, skipping event binding');
+            return;
+        }
+        
         this.caseNotesEventsBound = true;
 
-        document.querySelectorAll('.tag-btn').forEach(btn => {
+        tagButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 this.toggleCaseNoteTag(btn.dataset.tag);
             });
