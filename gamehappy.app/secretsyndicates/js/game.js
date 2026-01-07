@@ -75,6 +75,30 @@ class Game {
             { name: 'E', token: 'test-player-5', role: 'Bystander', alive: true }
         ];
         
+        // Generate random suspicion levels for demonstration
+        const generateRandomSuspicion = () => {
+            const score = Math.floor(Math.random() * 101);
+            let level = 'Clear';
+            if (score >= 90) {
+                level = 'Very Suspicious';
+            } else if (score >= 65) {
+                level = 'Suspicious';
+            } else if (score >= 40) {
+                level = 'Moderate';
+            } else if (score >= 15) {
+                level = 'Low';
+            }
+            return { level, score, reasons: [`Random suspicion score: ${score}/100`] };
+        };
+        
+        const playerSuspicionLevels = {
+            'test-player-1': generateRandomSuspicion(),
+            'test-player-2': generateRandomSuspicion(),
+            'test-player-3': generateRandomSuspicion(),
+            'test-player-4': generateRandomSuspicion(),
+            'test-player-5': generateRandomSuspicion()
+        };
+        
         // Simulate game-ended event
         this.handleGameEnded({
             winner: winner,
@@ -93,7 +117,8 @@ class Game {
                 'test-player-3': { accusationVotes: ['test-player-4', 'test-player-1'], trialVotes: ['not-guilty', 'guilty', 'guilty'] },
                 'test-player-4': { accusationVotes: ['test-player-5', 'test-player-2'], trialVotes: ['guilty', 'guilty', 'guilty'] },
                 'test-player-5': { accusationVotes: ['test-player-3', 'test-player-4'], trialVotes: ['guilty', 'guilty', 'guilty'] }
-            }
+            },
+            playerSuspicionLevels: playerSuspicionLevels
         });
     }
 
@@ -2457,11 +2482,11 @@ class Game {
         
         // Build and display player stats table
         if (data.allPlayers && data.allPlayers.length > 0) {
-            this.buildPlayersTable(playersTableContainer, data.allPlayers, data.playerRole);
+            this.buildPlayersTable(playersTableContainer, data.allPlayers, data.playerRole, data.playerSuspicionLevels);
         }
     }
 
-    buildPlayersTable(container, allPlayers, playerRole) {
+    buildPlayersTable(container, allPlayers, playerRole, playerSuspicionLevels = {}) {
         // Count number of rounds from voting history
         let maxRounds = 0;
         Object.values(this.votingHistory).forEach(history => {
@@ -2516,8 +2541,8 @@ class Game {
             let suspicionLevel = 'low';
             let suspicionDisplay = 'Low';
             let suspicionScore = 0;
-            if (this.gameState && this.gameState.playerSuspicionLevels && this.gameState.playerSuspicionLevels[player.token]) {
-                const serverSuspicion = this.gameState.playerSuspicionLevels[player.token];
+            if (playerSuspicionLevels && playerSuspicionLevels[player.token]) {
+                const serverSuspicion = playerSuspicionLevels[player.token];
                 suspicionDisplay = serverSuspicion.level;
                 suspicionScore = serverSuspicion.score;
                 

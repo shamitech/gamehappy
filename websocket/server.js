@@ -241,6 +241,17 @@ io.on('connection', (socket) => {
                 // Game has ended
                 console.log(`[${game.gameCode}] GAME ENDED: ${phaseResult.winCondition.winner} wins (${phaseResult.winCondition.winType})`);
                 
+                // Calculate suspicion levels for all players
+                const playerSuspicionLevels = {};
+                game.getPlayers().forEach(player => {
+                    const suspicion = game.calculateSuspicionLevel(player.token);
+                    playerSuspicionLevels[player.token] = {
+                        level: suspicion.level,
+                        score: suspicion.suspicionScore,
+                        reasons: suspicion.reasons
+                    };
+                });
+                
                 // Broadcast game-ended event to all players
                 for (const [socketId, playerSocket] of io.sockets.sockets) {
                   const pToken = playerSocket.handshake.query.token || socketId;
@@ -258,7 +269,8 @@ io.on('connection', (socket) => {
                       finalRound: pGameState.currentRound,
                       playerRole: pGameState.playerRole,
                       allPlayers: enhancedPlayers,
-                      votingHistory: game.votingHistory || {}
+                      votingHistory: game.votingHistory || {},
+                      playerSuspicionLevels: playerSuspicionLevels
                     });
                     console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
                   }
