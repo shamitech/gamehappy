@@ -1215,6 +1215,9 @@ class Game {
         
         // Initialize the "I'm Ready" button for Phase 2
         this.initPhase2ReadySection(data);
+        
+        // Show persistent case notes for detectives
+        this.showPersistentCaseNotesPanel(data);
     }
 
     initPhase2ReadySection(data) {
@@ -1474,6 +1477,9 @@ class Game {
         }
         document.getElementById('phase3-done-count').textContent = data.doneCount || 0;
         
+        // Show persistent case notes for detectives
+        this.showPersistentCaseNotesPanel(data);
+        
         // Bind button event (remove old listener first)
         const btn = document.getElementById('btn-phase3-done');
         if (btn) {
@@ -1623,6 +1629,10 @@ class Game {
             // Initialize "I'm Done" section
             console.log('initPhase1: Calling initImDoneSection');
             this.initImDoneSection(state);
+            
+            // Show persistent case notes for detectives
+            this.showPersistentCaseNotesPanel(state);
+            
             console.log('initPhase1: completed successfully');
         } catch (error) {
             console.error('ERROR in initPhase1:', error);
@@ -2024,26 +2034,8 @@ class Game {
                 <span id="phase4-vote-count">${data.voteCount || 0}</span>/<span id="phase4-vote-total">${(data.alivePlayers ? data.alivePlayers.length : 0) || 0}</span> players have voted`;
         }
         
-        // Display case notes if available (for detectives)
-        if (data.detectiveData && data.detectiveData.caseNotes && Object.keys(data.detectiveData.caseNotes).length > 0) {
-            const container = document.getElementById('phase4-case-notes-container');
-            const notesDiv = document.getElementById('phase4-case-notes');
-            container.style.display = 'block';
-            notesDiv.innerHTML = '';
-            
-            for (const [targetId, notesList] of Object.entries(data.detectiveData.caseNotes)) {
-                const targetPlayer = data.detectiveData.caseNotesPlayers.find(p => p.id === targetId);
-                const targetName = targetPlayer ? targetPlayer.name : targetId;
-                
-                const noteItem = document.createElement('div');
-                noteItem.className = 'case-note-item';
-                noteItem.innerHTML = `
-                    <strong>${this.escapeHtml(targetName)}</strong>: 
-                    ${Array.isArray(notesList) ? notesList.map(n => this.escapeHtml(n)).join(', ') : this.escapeHtml(String(notesList))}
-                `;
-                notesDiv.appendChild(noteItem);
-            }
-        }
+        // Show persistent case notes for detectives
+        this.showPersistentCaseNotesPanel(data);
     }
     
     castVote(playerId, playerName) {
@@ -2131,26 +2123,8 @@ class Game {
             newNotGuiltyBtn.classList.remove('selected');
         }
         
-        // Display case notes if available (for detectives)
-        if (data.detectiveData && data.detectiveData.caseNotes && Object.keys(data.detectiveData.caseNotes).length > 0) {
-            const container = document.getElementById('phase5-case-notes-container');
-            const notesDiv = document.getElementById('phase5-case-notes');
-            container.style.display = 'block';
-            notesDiv.innerHTML = '';
-            
-            for (const [targetId, notesList] of Object.entries(data.detectiveData.caseNotes)) {
-                const targetPlayer = data.detectiveData.caseNotesPlayers.find(p => p.id === targetId);
-                const targetName = targetPlayer ? targetPlayer.name : targetId;
-                
-                const noteItem = document.createElement('div');
-                noteItem.className = 'case-note-item';
-                noteItem.innerHTML = `
-                    <strong>${this.escapeHtml(targetName)}</strong>: 
-                    ${Array.isArray(notesList) ? notesList.map(n => this.escapeHtml(n)).join(', ') : this.escapeHtml(String(notesList))}
-                `;
-                notesDiv.appendChild(noteItem);
-            }
-        }
+        // Show persistent case notes for detectives
+        this.showPersistentCaseNotesPanel(data);
     }
     
     castTrialVote(vote) {
@@ -3228,6 +3202,224 @@ class Game {
             : '<span class="no-tags">No tags</span>';
 
         card.querySelector('.card-tags').innerHTML = tagsHtml;
+    }
+
+    showPersistentCaseNotesPanel(state) {
+        // Only show for detectives
+        if (state.role !== 'Detective') {
+            return;
+        }
+
+        // Initialize case notes data if not already done
+        const detectiveData = state.detectiveData || {};
+        if (!Object.keys(this.caseNotes).length && detectiveData.caseNotes) {
+            this.caseNotes = detectiveData.caseNotes;
+        }
+
+        const caseNotesPlayers = detectiveData.caseNotesPlayers || state.players.filter(p => p.id !== this.getMyPlayerId());
+        let availableRoles = detectiveData.availableRoles || [];
+        
+        // Always include Suspicious and Innocent tags
+        const allAvailableTags = ['Syndicate', 'Detective', 'Bystander', 'Eye Witness', 'Body Guard', 'Suspicious', 'Innocent'];
+        const tagsToShow = allAvailableTags.filter(tag => {
+            if (tag === 'Suspicious' || tag === 'Innocent') return true;
+            return availableRoles.includes(tag);
+        });
+
+        // Get the current phase container (phase1, phase2, phase3, phase4, phase5)
+        let caseNotesContainer = null;
+        const currentPhase = state.currentPhase;
+        
+        // Map phase names to container IDs
+        const phaseContainerMap = {
+            'night': 'phase1-case-notes-container',
+            'murder': 'phase2-case-notes-container',
+            'discussion': 'phase3-case-notes-container',
+            'vote': 'phase4-case-notes-container',
+            'trial': 'phase5-case-notes-container'
+        };
+
+        const containerId = phaseContainerMap[currentPhase];
+        if (containerId) {
+            caseNotesContainer = document.getElementById(containerId);
+        }
+
+        // If no specific phase container found, don't display
+        if (!caseNotesContainer) {
+            console.log('showPersistentCaseNotesPanel: No case notes container found for phase', currentPhase);
+            return;
+        }
+
+        // Show the container
+        caseNotesContainer.style.display = 'block';
+
+        // Render the case notes grid
+        const caseNotesGridContainer = caseNotesContainer.querySelector('.case-notes');
+        if (!caseNotesGridContainer) {
+            console.error('Case notes grid container not found in', containerId);
+            return;
+        }
+
+        caseNotesGridContainer.innerHTML = '';
+
+        // Create case notes grid HTML
+        const gridHtml = caseNotesPlayers
+            .filter(p => p.id !== this.getMyPlayerId())
+            .map(player => {
+                const notes = this.caseNotes[player.id] || [];
+                const tagsHtml = notes.length 
+                    ? notes.map(tag => `<span class="tag">${tag} <button class="tag-remove" data-tag="${tag}">✕</button></span>`).join('')
+                    : '<span class="no-tags">No tags</span>';
+
+                return `
+                    <div class="case-note-card" data-player-id="${player.id}">
+                        <div class="card-header">
+                            <h4>${this.escapeHtml(player.name)}</h4>
+                        </div>
+                        <div class="card-tags">
+                            ${tagsHtml}
+                        </div>
+                    </div>
+                `;
+            })
+            .join('');
+
+        caseNotesGridContainer.innerHTML = `
+            <div class="case-notes-compact">
+                <p style="margin: 0 0 10px 0; font-size: 12px; color: #999;">Click a player card to add tags</p>
+                <div class="case-notes-grid-compact">
+                    ${gridHtml}
+                </div>
+                <div class="case-notes-tags-compact" style="display: none; margin-top: 15px;">
+                    <h5>Add Tags to <span class="selected-player-name">Player</span></h5>
+                    <div class="tag-buttons-compact">
+                        ${allAvailableTags
+                            .filter(tag => tagsToShow.includes(tag))
+                            .map(tag => `<button class="tag-btn-compact" data-tag="${tag}">${tag}</button>`)
+                            .join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Bind case notes compact events
+        this.bindPersistentCaseNotesEvents(caseNotesContainer);
+    }
+
+    bindPersistentCaseNotesEvents(container) {
+        // Clear the flag each time to allow re-binding when container is recreated
+        container.dataset.eventsbound = 'false';
+
+        const grid = container.querySelector('.case-notes-grid-compact');
+        const tagsSection = container.querySelector('.case-notes-tags-compact');
+        const playerNameEl = container.querySelector('.selected-player-name');
+
+        // Card selection handler
+        if (grid) {
+            grid.querySelectorAll('.case-note-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const playerId = card.dataset.playerId;
+                    
+                    // Update selection
+                    grid.querySelectorAll('.case-note-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    this.selectedCaseNotesPlayer = playerId;
+
+                    // Show tags section and update player name
+                    if (tagsSection) {
+                        tagsSection.style.display = 'block';
+                        const player = this.phaseState.players.find(p => p.id === playerId);
+                        if (playerNameEl && player) {
+                            playerNameEl.textContent = this.escapeHtml(player.name);
+                        }
+
+                        // Update tag button states
+                        const playerNotes = this.caseNotes[playerId] || [];
+                        tagsSection.querySelectorAll('.tag-btn-compact').forEach(btn => {
+                            btn.classList.toggle('active', playerNotes.includes(btn.dataset.tag));
+                        });
+                    }
+                });
+            });
+        }
+
+        // Tag button handler
+        if (tagsSection) {
+            tagsSection.querySelectorAll('.tag-btn-compact').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    if (!this.selectedCaseNotesPlayer) return;
+
+                    const tag = btn.dataset.tag;
+                    const playerId = this.selectedCaseNotesPlayer;
+                    
+                    if (!this.caseNotes[playerId]) {
+                        this.caseNotes[playerId] = [];
+                    }
+
+                    const index = this.caseNotes[playerId].indexOf(tag);
+                    if (index > -1) {
+                        this.caseNotes[playerId].splice(index, 1);
+                    } else {
+                        this.caseNotes[playerId].push(tag);
+                    }
+
+                    // Update button state
+                    btn.classList.toggle('active');
+
+                    // Update card display
+                    const notes = this.caseNotes[playerId] || [];
+                    const card = grid.querySelector(`.case-note-card[data-player-id="${playerId}"]`);
+                    if (card) {
+                        const tagsHtml = notes.length 
+                            ? notes.map(t => `<span class="tag">${t}</span>`).join('')
+                            : '<span class="no-tags">No tags</span>';
+                        card.querySelector('.card-tags').innerHTML = tagsHtml;
+                    }
+
+                    // Send to server
+                    this.sendMessage({
+                        action: 'updateCaseNotes',
+                        targetId: playerId,
+                        notes: this.caseNotes[playerId]
+                    });
+                });
+            });
+        }
+
+        // Tag remove handler
+        container.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tag-remove')) {
+                const tag = e.target.dataset.tag;
+                if (!this.selectedCaseNotesPlayer) return;
+
+                const playerId = this.selectedCaseNotesPlayer;
+                if (!this.caseNotes[playerId]) return;
+
+                const index = this.caseNotes[playerId].indexOf(tag);
+                if (index > -1) {
+                    this.caseNotes[playerId].splice(index, 1);
+                }
+
+                // Update card display
+                const notes = this.caseNotes[playerId] || [];
+                const card = grid.querySelector(`.case-note-card[data-player-id="${playerId}"]`);
+                if (card) {
+                    const tagsHtml = notes.length 
+                        ? notes.map(t => `<span class="tag">${t}</span>`).join('')
+                        : '<span class="no-tags">No tags</span>';
+                    card.querySelector('.card-tags').innerHTML = tagsHtml;
+                }
+
+                // Send to server
+                this.sendMessage({
+                    action: 'updateCaseNotes',
+                    targetId: playerId,
+                    notes: this.caseNotes[playerId]
+                });
+            }
+        });
     }
 
     // ---- Bystander Functions ----
