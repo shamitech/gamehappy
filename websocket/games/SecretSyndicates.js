@@ -334,14 +334,13 @@ class SecretSyndicates extends GameManager {
                     console.log(`[${this.gameCode}] VERDICT: No accused player set! Cannot eliminate.`);
                 }
                 
-                // Check win conditions after round 2 and round 5
+                // Check win conditions after every verdict
                 const winResult = this.checkWinConditions();
                 
                 // End game if:
-                // 1. Win condition is met after round 2, OR
-                // 2. We've reached round 5 (final round), OR
-                // 3. Win condition is met after round 5
-                if ((this.currentRound === 2 && winResult) || this.currentRound === 5) {
+                // 1. Win condition is met (syndicates eliminated or they control votes), OR
+                // 2. We've reached round 5 (final round)
+                if (winResult || this.currentRound === 5) {
                     console.log(`[${this.gameCode}] Game ended after round ${this.currentRound}: ${winResult ? winResult.winner : 'Round limit'} wins`);
                     this.currentPhase = 'ended';
                     return {
