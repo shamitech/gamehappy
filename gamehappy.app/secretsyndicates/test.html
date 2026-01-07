@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameHappy Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 15px;
+        }
+
+        .start-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            color: #667eea;
+            font-weight: 600;
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .player-count-display {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Test Game</h1>
+        <p class="subtitle">Configure and start a test game</p>
+
+        <div class="form-section">
+            <label for="playerCount" class="form-label">Number of Players</label>
+            <input type="number" id="playerCount" class="form-input" min="3" max="10" value="5">
+            <div class="player-count-display" id="playerCountDisplay">5 players</div>
+        </div>
+
+        <div class="form-section">
+            <label class="form-label">Game Roles</label>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="enableEyeWitness" checked>
+                    <label for="enableEyeWitness">Enable Eye Witness</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="enableBodyGuard" checked>
+                    <label for="enableBodyGuard">Enable Body Guard</label>
+                </div>
+            </div>
+        </div>
+
+        <button class="start-btn" id="startBtn">Start Test Game</button>
+        <div class="loading" id="loading">Creating game...</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        const playerCountInput = document.getElementById('playerCount');
+        const playerCountDisplay = document.getElementById('playerCountDisplay');
+        const eyeWitnessCheckbox = document.getElementById('enableEyeWitness');
+        const bodyGuardCheckbox = document.getElementById('enableBodyGuard');
+        const startBtn = document.getElementById('startBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+
+        // Update player count display
+        playerCountInput.addEventListener('change', () => {
+            const count = playerCountInput.value;
+            playerCountDisplay.textContent = count + (count === '1' ? ' player' : ' players');
+        });
+
+        async function startTestGame() {
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            startBtn.disabled = true;
+
+            try {
+                const playerCount = parseInt(playerCountInput.value);
+                const enableEyeWitness = eyeWitnessCheckbox.checked;
+                const enableBodyGuard = bodyGuardCheckbox.checked;
+
+                // Create query string with settings
+                const params = new URLSearchParams({
+                    playerCount,
+                    enableEyeWitness,
+                    enableBodyGuard
+                });
+
+                const response = await fetch(`https://gamehappy.app:8443/test-game?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Open tabs for all players
+                    data.players.forEach((player, index) => {
+                        const delay = index * 200; // Stagger opening tabs
+                        setTimeout(() => {
+                            const url = `/secretsyndicates/?test=${player.token}&gameCode=${data.gameCode}&playerName=${player.name}`;
+                            window.open(url, `player-${player.name}`);
+                        }, delay);
+                    });
+                } else {
+                    showError(data.message || 'Failed to create game');
+                }
+            } catch (err) {
+                showError('Error: ' + err.message);
+            } finally {
+                loading.style.display = 'none';
+                startBtn.disabled = false;
+            }
+        }
+
+        function showError(msg) {
+            error.textContent = msg;
+            error.style.display = 'block';
+        }
+
+        startBtn.addEventListener('click', startTestGame);
+    </script>
+</body>
+</html>

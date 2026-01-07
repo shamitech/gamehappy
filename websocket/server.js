@@ -644,18 +644,30 @@ io.on('connection', (socket) => {
 // TEST ENDPOINT - Creates a pre-populated game for quick testing
 app.get('/test-game', (req, res) => {
   try {
-    // Create game with 5 pre-populated players
-    const playerNames = ['A', 'B', 'C', 'D', 'E'];
+    // Get query parameters with defaults
+    const playerCount = Math.min(Math.max(parseInt(req.query.playerCount) || 5, 3), 10); // 3-10 players
+    const enableEyeWitness = req.query.enableEyeWitness !== 'false'; // Default true
+    const enableBodyGuard = req.query.enableBodyGuard !== 'false'; // Default true
+    
+    // Create player names based on count
+    const playerNames = Array.from({ length: playerCount }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, etc.
     const playerTokens = [];
     
     // Create the game with player A
-    const createResult = gameServer.createGame('secretsyndicates', 'test-player-1', 'A');
+    const createResult = gameServer.createGame('secretsyndicates', 'test-player-1', playerNames[0]);
     if (!createResult.success) {
       return res.json({ success: false, message: 'Failed to create game' });
     }
     
     const gameCode = createResult.gameCode;
     const game = gameServer.games.get(gameCode);
+    
+    // Apply game settings
+    if (game) {
+      game.settings.enableEyeWitness = enableEyeWitness;
+      game.settings.enableBodyGuard = enableBodyGuard;
+    }
+    
     playerTokens.push('test-player-1');
     
     // Add remaining players
@@ -668,19 +680,20 @@ app.get('/test-game', (req, res) => {
     // Start the game
     gameServer.startGame(gameCode, 'test-player-1');
     
-    console.log(`[TEST] Created game ${gameCode} with 5 players`);
+    console.log(`[TEST] Created game ${gameCode} with ${playerCount} players (eyeWitness: ${enableEyeWitness}, bodyGuard: ${enableBodyGuard})`);
     
-    // Return game info with player tokens
+    // Generate player response with dynamic count
+    const playerColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#A9DFBF'];
+    const players = playerNames.map((name, index) => ({
+      name,
+      token: `test-player-${index + 1}`,
+      color: playerColors[index]
+    }));
+    
     res.json({
       success: true,
       gameCode: gameCode,
-      players: [
-        { name: 'A', token: 'test-player-1', color: '#FF6B6B' },
-        { name: 'B', token: 'test-player-2', color: '#4ECDC4' },
-        { name: 'C', token: 'test-player-3', color: '#45B7D1' },
-        { name: 'D', token: 'test-player-4', color: '#FFA07A' },
-        { name: 'E', token: 'test-player-5', color: '#98D8C8' }
-      ]
+      players: players
     });
   } catch (err) {
     console.error('Error creating test game:', err);
