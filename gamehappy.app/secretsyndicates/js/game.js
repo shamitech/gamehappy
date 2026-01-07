@@ -3253,16 +3253,7 @@ class Game {
         // Show the container
         caseNotesContainer.style.display = 'block';
 
-        // Render the case notes grid
-        const caseNotesGridContainer = caseNotesContainer.querySelector('.case-notes');
-        if (!caseNotesGridContainer) {
-            console.error('Case notes grid container not found in', containerId);
-            return;
-        }
-
-        caseNotesGridContainer.innerHTML = '';
-
-        // Create case notes grid HTML using exact same structure as original
+        // Build the case notes content directly in the container
         const gridHtml = caseNotesPlayers
             .filter(p => p.id !== this.getMyPlayerId())
             .map(player => {
@@ -3284,7 +3275,9 @@ class Game {
             })
             .join('');
 
-        caseNotesGridContainer.innerHTML = `
+        // Rebuild entire container without the nested .case-notes wrapper
+        caseNotesContainer.innerHTML = `
+            <h3>📋 Case Notes</h3>
             <div class="case-notes-grid">
                 ${gridHtml}
             </div>
