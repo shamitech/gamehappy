@@ -189,6 +189,50 @@ class SecretSyndicates extends GameManager {
     }
 
     /**
+     * Check if game has ended and return win conditions
+     * Returns null if game continues, otherwise returns { winner, winType, details }
+     */
+    checkWinConditions() {
+        const alivePlayers = this.getAlivePlayers();
+        const syndicateMembers = alivePlayers.filter(p => this.getPlayerRole(p.token) === 'Syndicate');
+        const otherPlayers = alivePlayers.filter(p => this.getPlayerRole(p.token) !== 'Syndicate');
+        
+        console.log(`[${this.gameCode}] Checking win conditions: syndicate=${syndicateMembers.length}, other=${otherPlayers.length}`);
+        
+        // Condition 1: All syndicates eliminated - innocent players win
+        if (syndicateMembers.length === 0 && alivePlayers.length > 0) {
+            console.log(`[${this.gameCode}] GAME OVER: All syndicates eliminated! Innocent players win.`);
+            return {
+                winner: 'innocent',
+                winType: 'ELIMINATED_SYNDICATES',
+                details: {
+                    message: 'All syndicates have been eliminated!',
+                    syndicatesLeft: 0,
+                    innocentLeft: otherPlayers.length
+                }
+            };
+        }
+        
+        // Condition 2: Syndicates equal or outnumber other players - syndicates win
+        // (They control the votes at 50% or more)
+        if (syndicateMembers.length > 0 && syndicateMembers.length >= otherPlayers.length) {
+            console.log(`[${this.gameCode}] GAME OVER: Syndicates control the votes! Syndicates win.`);
+            return {
+                winner: 'syndicate',
+                winType: 'VOTE_CONTROL',
+                details: {
+                    message: 'Syndicates now control the majority and rule the votes!',
+                    syndicatesLeft: syndicateMembers.length,
+                    innocentLeft: otherPlayers.length
+                }
+            };
+        }
+        
+        // Game continues
+        return null;
+    }
+
+    /**
      * Advance to the next phase
      */
     advancePhase() {
@@ -317,7 +361,9 @@ class SecretSyndicates extends GameManager {
             success: true,
             phase: this.currentPhase,
             previousPhase: previousPhase,
-            round: this.currentRound
+            round: this.currentRound,
+            gameEnded: false,
+            winCondition: null
         };
     }
 

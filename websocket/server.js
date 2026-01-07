@@ -236,6 +236,33 @@ io.on('connection', (socket) => {
             if (phaseResult.success) {
               console.log(`[${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
               
+              // Check for win conditions
+              const winCondition = game.checkWinConditions();
+              if (winCondition) {
+                // Game has ended
+                console.log(`[${game.gameCode}] GAME ENDED: ${winCondition.winner} wins (${winCondition.winType})`);
+                phaseResult.gameEnded = true;
+                phaseResult.winCondition = winCondition;
+                
+                // Broadcast game-ended event to all players
+                for (const [socketId, playerSocket] of io.sockets.sockets) {
+                  const pToken = playerSocket.handshake.query.token || socketId;
+                  if (game.hasPlayer(pToken)) {
+                    const pGameState = gameServer.getGameStateForPlayer(pToken);
+                    playerSocket.emit('game-ended', {
+                      winner: winCondition.winner,
+                      winType: winCondition.winType,
+                      details: winCondition.details,
+                      finalRound: pGameState.currentRound,
+                      playerRole: pGameState.playerRole,
+                      allPlayers: pGameState.players
+                    });
+                    console.log(`[${game.gameCode}] Sent game-ended event to ${pToken}`);
+                  }
+                }
+                return;
+              }
+              
               // Send on-phase-start event to each player with their individual gameState
               for (const [socketId, playerSocket] of io.sockets.sockets) {
                 const pToken = playerSocket.handshake.query.token || socketId;

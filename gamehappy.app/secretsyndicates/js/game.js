@@ -223,6 +223,11 @@ class Game {
                 }
             });
 
+            this.socket.on('game-ended', (data) => {
+                console.log('Game ended event received:', data);
+                this.handleGameEnded(data);
+            });
+
             this.socket.on('disconnect', () => {
                 console.log('Disconnected from server');
                 this.updateConnectionStatus('disconnected');
@@ -2317,6 +2322,120 @@ class Game {
         }
         
         roleEl.textContent = data.role;
+    }
+
+    handleGameEnded(data) {
+        console.log('Game ended event:', data);
+        
+        // Hide all game screens
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.style.display = 'none';
+        });
+        
+        // Show results screen
+        const resultsScreen = document.getElementById('results-screen');
+        if (resultsScreen) {
+            resultsScreen.style.display = 'flex';
+        } else {
+            // Create results screen if it doesn't exist
+            this.createResultsScreen();
+        }
+        
+        // Update results content
+        const resultsTitle = document.getElementById('results-title');
+        const resultsBanner = document.getElementById('results-banner');
+        const resultsDetails = document.getElementById('results-details');
+        
+        if (data.winner === 'syndicate') {
+            resultsTitle.textContent = '👹 Syndicate Wins!';
+            resultsBanner.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+            resultsBanner.innerHTML = '🏆 The Syndicate has taken control!';
+            
+            const message = data.winType === 'VOTE_CONTROL' 
+                ? `The Syndicate has achieved vote control with ${data.details.syndicatesLeft} members remaining to ${data.details.innocentLeft} innocent players.`
+                : 'The Syndicate has won!';
+            resultsDetails.innerHTML = `
+                <div style="text-align: center; margin: 30px 0;">
+                    <p style="font-size: 18px; margin-bottom: 15px;">${message}</p>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p><strong>Syndicates:</strong> ${data.details.syndicatesLeft}</p>
+                        <p><strong>Innocent Players:</strong> ${data.details.innocentLeft}</p>
+                    </div>
+                    <p><strong>Your Role:</strong> ${data.playerRole}</p>
+                    <p><strong>Final Round:</strong> ${data.finalRound}</p>
+                </div>
+            `;
+        } else {
+            resultsTitle.textContent = '🎉 Innocents Win!';
+            resultsBanner.style.background = 'linear-gradient(135deg, #27ae60 0%, #229954 100%)';
+            resultsBanner.innerHTML = '🏆 The Syndicate has been eliminated!';
+            
+            resultsDetails.innerHTML = `
+                <div style="text-align: center; margin: 30px 0;">
+                    <p style="font-size: 18px; margin-bottom: 15px;">All syndicate members have been eliminated!</p>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p><strong>Syndicates Eliminated:</strong> ${data.details.syndicatesLeft}</p>
+                        <p><strong>Innocent Players Remaining:</strong> ${data.details.innocentLeft}</p>
+                    </div>
+                    <p><strong>Your Role:</strong> ${data.playerRole}</p>
+                    <p><strong>Final Round:</strong> ${data.finalRound}</p>
+                </div>
+            `;
+        }
+    }
+
+    createResultsScreen() {
+        const screen = document.createElement('div');
+        screen.id = 'results-screen';
+        screen.className = 'screen';
+        screen.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            z-index: 1000;
+        `;
+        
+        screen.innerHTML = `
+            <div style="
+                background: white;
+                border-radius: 12px;
+                padding: 40px;
+                max-width: 600px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                text-align: center;
+            ">
+                <div id="results-banner" style="
+                    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 30px;
+                    font-size: 18px;
+                    font-weight: bold;
+                ">Game Over</div>
+                
+                <h1 id="results-title" style="
+                    font-size: 32px;
+                    color: #333;
+                    margin-bottom: 20px;
+                ">Game Results</h1>
+                
+                <div id="results-details" style="
+                    color: #666;
+                    font-size: 16px;
+                    line-height: 1.8;
+                "></div>
+            </div>
+        `;
+        
+        document.body.appendChild(screen);
     }
     
     onNextRoundStart(data) {
