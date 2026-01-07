@@ -975,6 +975,19 @@ class SecretSyndicates extends GameManager {
             gameState.gameNotes = this.gameNotes;
         }
 
+        // Add suspicion levels for all players when game has ended
+        if (this.currentPhase === 'ended') {
+            gameState.playerSuspicionLevels = {};
+            this.getPlayers().forEach(player => {
+                const suspicion = this.calculateSuspicionLevel(player.token);
+                gameState.playerSuspicionLevels[player.token] = {
+                    level: suspicion.level,
+                    score: suspicion.suspicionScore,
+                    reasons: suspicion.reasons
+                };
+            });
+        }
+
         return gameState;
     }
 

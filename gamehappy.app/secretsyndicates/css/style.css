@@ -2440,6 +2440,32 @@ h3 {
     font-size: 0.85rem;
 }
 
+.suspicion-level.very-suspicious {
+    background: rgba(255, 0, 0, 0.3);
+    color: #ff6b6b;
+}
+
+.suspicion-level.suspicious {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff9f43;
+}
+
+.suspicion-level.moderate {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.suspicion-level.low-suspicion {
+    background: rgba(78, 205, 196, 0.2);
+    color: #4ecdc4;
+}
+
+.suspicion-level.clear {
+    background: rgba(136, 136, 136, 0.2);
+    color: #888;
+}
+
+/* Fallback for old CSS classes */
 .suspicion-level.high {
     background: rgba(255, 0, 0, 0.2);
     color: #ff6b6b;

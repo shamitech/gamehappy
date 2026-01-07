@@ -2512,13 +2512,40 @@ class Game {
             // Count guilty votes
             const guiltyVotes = history.trialVotes ? history.trialVotes.filter(v => v === 'guilty').length : 0;
             
-            // Determine suspicion level
-            const suspicionCount = suspicionMap[player.token] || 0;
+            // Get suspicion level from server (if available), otherwise fallback to local calculation
             let suspicionLevel = 'low';
-            if (suspicionCount >= 3) {
-                suspicionLevel = 'high';
-            } else if (suspicionCount >= 2) {
-                suspicionLevel = 'medium';
+            let suspicionDisplay = 'Low';
+            let suspicionScore = 0;
+            if (this.gameState && this.gameState.playerSuspicionLevels && this.gameState.playerSuspicionLevels[player.token]) {
+                const serverSuspicion = this.gameState.playerSuspicionLevels[player.token];
+                suspicionDisplay = serverSuspicion.level;
+                suspicionScore = serverSuspicion.score;
+                
+                // Convert server level names to CSS class names
+                if (serverSuspicion.level === 'Very Suspicious') {
+                    suspicionLevel = 'very-suspicious';
+                } else if (serverSuspicion.level === 'Suspicious') {
+                    suspicionLevel = 'suspicious';
+                } else if (serverSuspicion.level === 'Moderate') {
+                    suspicionLevel = 'moderate';
+                } else if (serverSuspicion.level === 'Low') {
+                    suspicionLevel = 'low-suspicion';
+                } else {
+                    suspicionLevel = 'clear';
+                }
+            } else {
+                // Fallback to old method for backward compatibility
+                const suspicionCount = suspicionMap[player.token] || 0;
+                if (suspicionCount >= 3) {
+                    suspicionLevel = 'high';
+                    suspicionDisplay = 'High';
+                } else if (suspicionCount >= 2) {
+                    suspicionLevel = 'medium';
+                    suspicionDisplay = 'Medium';
+                } else {
+                    suspicionLevel = 'low';
+                    suspicionDisplay = 'Low';
+                }
             }
             
             return {
@@ -2527,8 +2554,9 @@ class Game {
                 alive: player.alive,
                 accusations: accusations,
                 guiltyVotes: guiltyVotes,
-                suspicionCount: suspicionCount,
-                suspicionLevel: suspicionLevel
+                suspicionLevel: suspicionLevel,
+                suspicionDisplay: suspicionDisplay,
+                suspicionScore: suspicionScore
             };
         });
 
@@ -2573,7 +2601,7 @@ class Game {
                                     ${player.accusations.map(acc => `<td class="accusation">${acc}</td>`).join('')}
                                     <td class="guilty-votes">${player.guiltyVotes}</td>
                                     <td class="suspicion-cell">
-                                        <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionLevel.charAt(0).toUpperCase() + player.suspicionLevel.slice(1)}</span>
+                                        <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionDisplay}</span>
                                     </td>
                                 </tr>
                             `).join('')}
