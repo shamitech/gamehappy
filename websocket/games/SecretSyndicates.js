@@ -552,6 +552,16 @@ class SecretSyndicates extends GameManager {
                 this.votingHistory[this.accusedPlayer].verdictGuiltyVotes = [];
             }
             this.votingHistory[this.accusedPlayer].verdictGuiltyVotes.push(playerToken);
+            
+            // Also track if a player voted guilty for an innocent (they voted wrong)
+            const accusedRole = this.getPlayerRole(this.accusedPlayer);
+            if (accusedRole !== 'Syndicate') {
+                // They voted guilty for an innocent player
+                if (!this.votingHistory[playerToken].innocentGuiltyVotes) {
+                    this.votingHistory[playerToken].innocentGuiltyVotes = [];
+                }
+                this.votingHistory[playerToken].innocentGuiltyVotes.push(this.accusedPlayer);
+            }
         }
         
         return { success: true };
@@ -575,7 +585,17 @@ class SecretSyndicates extends GameManager {
         }
         this.votingHistory[playerToken].accusationVotes.push(targetToken);
         
-        console.log(`[${this.gameCode}] Accusation vote recorded: ${playerToken} -> ${targetToken}, total votes: ${this.accusationVotes.size}`);
+        // Track if they accused an innocent player (for suspicion calculation)
+        const targetRole = this.getPlayerRole(targetToken);
+        if (targetRole !== 'Syndicate') {
+            // They accused an innocent player
+            if (!this.votingHistory[playerToken].innocentAccusations) {
+                this.votingHistory[playerToken].innocentAccusations = [];
+            }
+            this.votingHistory[playerToken].innocentAccusations.push(targetToken);
+        }
+        
+        console.log(`[${this.gameCode}] Accusation vote recorded: ${playerToken} -> ${targetToken} (${targetRole}), total votes: ${this.accusationVotes.size}`);
         return { success: true, voteCount: this.accusationVotes.size };
     }
 
@@ -1086,6 +1106,58 @@ class SecretSyndicates extends GameManager {
         } else if (verdictGuiltyVotesAgainst === 1) {
             suspicionScore += 20;
             reasons.push(`At least one guilty vote during trial`);
+        }
+
+        // Check if they accused innocent players (poor judgment or suspicious behavior)
+        const innocentAccusations = targetHistory.innocentAccusations ? targetHistory.innocentAccusations.length : 0;
+        if (innocentAccusations >= 4) {
+            suspicionScore += 40;
+            reasons.push(`Repeatedly accused innocent players - poor judgment or trying to hide (${innocentAccusations} accusations)`);
+        } else if (innocentAccusations >= 2) {
+            suspicionScore += 25;
+            reasons.push(`Accused innocent players multiple times (${innocentAccusations} accusations)`);
+        } else if (innocentAccusations === 1) {
+            suspicionScore += 10;
+            reasons.push(`Accused an innocent player at least once`);
+        }
+
+        // Check if they voted guilty for innocent players (another bad vote pattern)
+        const innocentGuiltyVotes = targetHistory.innocentGuiltyVotes ? targetHistory.innocentGuiltyVotes.length : 0;
+        if (innocentGuiltyVotes >= 3) {
+            suspicionScore += 45;
+            reasons.push(`Voted guilty for innocent players multiple times - major red flag (${innocentGuiltyVotes} votes)`);
+        } else if (innocentGuiltyVotes === 2) {
+            suspicionScore += 30;
+            reasons.push(`Voted guilty for innocent players (${innocentGuiltyVotes} votes)`);
+        } else if (innocentGuiltyVotes === 1) {
+            suspicionScore += 15;
+            reasons.push(`Voted guilty for at least one innocent player`);
+        }
+
+        // Check if they ONLY accuse/vote for syndicates (suggests they know who they are)
+        const syndicateAccusations = votesFor - innocentAccusations;
+        const totalAccusations = votesFor;
+        if (totalAccusations >= 2 && syndicateAccusations === totalAccusations) {
+            // They ONLY accused syndicates - very suspicious pattern
+            suspicionScore += 35;
+            reasons.push(`Only accused syndicate members - too informed? (${totalAccusations}/${syndicateAccusations} accusations)`);
+        }
+
+        // Check guilty vote pattern - if they ONLY voted guilty for syndicates
+        const syndicateGuiltyVotes = targetHistory.trialVotes 
+            ? targetHistory.trialVotes.filter(v => v === 'guilty').length 
+            : 0;
+        const innocentVerdictCount = innocentGuiltyVotes;
+        if (syndicateGuiltyVotes >= 2 && innocentVerdictCount === 0) {
+            // They ONLY voted guilty for syndicates
+            suspicionScore += 30;
+            reasons.push(`Consistently votes guilty only for syndicate members - highly suspicious (${syndicateGuiltyVotes} guilty votes, all syndicate)`);
+        }
+
+        // Conversely, if an innocent player only accuses syndicates, reduce suspicion
+        if (innocentAccusations === 0 && totalAccusations >= 2) {
+            suspicionScore -= 20;
+            reasons.push(`Always accuses syndicate members - excellent judgment`);
         }
 
         // Determine level based on score
