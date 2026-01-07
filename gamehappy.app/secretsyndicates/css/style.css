@@ -2381,6 +2381,7 @@ h3 {
     padding: 10px;
     color: var(--text-light);
     font-size: 0.9rem;
+    vertical-align: middle;
 }
 
 .players-stats-table td:last-child {
@@ -2395,12 +2396,12 @@ h3 {
 
 .status-badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.85rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 .status-badge.alive {
