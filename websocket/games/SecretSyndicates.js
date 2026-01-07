@@ -536,11 +536,23 @@ class SecretSyndicates extends GameManager {
         this.trialVotes.set(playerToken, normalizedVote);
         console.log(`[${this.gameCode}] Trial vote recorded: ${playerToken} -> ${normalizedVote}. Total votes: ${this.trialVotes.size}`);
         
-        // Track voting history
+        // Track voting history - record voter's own voting pattern
         if (!this.votingHistory[playerToken]) {
             this.votingHistory[playerToken] = { accusationVotes: [], trialVotes: [], dayVotes: [] };
         }
         this.votingHistory[playerToken].trialVotes.push(normalizedVote);
+        
+        // Also track guilt votes AGAINST the accused player (for suspicion calculation)
+        if (this.accusedPlayer && normalizedVote === 'guilty') {
+            if (!this.votingHistory[this.accusedPlayer]) {
+                this.votingHistory[this.accusedPlayer] = { accusationVotes: [], trialVotes: [], dayVotes: [] };
+            }
+            // Use a format like "guilty-from-X" to track who voted guilty for them
+            if (!this.votingHistory[this.accusedPlayer].verdictGuiltyVotes) {
+                this.votingHistory[this.accusedPlayer].verdictGuiltyVotes = [];
+            }
+            this.votingHistory[this.accusedPlayer].verdictGuiltyVotes.push(playerToken);
+        }
         
         return { success: true };
     }
@@ -1061,6 +1073,19 @@ class SecretSyndicates extends GameManager {
                 suspicionScore -= 10;
                 reasons.push(`Consistent guilty votes - seems aligned with eliminating suspects`);
             }
+        }
+
+        // Check verdict guilty votes received (how many guilty votes they received during verdicts)
+        const verdictGuiltyVotesAgainst = targetHistory.verdictGuiltyVotes ? targetHistory.verdictGuiltyVotes.length : 0;
+        if (verdictGuiltyVotesAgainst >= 3) {
+            suspicionScore += 50;
+            reasons.push(`Received multiple guilty votes during trials - strong suspicion (${verdictGuiltyVotesAgainst} guilty votes)`);
+        } else if (verdictGuiltyVotesAgainst === 2) {
+            suspicionScore += 35;
+            reasons.push(`Received guilty votes during trials (${verdictGuiltyVotesAgainst} votes)`);
+        } else if (verdictGuiltyVotesAgainst === 1) {
+            suspicionScore += 20;
+            reasons.push(`At least one guilty vote during trial`);
         }
 
         // Determine level based on score
