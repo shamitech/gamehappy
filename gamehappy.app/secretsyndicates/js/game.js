@@ -75,36 +75,21 @@ class Game {
             { name: 'E', token: 'test-player-5', role: 'Bystander', alive: true }
         ];
         
-        // Generate random suspicion levels for demonstration
-        const generateRandomSuspicion = () => {
-            const score = Math.floor(Math.random() * 101);
-            let level = 'Clear';
-            if (score >= 90) {
-                level = 'Very Suspicious';
-            } else if (score >= 65) {
-                level = 'Suspicious';
-            } else if (score >= 40) {
-                level = 'Moderate';
-            } else if (score >= 15) {
-                level = 'Low';
-            }
-            return { level, score, reasons: [`Random suspicion score: ${score}/100`] };
-        };
-        
+        // Create suspicion levels that vary based on voting patterns
         const playerSuspicionLevels = {
-            'test-player-1': generateRandomSuspicion(),
-            'test-player-2': generateRandomSuspicion(),
-            'test-player-3': generateRandomSuspicion(),
-            'test-player-4': generateRandomSuspicion(),
-            'test-player-5': generateRandomSuspicion()
+            'test-player-1': { level: 'Suspicious', score: 72, reasons: ['3 players voted to accuse them', 'Voted not guilty multiple times'] },
+            'test-player-2': { level: 'Clear', score: 5, reasons: ['Clean voting record - consistently accurate'] },
+            'test-player-3': { level: 'Very Suspicious', score: 85, reasons: ['2 players voted to accuse them', 'Frequently voted not guilty - defensive'] },
+            'test-player-4': { level: 'Moderate', score: 45, reasons: ['Accused 2 times across rounds', 'Mixed voting pattern'] },
+            'test-player-5': { level: 'Low', score: 25, reasons: ['1 player voted to accuse them'] }
         };
         
         // Create voting history with new per-round structure
         const votingHistory = {
-            'test-player-1': { roundVotes: { 1: { accused: 'test-player-2', verdict: 'guilty' }, 2: { accused: 'test-player-3', verdict: 'guilty' }, 3: { accused: 'test-player-4', verdict: 'guilty' } } },
+            'test-player-1': { roundVotes: { 1: { accused: 'test-player-2', verdict: 'guilty' }, 2: { accused: 'test-player-3', verdict: 'not-guilty' }, 3: { accused: 'test-player-4', verdict: 'not-guilty' } } },
             'test-player-2': { roundVotes: { 1: { accused: 'test-player-1', verdict: 'guilty' }, 2: { accused: 'test-player-1', verdict: 'guilty' }, 3: { accused: 'test-player-5', verdict: 'guilty' } } },
-            'test-player-3': { roundVotes: { 1: { accused: 'test-player-4', verdict: 'not-guilty' }, 2: { accused: 'test-player-1', verdict: 'guilty' }, 3: { accused: 'test-player-2', verdict: 'guilty' } } },
-            'test-player-4': { roundVotes: { 1: { accused: 'test-player-5', verdict: 'guilty' }, 2: { accused: 'test-player-2', verdict: 'guilty' }, 3: { accused: 'test-player-3', verdict: 'guilty' } } },
+            'test-player-3': { roundVotes: { 1: { accused: 'test-player-4', verdict: 'not-guilty' }, 2: { accused: 'test-player-1', verdict: 'guilty' }, 3: { accused: 'test-player-2', verdict: 'not-guilty' } } },
+            'test-player-4': { roundVotes: { 1: { accused: 'test-player-5', verdict: 'guilty' }, 2: { accused: 'test-player-2', verdict: 'not-guilty' }, 3: { accused: 'test-player-3', verdict: 'guilty' } } },
             'test-player-5': { roundVotes: { 1: { accused: 'test-player-3', verdict: 'guilty' }, 2: { accused: 'test-player-4', verdict: 'guilty' }, 3: { accused: 'test-player-1', verdict: 'guilty' } } }
         };
         
@@ -2618,7 +2603,7 @@ class Game {
         // Build table headers with rounds
         const roundHeaders = [];
         for (let i = 1; i <= maxRounds; i++) {
-            roundHeaders.push(`<th colspan="2" style="text-align: center;">Round ${i}</th>`);
+            roundHeaders.push(`<th style="text-align: center;">Round ${i}</th>`);
         }
 
         const tableHTML = `

@@ -2400,9 +2400,10 @@ h3 {
 
 .round-data {
     text-align: center;
-    font-size: 0.8rem;
-    min-width: 45px;
-    padding: 8px 5px;
+    font-size: 0.85rem;
+    min-width: 65px;
+    padding: 8px 6px;
+    white-space: nowrap;
 }
 
 .player-name {
