@@ -2625,22 +2625,21 @@ class Game {
                 
                 // Determine who was accused and how they voted
                 const accusedPlayer = accused ? allPlayers.find(p => p.token === accused) : null;
-                const accusedName = accusedPlayer ? accusedPlayer.name.charAt(0) : '-';
+                const accusedName = accusedPlayer ? accusedPlayer.name : '-';
                 
                 // Determine verdict display
-                let verdictDisplay = '-';
-                if (verdict && mostAccused === accused) {
-                    // They voted on the most accused player
-                    verdictDisplay = verdict === 'guilty' ? '✓G' : '✗G';
-                } else if (verdict) {
-                    // They voted but not on the most accused
-                    verdictDisplay = verdict === 'guilty' ? 'G' : 'N';
+                let verdictIcon = '';
+                if (verdict === 'guilty') {
+                    verdictIcon = '✓';
+                } else if (verdict === 'not guilty') {
+                    verdictIcon = '✗';
                 }
                 
                 roundCells.push({
                     accused: accusedName,
-                    verdict: verdictDisplay,
-                    display: `${accusedName} ${verdictDisplay}`
+                    verdict: verdictIcon,
+                    display: accusedName,
+                    displayWithVerdict: verdictIcon
                 });
             }
             
@@ -2691,9 +2690,6 @@ class Game {
         const tableHTML = `
             <div class="players-stats-section">
                 <h3 style="margin-bottom: 15px;">📊 Final Results</h3>
-                <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 10px;">
-                    Legend: First letter = most accused player | ✓G = voted guilty | ✗G = voted not guilty | G = voted guilty (different target) | N = voted not guilty
-                </p>
                 <div class="table-wrapper">
                     <table class="players-stats-table">
                         <thead>
@@ -2719,7 +2715,14 @@ class Game {
                                             ${player.alive ? 'Alive' : 'Out'}
                                         </span>
                                     </td>
-                                    ${player.roundCells.map(cell => `<td class="round-data" title="${cell.display}">${cell.display}</td>`).join('')}
+                                    ${player.roundCells.map(cell => `
+                                        <td class="round-data" style="text-align: center; padding: 8px;">
+                                            <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                                                <span style="background: #4a5f8f; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; white-space: nowrap;">${cell.display}</span>
+                                                ${cell.displayWithVerdict ? `<span style="background: ${cell.displayWithVerdict === '✓' ? '#2d5a2d' : '#5a2d2d'}; color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold;">${cell.displayWithVerdict}</span>` : ''}
+                                            </div>
+                                        </td>
+                                    `).join('')}
                                     <td class="suspicion-cell">
                                         <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionDisplay}</span>
                                     </td>
