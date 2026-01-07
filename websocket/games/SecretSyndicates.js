@@ -1021,6 +1021,8 @@ class SecretSyndicates extends GameManager {
         // Get voting history for this player
         const targetHistory = this.votingHistory[targetToken] || { accusationVotes: [], trialVotes: [], dayVotes: [] };
 
+        // ==================== INCOMING SUSPICION (votes/accusations against them) ====================
+        
         // Check votes AGAINST the target (how many times voted for them in day/accusation votes)
         let votesAgainst = 0;
         
@@ -1043,6 +1045,38 @@ class SecretSyndicates extends GameManager {
             votesAgainst += targetHistory.dayVotes.length;
         }
 
+        // High number of votes against suggests they're a suspect
+        const totalPlayers = this.getPlayers().length;
+        const percentVotedAgainst = totalPlayers > 0 ? (votesAgainst / totalPlayers) * 100 : 0;
+        
+        if (votesAgainst >= 2) {
+            suspicionScore += (votesAgainst * 15);  // +15 per vote against them
+            reasons.push(`${votesAgainst} players voted to accuse them`);
+        }
+
+        // Check verdict guilty votes received (how many guilty votes they received during verdicts)
+        const verdictGuiltyVotesAgainst = targetHistory.verdictGuiltyVotes ? targetHistory.verdictGuiltyVotes.length : 0;
+        if (verdictGuiltyVotesAgainst >= 1) {
+            suspicionScore += (verdictGuiltyVotesAgainst * 25);  // +25 per guilty vote
+            reasons.push(`${verdictGuiltyVotesAgainst} guilty vote(s) received during verdict`);
+        }
+
+        // ==================== OUTGOING SUSPICION (their voting patterns) ====================
+        
+        // Check if they accused innocent players (poor judgment or suspicious behavior)
+        const innocentAccusations = targetHistory.innocentAccusations ? targetHistory.innocentAccusations.length : 0;
+        if (innocentAccusations >= 1) {
+            suspicionScore += (innocentAccusations * 20);  // +20 per innocent accused
+            reasons.push(`Accused ${innocentAccusations} innocent player(s)`);
+        }
+
+        // Check if they voted guilty for innocent players (another bad vote pattern)
+        const innocentGuiltyVotes = targetHistory.innocentGuiltyVotes ? targetHistory.innocentGuiltyVotes.length : 0;
+        if (innocentGuiltyVotes >= 1) {
+            suspicionScore += (innocentGuiltyVotes * 30);  // +30 per innocent guilty vote
+            reasons.push(`Voted guilty for ${innocentGuiltyVotes} innocent player(s)`);
+        }
+
         // Check votes FOR the target during accusations (how many people they accused)
         let votesFor = 0;
         if (targetHistory.accusationVotes) {
@@ -1056,31 +1090,10 @@ class SecretSyndicates extends GameManager {
             }
         }
 
-        // High number of votes against suggests they're a suspect
-        const totalPlayers = this.getPlayers().length;
-        const percentVotedAgainst = totalPlayers > 0 ? (votesAgainst / totalPlayers) * 100 : 0;
-        
-        if (percentVotedAgainst >= 60) {
-            suspicionScore += 40;
-            reasons.push(`Multiple players voted to eliminate them (${votesAgainst} votes)`);
-        } else if (percentVotedAgainst >= 40) {
-            suspicionScore += 25;
-            reasons.push(`Several players suspected them (${votesAgainst} votes)`);
-        } else if (percentVotedAgainst >= 20) {
-            suspicionScore += 15;
-            reasons.push(`Some suspicion detected (${votesAgainst} votes)`);
-        }
-
         // If they accused many people, they might be trying to throw suspicion
-        if (votesFor >= 5) {
-            suspicionScore += 30;
-            reasons.push(`Aggressive voting pattern - accused many players (${votesFor} accusations)`);
-        } else if (votesFor >= 3) {
-            suspicionScore += 20;
-            reasons.push(`Made multiple accusations (${votesFor})`);
-        } else if (votesFor >= 2) {
-            suspicionScore += 10;
-            reasons.push(`Made several accusations (${votesFor})`);
+        if (votesFor >= 4) {
+            suspicionScore += 25;
+            reasons.push(`Aggressive voting pattern - accused ${votesFor} players`);
         }
 
         // Check voting consistency with guilty votes
@@ -1089,61 +1102,19 @@ class SecretSyndicates extends GameManager {
             const notGuiltyVotes = targetHistory.trialVotes.filter(v => v === 'notguilty').length;
             
             // If they voted not guilty a lot, they might be defending syndicate members
-            if (notGuiltyVotes > guiltyVotes) {
-                suspicionScore += 15;
-                reasons.push(`Frequently voted not guilty - possibly defending allies`);
-            } else if (guiltyVotes > notGuiltyVotes) {
-                suspicionScore -= 10;
-                reasons.push(`Consistent guilty votes - seems aligned with eliminating suspects`);
+            if (notGuiltyVotes > guiltyVotes && notGuiltyVotes >= 2) {
+                suspicionScore += (notGuiltyVotes * 15);  // Defensive voting
+                reasons.push(`Frequently voted not guilty (${notGuiltyVotes} times) - possibly protecting allies`);
             }
-        }
-
-        // Check verdict guilty votes received (how many guilty votes they received during verdicts)
-        const verdictGuiltyVotesAgainst = targetHistory.verdictGuiltyVotes ? targetHistory.verdictGuiltyVotes.length : 0;
-        if (verdictGuiltyVotesAgainst >= 3) {
-            suspicionScore += 50;
-            reasons.push(`Received multiple guilty votes during trials - strong suspicion (${verdictGuiltyVotesAgainst} guilty votes)`);
-        } else if (verdictGuiltyVotesAgainst === 2) {
-            suspicionScore += 35;
-            reasons.push(`Received guilty votes during trials (${verdictGuiltyVotesAgainst} votes)`);
-        } else if (verdictGuiltyVotesAgainst === 1) {
-            suspicionScore += 20;
-            reasons.push(`At least one guilty vote during trial`);
-        }
-
-        // Check if they accused innocent players (poor judgment or suspicious behavior)
-        const innocentAccusations = targetHistory.innocentAccusations ? targetHistory.innocentAccusations.length : 0;
-        if (innocentAccusations >= 4) {
-            suspicionScore += 40;
-            reasons.push(`Repeatedly accused innocent players - poor judgment or trying to hide (${innocentAccusations} accusations)`);
-        } else if (innocentAccusations >= 2) {
-            suspicionScore += 25;
-            reasons.push(`Accused innocent players multiple times (${innocentAccusations} accusations)`);
-        } else if (innocentAccusations === 1) {
-            suspicionScore += 10;
-            reasons.push(`Accused an innocent player at least once`);
-        }
-
-        // Check if they voted guilty for innocent players (another bad vote pattern)
-        const innocentGuiltyVotes = targetHistory.innocentGuiltyVotes ? targetHistory.innocentGuiltyVotes.length : 0;
-        if (innocentGuiltyVotes >= 3) {
-            suspicionScore += 45;
-            reasons.push(`Voted guilty for innocent players multiple times - major red flag (${innocentGuiltyVotes} votes)`);
-        } else if (innocentGuiltyVotes === 2) {
-            suspicionScore += 30;
-            reasons.push(`Voted guilty for innocent players (${innocentGuiltyVotes} votes)`);
-        } else if (innocentGuiltyVotes === 1) {
-            suspicionScore += 15;
-            reasons.push(`Voted guilty for at least one innocent player`);
         }
 
         // Check if they ONLY accuse/vote for syndicates (suggests they know who they are)
         const syndicateAccusations = votesFor - innocentAccusations;
         const totalAccusations = votesFor;
-        if (totalAccusations >= 2 && syndicateAccusations === totalAccusations) {
+        if (totalAccusations >= 3 && syndicateAccusations === totalAccusations && innocentAccusations === 0) {
             // They ONLY accused syndicates - very suspicious pattern
-            suspicionScore += 35;
-            reasons.push(`Only accused syndicate members - too informed? (${totalAccusations}/${syndicateAccusations} accusations)`);
+            suspicionScore += 40;
+            reasons.push(`ONLY accused syndicate members (${totalAccusations}/${syndicateAccusations}) - too informed?`);
         }
 
         // Check guilty vote pattern - if they ONLY voted guilty for syndicates
@@ -1153,25 +1124,43 @@ class SecretSyndicates extends GameManager {
         const innocentVerdictCount = innocentGuiltyVotes;
         if (syndicateGuiltyVotes >= 2 && innocentVerdictCount === 0) {
             // They ONLY voted guilty for syndicates
-            suspicionScore += 30;
-            reasons.push(`Consistently votes guilty only for syndicate members - highly suspicious (${syndicateGuiltyVotes} guilty votes, all syndicate)`);
+            suspicionScore += 35;
+            reasons.push(`ONLY voted guilty for syndicates (${syndicateGuiltyVotes} times) - highly suspicious`);
         }
 
+        // ==================== RUMORS ====================
+        // Check if they have rumors about them (community suspicion)
+        let rumorsAgainstThem = 0;
+        if (this.gameNotes && this.gameNotes.length > 0) {
+            // Check if any game notes (rumors) mention this player
+            for (const note of this.gameNotes) {
+                if (note.includes(targetPlayer.name)) {
+                    rumorsAgainstThem++;
+                }
+            }
+        }
+        
+        if (rumorsAgainstThem >= 1) {
+            suspicionScore += (rumorsAgainstThem * 35);  // +35 per rumor
+            reasons.push(`${rumorsAgainstThem} rumor(s) in circulation about them`);
+        }
+
+        // ==================== BONUS FOR CLEAR INNOCENTS ====================
         // Conversely, if an innocent player only accuses syndicates, reduce suspicion
-        if (innocentAccusations === 0 && totalAccusations >= 2) {
-            suspicionScore -= 20;
-            reasons.push(`Always accuses syndicate members - excellent judgment`);
+        if (innocentAccusations === 0 && innocentGuiltyVotes === 0 && totalAccusations >= 2) {
+            suspicionScore -= 15;
+            reasons.push(`Clean voting record - consistently accurate`);
         }
 
         // Determine level based on score
         let level = 'Clear';
-        if (suspicionScore >= 80) {
+        if (suspicionScore >= 90) {
             level = 'Very Suspicious';
-        } else if (suspicionScore >= 60) {
+        } else if (suspicionScore >= 65) {
             level = 'Suspicious';
         } else if (suspicionScore >= 40) {
             level = 'Moderate';
-        } else if (suspicionScore >= 20) {
+        } else if (suspicionScore >= 15) {
             level = 'Low';
         }
 
