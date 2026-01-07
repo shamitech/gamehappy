@@ -295,6 +295,7 @@ class SecretSyndicates extends GameManager {
                 if (nightResult.wasSaved) {
                     console.log(`[${this.gameCode}] Body Guard saved the target - no victim this round`);
                     this.lastVictim = null;
+                    this.lastMurderTarget = null;
                     this.murderEliminatedPlayer = null;
                     // Generate the saved story
                     this.currentPhaseStory = this.getMurderStory();
@@ -1534,7 +1535,7 @@ class SecretSyndicates extends GameManager {
             return { success: false, message: 'Cannot protect yourself' };
         }
         
-        const result = this.setBodyGuardProtection(targetToken);
+        const result = this.setBodyGuardProtection(playerToken, targetToken);
         console.log(`[${this.gameCode}] Body Guard ${playerToken} protecting ${targetToken}`);
         
         return result;
