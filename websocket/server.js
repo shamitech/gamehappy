@@ -223,7 +223,21 @@ io.on('connection', (socket) => {
           eventResult: result
         });
 
-        // Handle syndicate real-time updates (night-vote or night-lock)
+        // Broadcast to admin watchers
+        const player = game.getPlayers().find(p => p.token === playerToken);
+        if (player) {
+          io.to(`admin-watch-${game.gameCode}`).emit('player-state-update', {
+            gameCode: game.gameCode,
+            playerToken: playerToken,
+            playerName: player.name,
+            role: player.role,
+            alive: player.alive,
+            phase: game.currentPhase,
+            screen: eventName,
+            action: eventName,
+            state: result.success ? 'Success' : 'Failed'
+          });
+        }        // Handle syndicate real-time updates (night-vote or night-lock)
         if (result.syndicateUpdate && (eventName === 'night-vote' || eventName === 'night-lock')) {
           console.log(`[${game.gameCode}] Broadcasting syndicate update to syndicate members`);
           
@@ -911,6 +925,60 @@ io.on('connection', (socket) => {
       });
     }
     callback({ games });
+  });
+
+  /**
+   * Admin: Get list of all games
+   */
+  socket.on('admin-get-games', (data, callback) => {
+    const games = {};
+    for (const [code, game] of gameServer.games) {
+      games[code] = {
+        status: game.gameState,
+        players: game.getPlayers() || [],
+        phase: game.currentPhase || 'Unknown',
+        playerCount: (game.getPlayers() || []).length,
+        timestamp: Date.now()
+      };
+    }
+    callback(games);
+  });
+
+  /**
+   * Admin: Start watching a specific game
+   */
+  socket.on('admin-watch-game', (data) => {
+    if (!data.gameCode) return;
+    
+    socket.join(`admin-watch-${data.gameCode}`);
+    console.log(`Admin joined watch room for game ${data.gameCode}`);
+    
+    // Send initial state for all players
+    const game = gameServer.games.get(data.gameCode);
+    if (game) {
+      const players = game.getPlayers() || [];
+      for (const player of players) {
+        socket.emit('player-state-update', {
+          gameCode: data.gameCode,
+          playerToken: player.token,
+          playerName: player.name,
+          role: player.role,
+          alive: player.alive
+        });
+      }
+    }
+  });
+
+  /**
+   * Admin: Stop watching a game
+   */
+  socket.on('admin-stop-watching', () => {
+    // Leave all admin watch rooms
+    for (const room of socket.rooms) {
+      if (room.startsWith('admin-watch-')) {
+        socket.leave(room);
+      }
+    }
   });
 });
 
