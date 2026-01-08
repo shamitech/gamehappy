@@ -356,8 +356,8 @@
                 const token = localStorage.getItem('adminToken');
                 if (token) {
                     this.isAuthenticated = true;
-                    this.showDashboard();
                     this.connectWebSocket();
+                    setTimeout(() => this.showDashboard(), 500);
                 }
             }
 
@@ -371,8 +371,8 @@
                     errorEl.style.display = 'none';
                     this.isAuthenticated = true;
                     localStorage.setItem('adminToken', 'admin-' + Date.now());
-                    this.showDashboard();
                     this.connectWebSocket();
+                    setTimeout(() => this.showDashboard(), 500);
                 } else {
                     errorEl.textContent = 'Invalid username or password';
                     errorEl.style.display = 'block';
@@ -423,6 +423,10 @@
 
                 this.socket.on('connect', () => {
                     console.log('Connected to WebSocket');
+                    // Start refreshing games once connected
+                    if (this.isAuthenticated) {
+                        this.refreshGames();
+                    }
                 });
 
                 this.socket.on('games-list', (data) => {
