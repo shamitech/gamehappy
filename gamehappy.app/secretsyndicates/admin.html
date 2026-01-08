@@ -313,7 +313,6 @@
             background: rgba(96, 165, 250, 0.2);
             color: #60a5fa;
         }
-        }
 
         .game-status {
             display: inline-block;
@@ -986,9 +985,17 @@
                             <div class="history-game-details">${game.playerCount} players</div>
                             <div class="history-game-winner">🏆 ${game.winner === 'Innocents' ? '👤 Innocents' : '🔴 Syndicate'} won</div>
                         </div>
-                        <button class="delete-game-btn" onclick="adminPanel.deleteGameHistory('${game.id}')">✕</button>
+                        <button class="delete-game-btn" data-game-id="${game.id}">✕</button>
                     </div>
                 `).join('');
+
+                // Add event listeners to delete buttons
+                historyList.querySelectorAll('.delete-game-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const gameId = e.target.dataset.gameId;
+                        this.deleteGameHistory(gameId);
+                    });
+                });
 
                 document.getElementById('month-total').textContent = monthTotal;
                 document.getElementById('year-total').textContent = yearTotal;
@@ -1006,6 +1013,7 @@
                     })
                     .catch(err => console.error('[ADMIN] Error deleting game:', err));
             }
+        }
 
         const adminPanel = new AdminPanel();
     </script>
