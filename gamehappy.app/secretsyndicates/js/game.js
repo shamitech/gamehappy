@@ -387,6 +387,11 @@ class Game {
                 console.log('Game ended event received:', data);
                 this.handleGameEnded(data);
             });
+            
+            this.socket.on('play-again-lobby', (data) => {
+                console.log('Play again - moving to new lobby:', data);
+                this.handlePlayAgainLobby(data);
+            });
 
             this.socket.on('disconnect', () => {
                 console.log('Disconnected from server');
@@ -2565,6 +2570,7 @@ class Game {
         }
         
         resultsScreen.style.display = 'block';
+        resultsScreen.style.zIndex = '9999';
         
         // Update results content
         const resultsTitle = document.getElementById('results-title');
@@ -2761,7 +2767,7 @@ class Game {
         // Build table headers with rounds
         const roundHeaders = [];
         for (let i = 1; i <= maxRounds; i++) {
-            roundHeaders.push(`<th style="text-align: center;">Round ${i}</th>`);
+            roundHeaders.push(`<th style="text-align: center; font-size: 0.9em;"><div style="min-width: 100px;">Round ${i}</div><div style="font-size: 0.8em; font-weight: normal; color: var(--text-muted);">Accused/Vote</div></th>`);
         }
 
         const tableHTML = `
@@ -2794,9 +2800,10 @@ class Game {
                                     </td>
                                     ${player.roundCells.map(cell => `
                                         <td class="round-data" style="text-align: center; padding: 8px;">
-                                            <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                                                <span style="background: #4a5f8f; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.85em; white-space: nowrap;">${cell.display}</span>
-                                                ${cell.displayWithVerdict ? `<span style="background: ${cell.displayWithVerdict === '✓' ? '#2d5a2d' : '#5a2d2d'}; color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold;">${cell.displayWithVerdict}</span>` : ''}
+                                            <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap; flex-direction: column;">
+                                                <span style="background: #4a5f8f; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; white-space: nowrap;">${cell.display}</span>
+                                                ${cell.displayWithVerdict === '✓' ? `<span style="background: #2d5a2d; color: #4ade80; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">✓ Not Guilty</span>` : ''}
+                                                ${cell.displayWithVerdict === '✗' ? `<span style="background: #5a2d2d; color: #ff6b6b; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">✗ Guilty</span>` : ''}
                                             </div>
                                         </td>
                                     `).join('')}
@@ -2844,6 +2851,13 @@ class Game {
                     <div id="results-details" class="results-details" style="margin-bottom: 40px;"></div>
                     
                     <div id="players-table-container" class="players-table-container"></div>
+                    
+                    <div class="results-actions" style="margin-top: 40px; text-align: center;">
+                        <button id="btn-play-again" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">
+                            🔄 Play Again
+                        </button>
+                        <p id="play-again-status" style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;"></p>
+                    </div>
                 </div>
             </div>
         `;
@@ -2854,6 +2868,32 @@ class Game {
         } else {
             document.body.appendChild(screen);
         }
+        
+        // Bind play again button
+        document.getElementById('btn-play-again').addEventListener('click', () => this.playAgain());
+    }
+    
+    playAgain() {
+        const statusEl = document.getElementById('play-again-status');
+        const btn = document.getElementById('btn-play-again');
+        
+        if (!this.socket || !this.socket.connected) {
+            statusEl.textContent = 'Not connected to server. Please refresh the page.';
+            return;
+        }
+        
+        btn.disabled = true;
+        statusEl.textContent = 'Creating new lobby...';
+        
+        this.socket.emit('play-again', { gameCode: this.gameCode }, (response) => {
+            if (response.success) {
+                console.log('Play again - new game created:', response.gameCode);
+                // Will receive 'play-again-lobby' event with new game info
+            } else {
+                btn.disabled = false;
+                statusEl.textContent = response.message || 'Failed to create new game';
+            }
+        });
     }
     
     onNextRoundStart(data) {
@@ -2976,12 +3016,44 @@ class Game {
         });
     }
     
-    playAgain() {
-        console.log('Host clicked Play Again');
-        this.socket.emit('game-event', {
-            eventName: 'play-again',
-            payload: {}
+    handlePlayAgainLobby(data) {
+        console.log('handlePlayAgainLobby called with:', data);
+        
+        // Reset all local state
+        this.isEliminated = false;
+        this.eliminationData = null;
+        this.phase3Done = false;
+        this.phase4Voted = false;
+        this.phase5Voted = false;
+        this.isReady = false;
+        this.startGameInProgress = false;
+        this.syndicateState = null;
+        this.detectiveState = null;
+        this.bystanderState = null;
+        this.bodyGuardState = null;
+        this.playerDone = false;
+        this.phase2Ready = false;
+        this.caseNotes = {};
+        this.selectedCaseNotesPlayer = null;
+        this.role = null;
+        this.votingHistory = {};
+        
+        // Update game code and host status
+        this.gameCode = data.gameCode;
+        this.isHost = data.isHost;
+        console.log('New game code:', this.gameCode, 'isHost:', this.isHost);
+        
+        // Save new session
+        this.saveSession();
+        
+        // Hide all screens
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.style.display = 'none';
         });
+        
+        // Show lobby screen
+        this.showScreen('lobby-screen');
+        this.updateLobby(data.game);
     }
     
     onPlayAgain(data) {

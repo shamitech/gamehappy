@@ -821,6 +821,83 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Play Again - Create new lobby with same players
+   */
+  socket.on('play-again', (data, callback) => {
+    try {
+      const { gameCode: oldGameCode } = data;
+      console.log(`Play Again requested for game ${oldGameCode} by player ${playerToken}`);
+      
+      // Get the old game
+      const oldGame = gameServer.games.get(oldGameCode);
+      if (!oldGame) {
+        return callback({ success: false, message: 'Game not found' });
+      }
+      
+      // Get all players from old game (including eliminated)
+      const allPlayers = oldGame.getPlayers();
+      if (allPlayers.length === 0) {
+        return callback({ success: false, message: 'No players in game' });
+      }
+      
+      // Determine original host
+      const originalHost = oldGame.hostToken;
+      const hostPlayer = allPlayers.find(p => p.token === originalHost) || allPlayers[0];
+      
+      // Create new game with the host
+      const createResult = gameServer.createGame('secretsyndicates', hostPlayer.token, hostPlayer.name);
+      if (!createResult.success) {
+        return callback({ success: false, message: 'Failed to create new game' });
+      }
+      
+      const newGameCode = createResult.gameCode;
+      const newGame = gameServer.games.get(newGameCode);
+      
+      // Copy settings from old game
+      if (oldGame.settings && newGame) {
+        newGame.settings = { ...oldGame.settings };
+      }
+      
+      // Add all other players to the new game
+      for (const player of allPlayers) {
+        if (player.token !== hostPlayer.token) {
+          gameServer.joinGame(newGameCode, player.token, player.name);
+        }
+      }
+      
+      // Move all players' sockets to new game room
+      for (const [socketId, playerSocket] of io.sockets.sockets) {
+        const pToken = playerSocket.handshake.query.token || socketId;
+        const playerInGame = allPlayers.find(p => p.token === pToken);
+        
+        if (playerInGame) {
+          // Leave old room, join new room
+          playerSocket.leave(`game-${oldGameCode}`);
+          playerSocket.join(`game-${newGameCode}`);
+          
+          // Send play-again-lobby event to each player
+          const isHost = pToken === hostPlayer.token;
+          playerSocket.emit('play-again-lobby', {
+            gameCode: newGameCode,
+            game: gameServer.getGameLobbyInfo(newGameCode),
+            isHost: isHost
+          });
+          console.log(`Moved player ${pToken} to new game ${newGameCode}, isHost: ${isHost}`);
+        }
+      }
+      
+      // Clean up old game
+      gameServer.games.delete(oldGameCode);
+      console.log(`Deleted old game ${oldGameCode}, created new game ${newGameCode}`);
+      
+      callback({ success: true, gameCode: newGameCode });
+    } catch (err) {
+      console.error('Error in play-again:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
    * Debug: List active games (remove in production)
    */
   socket.on('debug-games', (callback) => {

@@ -332,6 +332,21 @@ class SecretSyndicates extends GameManager {
                     this.currentPhaseStory = this.getMurderStory();
                 }
                 this.playersReady.clear();
+                
+                // Check win conditions after night phase (someone may have been assassinated)
+                const nightWinResult = this.checkWinConditions();
+                if (nightWinResult) {
+                    console.log(`[${this.gameCode}] Game ended after assassination: ${nightWinResult.winner} wins`);
+                    this.currentPhase = 'ended';
+                    return {
+                        success: true,
+                        phase: 'murder', // Still show murder phase first
+                        previousPhase: previousPhase,
+                        round: this.currentRound,
+                        gameEnded: true,
+                        winCondition: nightWinResult
+                    };
+                }
                 break;
             case 'murder':
                 this.currentPhase = 'trial';
