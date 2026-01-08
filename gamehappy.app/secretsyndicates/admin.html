@@ -480,6 +480,7 @@
             startListeningToGame(gameCode) {
                 if (this.socket) {
                     this.playerScreens = {};
+                    console.log(`[ADMIN] Starting to watch game ${gameCode}`);
                     this.socket.emit('admin-watch-game', { gameCode });
                 }
             }
@@ -501,20 +502,24 @@
 
                 playersGrid.innerHTML = Object.entries(this.playerScreens).map(([token, data]) => `
                     <div class="player-viewport">
-                        <div class="player-name">${data.playerName}</div>
-                        <div class="player-role">Role: ${data.role || 'Unknown'}</div>
+                        <div class="player-name">${data.playerName} ${data.alive === false ? '(ELIMINATED)' : ''}</div>
+                        <div class="player-role">Role: ${data.role || 'Unknown'} | Phase: ${data.phase || 'N/A'}</div>
                         <div class="player-screen">
-                            <div>${this.formatPlayerState(data)}</div>
+                            ${this.formatPlayerState(data)}
                         </div>
                     </div>
                 `).join('');
             }
 
             formatPlayerState(data) {
-                let html = '';
+                let html = '<div style="font-size: 13px; line-height: 1.6;">';
+                
+                if (data.gameState) {
+                    html += `<p><strong>State:</strong> ${data.gameState}</p>`;
+                }
                 
                 if (data.phase) {
-                    html += `<h3>Phase: ${data.phase}</h3>`;
+                    html += `<p><strong>Phase:</strong> ${data.phase}</p>`;
                 }
                 
                 if (data.screen) {
@@ -522,18 +527,24 @@
                 }
                 
                 if (data.action) {
-                    html += `<p><strong>Action:</strong> ${data.action}</p>`;
+                    html += `<p><strong>Last Action:</strong> ${data.action}</p>`;
                 }
                 
                 if (data.state) {
-                    html += `<p><strong>State:</strong> ${data.state}</p>`;
+                    html += `<p><strong>Status:</strong> ${data.state}</p>`;
                 }
                 
                 if (data.alive !== undefined) {
-                    html += `<p><strong>Status:</strong> ${data.alive ? 'Alive' : 'Eliminated'}</p>`;
+                    const status = data.alive ? '✓ Alive' : '✗ Eliminated';
+                    html += `<p><strong>Status:</strong> ${status}</p>`;
                 }
                 
-                return html || '<p style="color: var(--text-muted);">Waiting for updates...</p>';
+                if (data.ready !== undefined) {
+                    html += `<p><strong>Ready:</strong> ${data.ready ? 'Yes' : 'No'}</p>`;
+                }
+                
+                html += '</div>';
+                return html.length > 60 ? html : '<p style="color: var(--text-muted);">Waiting for updates...</p>';
             }
         }
 

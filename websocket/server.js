@@ -956,19 +956,24 @@ io.on('connection', (socket) => {
     if (!data.gameCode) return;
     
     socket.join(`admin-watch-${data.gameCode}`);
-    console.log(`Admin joined watch room for game ${data.gameCode}`);
+    console.log(`[ADMIN] Admin joined watch room for game ${data.gameCode}`);
     
     // Send initial state for all players
     const game = gameServer.games.get(data.gameCode);
     if (game) {
       const players = game.getPlayers() || [];
+      console.log(`[ADMIN] Sending initial state for ${players.length} players in game ${data.gameCode}`);
+      
       for (const player of players) {
+        const playerState = gameServer.getGameStateForPlayer(player.token);
         socket.emit('player-state-update', {
           gameCode: data.gameCode,
           playerToken: player.token,
           playerName: player.name,
           role: player.role,
-          alive: player.alive
+          alive: player.alive,
+          phase: game.currentPhase,
+          gameState: playerState ? playerState.gameState : 'unknown'
         });
       }
     }
