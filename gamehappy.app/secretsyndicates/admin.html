@@ -642,8 +642,16 @@
             showDashboard() {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('admin-dashboard').style.display = 'block';
-                this.initializeYearSelect();
-                this.loadGameHistory();
+                try {
+                    this.initializeYearSelect();
+                } catch (e) {
+                    console.warn('[ADMIN] Error initializing year select:', e);
+                }
+                try {
+                    this.loadGameHistory();
+                } catch (e) {
+                    console.warn('[ADMIN] Error loading game history:', e);
+                }
                 this.showGamesView();
                 this.refreshGames();
             }
@@ -930,6 +938,10 @@
 
             initializeYearSelect() {
                 const yearSelect = document.getElementById('year-select');
+                if (!yearSelect) {
+                    console.warn('[ADMIN] year-select element not found');
+                    return;
+                }
                 const currentYear = new Date().getFullYear();
                 yearSelect.innerHTML = '';
                 for (let year = currentYear; year >= currentYear - 5; year--) {
