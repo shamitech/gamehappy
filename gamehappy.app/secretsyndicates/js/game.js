@@ -2781,7 +2781,7 @@ class Game {
                                 <th>Role</th>
                                 <th>Status</th>
                                 ${roundHeaders.join('')}
-                                <th>Suspicion</th>
+                                <th style="min-width: 200px;">Suspicion</th>
                             </tr>
                         </thead>
                         <tbody>
