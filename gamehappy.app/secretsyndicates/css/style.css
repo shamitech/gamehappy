@@ -2355,7 +2355,7 @@ h3 {
 
 .players-stats-table th {
     padding: 12px 10px;
-    text-align: left;
+    text-align: center;
     color: var(--primary-gold);
     font-family: 'Cinzel', serif;
     font-size: 0.85rem;
