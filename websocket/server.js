@@ -18,10 +18,41 @@ const io = new Server(server, {
   }
 });
 
+// Game history file path
+const GAME_HISTORY_FILE = './game-history.json';
+
+// Ensure game history file exists
+function ensureGameHistoryFile() {
+  if (!fs.existsSync(GAME_HISTORY_FILE)) {
+    fs.writeFileSync(GAME_HISTORY_FILE, JSON.stringify([], null, 2));
+  }
+}
+
+// Load game history from file
+function loadGameHistory() {
+  try {
+    ensureGameHistoryFile();
+    const data = fs.readFileSync(GAME_HISTORY_FILE, 'utf8');
+    return JSON.parse(data) || [];
+  } catch (err) {
+    console.error('Error loading game history:', err);
+    return [];
+  }
+}
+
+// Save game history to file
+function saveGameHistory(games) {
+  try {
+    fs.writeFileSync(GAME_HISTORY_FILE, JSON.stringify(games, null, 2));
+  } catch (err) {
+    console.error('Error saving game history:', err);
+  }
+}
+
 // Add CORS headers for HTTP requests
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://gamehappy.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   
   if (req.method === 'OPTIONS') {
@@ -30,8 +61,62 @@ app.use((req, res, next) => {
   next();
 });
 
+// API: Get game history for a specific month/year
+app.get('/api/game-history', (req, res) => {
+  try {
+    const month = req.query.month || new Date().getMonth().toString().padStart(2, '0');
+    const year = req.query.year || new Date().getFullYear();
+    
+    const games = loadGameHistory();
+    
+    // Filter games by month and year
+    const filteredGames = games.filter(game => {
+      const gameDate = new Date(game.completedAt);
+      const gameMonth = (gameDate.getMonth() + 1).toString().padStart(2, '0');
+      const gameYear = gameDate.getFullYear().toString();
+      return gameMonth === month && gameYear === year.toString();
+    });
+
+    // Sort by date descending
+    filteredGames.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+    // Calculate totals
+    const monthTotal = filteredGames.length;
+    const yearTotal = games.filter(game => new Date(game.completedAt).getFullYear().toString() === year.toString()).length;
+
+    res.json({
+      success: true,
+      games: filteredGames,
+      monthTotal,
+      yearTotal
+    });
+  } catch (err) {
+    console.error('Error fetching game history:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// API: Delete a game from history
+app.delete('/api/game-history/:gameId', (req, res) => {
+  try {
+    const gameId = req.params.gameId;
+    let games = loadGameHistory();
+    
+    games = games.filter(game => game.id !== gameId);
+    saveGameHistory(games);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error deleting game from history:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Initialize game server
 const gameServer = new GameServer();
+
+// Initialize game history file
+ensureGameHistoryFile();
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -364,6 +449,24 @@ io.on('connection', (socket) => {
               if (phaseResult.gameEnded && phaseResult.winCondition) {
                 // Game has ended
                 console.log(`[${game.gameCode}] GAME ENDED: ${phaseResult.winCondition.winner} wins (${phaseResult.winCondition.winType})`);
+                
+                // Save completed game to history
+                try {
+                  const gameHistories = loadGameHistory();
+                  gameHistories.push({
+                    id: `${game.gameCode}-${Date.now()}`,
+                    gameCode: game.gameCode,
+                    completedAt: new Date().toISOString(),
+                    playerCount: game.getPlayers().length,
+                    winner: phaseResult.winCondition.winner,
+                    winType: phaseResult.winCondition.winType,
+                    duration: phaseResult.winCondition.duration
+                  });
+                  saveGameHistory(gameHistories);
+                  console.log(`[HISTORY] Game ${game.gameCode} saved to history`);
+                } catch (historyErr) {
+                  console.error(`[HISTORY] Error saving game to history:`, historyErr);
+                }
                 
                 // Calculate suspicion levels for all players
                 const playerSuspicionLevels = {};
@@ -1037,6 +1140,7 @@ io.on('connection', (socket) => {
     }
   });
 });
+
 
 // TEST ENDPOINT - Creates a pre-populated game for quick testing
 app.get('/test-game', (req, res) => {

@@ -13,10 +13,148 @@
             color: var(--text-light);
         }
 
+        .admin-dashboard {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
         .admin-container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .dashboard-two-column {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .games-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-section {
+            display: flex;
+            flex-direction: column;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
             padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .history-section h3 {
+            color: var(--primary-gold);
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .month-year-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .month-year-selector select {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-light);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .game-history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-game-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--primary-gold);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-game-info {
+            flex: 1;
+        }
+
+        .history-game-date {
+            color: var(--primary-gold);
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .history-game-details {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .history-game-winner {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .delete-game-btn {
+            background: #ef4444;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .delete-game-btn:hover {
+            background: #dc2626;
+        }
+
+        .history-totals {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(212, 175, 55, 0.3);
+            font-size: 12px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            color: var(--text-muted);
+        }
+
+        .total-row.year-total {
+            color: var(--primary-gold);
+            font-weight: bold;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .games-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .login-screen {
@@ -129,25 +267,52 @@
             padding: 20px;
             cursor: pointer;
             transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .game-card:hover {
             background: rgba(212, 175, 55, 0.2);
-            transform: translateY(-5px);
+            transform: translateX(10px);
+        }
+
+        .game-card-content {
+            flex: 1;
         }
 
         .game-code {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             color: var(--primary-gold);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-family: 'Cinzel', serif;
         }
 
         .game-info {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
-            margin-bottom: 5px;
+            margin-bottom: 3px;
+        }
+
+        .game-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .status-active {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .status-completed {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
         }
 
         .game-status {
@@ -343,8 +508,48 @@
                     <p style="color: var(--text-muted); font-size: 14px;">Click on a game to monitor it in real-time</p>
                 </div>
 
-                <div class="games-list" id="games-list">
-                    <div class="empty-message">Loading games...</div>
+                <div class="dashboard-two-column">
+                    <div class="games-section">
+                        <div class="games-list" id="games-list">
+                            <div class="empty-message">Loading games...</div>
+                        </div>
+                    </div>
+
+                    <div class="history-section">
+                        <h3>📊 Game History</h3>
+                        <div class="month-year-selector">
+                            <select id="month-select">
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                            <select id="year-select">
+                                <!-- Will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="game-history-list" id="game-history-list">
+                            <div class="empty-message">No games played</div>
+                        </div>
+                        <div class="history-totals">
+                            <div class="total-row">
+                                <span>Games this month:</span>
+                                <span id="month-total">0</span>
+                            </div>
+                            <div class="total-row year-total">
+                                <span>Games this year:</span>
+                                <span id="year-total">0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="refresh-info">
@@ -389,6 +594,10 @@
                 
                 // Back button
                 document.getElementById('back-to-games-btn').addEventListener('click', () => this.showGamesView());
+                
+                // Month/Year selector
+                document.getElementById('month-select').addEventListener('change', () => this.loadGameHistory());
+                document.getElementById('year-select').addEventListener('change', () => this.loadGameHistory());
             }
 
             attemptAutoLogin() {
@@ -433,6 +642,8 @@
             showDashboard() {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('admin-dashboard').style.display = 'block';
+                this.initializeYearSelect();
+                this.loadGameHistory();
                 this.showGamesView();
                 this.refreshGames();
             }
@@ -716,7 +927,73 @@
                         return `${action}${detailStr ? ' ' + detailStr : ''}`;
                 }
             }
-        }
+
+            initializeYearSelect() {
+                const yearSelect = document.getElementById('year-select');
+                const currentYear = new Date().getFullYear();
+                yearSelect.innerHTML = '';
+                for (let year = currentYear; year >= currentYear - 5; year--) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    if (year === currentYear) option.selected = true;
+                    yearSelect.appendChild(option);
+                }
+            }
+
+            loadGameHistory() {
+                const month = document.getElementById('month-select').value;
+                const year = document.getElementById('year-select').value;
+                
+                // Fetch game history from server
+                fetch(`/api/game-history?month=${month}&year=${year}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        this.renderGameHistory(data.games, data.monthTotal, data.yearTotal);
+                    })
+                    .catch(err => {
+                        console.error('[ADMIN] Error loading game history:', err);
+                        document.getElementById('game-history-list').innerHTML = '<div class="empty-message">Error loading history</div>';
+                    });
+            }
+
+            renderGameHistory(games, monthTotal, yearTotal) {
+                const historyList = document.getElementById('game-history-list');
+                
+                if (!games || games.length === 0) {
+                    historyList.innerHTML = '<div class="empty-message">No games played</div>';
+                    document.getElementById('month-total').textContent = '0';
+                    document.getElementById('year-total').textContent = yearTotal;
+                    return;
+                }
+
+                historyList.innerHTML = games.map(game => `
+                    <div class="history-game-item">
+                        <div class="history-game-info">
+                            <div class="history-game-date">${new Date(game.completedAt).toLocaleDateString()} ${new Date(game.completedAt).toLocaleTimeString()}</div>
+                            <div class="history-game-details">${game.playerCount} players</div>
+                            <div class="history-game-winner">🏆 ${game.winner === 'Innocents' ? '👤 Innocents' : '🔴 Syndicate'} won</div>
+                        </div>
+                        <button class="delete-game-btn" onclick="adminPanel.deleteGameHistory('${game.id}')">✕</button>
+                    </div>
+                `).join('');
+
+                document.getElementById('month-total').textContent = monthTotal;
+                document.getElementById('year-total').textContent = yearTotal;
+            }
+
+            deleteGameHistory(gameId) {
+                if (!confirm('Delete this game from history?')) return;
+                
+                fetch(`/api/game-history/${gameId}`, { method: 'DELETE' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            this.loadGameHistory();
+                        }
+                    })
+                    .catch(err => console.error('[ADMIN] Error deleting game:', err));
+            }
 
         const adminPanel = new AdminPanel();
     </script>
