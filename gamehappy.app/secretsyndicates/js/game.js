@@ -2807,7 +2807,7 @@ class Game {
                                             </div>
                                         </td>
                                     `).join('')}
-                                    <td class="suspicion-cell">
+                                    <td class="suspicion-cell" style="min-width: 140px;">
                                         <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionDisplay}</span>
                                     </td>
                                 </tr>
