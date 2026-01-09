@@ -1227,17 +1227,6 @@ io.on('connection', (socket) => {
           gameState: playerState
         });
       }
-          alive: player.alive,
-          phase: game.currentPhase,
-          screen: screenType,
-          action: 'join-game',
-          actionDetails: {
-            playerName: player.name,
-            role: player.role || playerState?.playerRole || 'Unknown'
-          },
-          gameState: playerState
-        });
-      }
     }
   });
 
