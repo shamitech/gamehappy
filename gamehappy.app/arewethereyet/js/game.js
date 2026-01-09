@@ -102,9 +102,6 @@ class Game {
             (texture) => {
                 console.log('✓ Car sprite texture loaded!');
                 
-                // Shift the image up by adjusting texture offset (about 100 pixels up)
-                texture.offset.y = -0.14;
-                
                 // Create sprite material with the car image
                 const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
                 
@@ -112,14 +109,15 @@ class Game {
                 const sprite = new THREE.Sprite(spriteMaterial);
                 
                 // Image is 536x729 (width x height), so aspect ratio is 0.735
-                // Scale large and position so entire car is visible
+                // Scale sprite to 750px height, maintaining aspect ratio
                 const aspectRatio = 536 / 729;
-                sprite.scale.set(6 * aspectRatio, 6, 1);
-                sprite.position.y = -1; // Move sprite down
+                const spriteHeight = 750;
+                sprite.scale.set(spriteHeight * aspectRatio, spriteHeight, 1);
+                sprite.position.y = 0; // Center sprite
                 
                 this.car.add(sprite);
                 this.carLoaded = true;
-                console.log('Car sprite added with adjusted position and texture offset');
+                console.log('Car sprite added with 750px height');
             },
             undefined,
             (error) => {
