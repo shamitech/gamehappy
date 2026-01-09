@@ -77,6 +77,8 @@ class Game {
     }
 
     createCar() {
+        this.car = new THREE.Group();
+        this.car.position.set(0, 0, 0);
         this.wheels = [];
 
         // Car body - station wagon shape (longer and roomier)
@@ -155,13 +157,7 @@ class Game {
         frontBumper.receiveShadow = true;
         this.car.add(frontBumper);
 
-        const rearwheel rotation based on movement
-        this.wheelRotation += this.carSpeed * 0.15;
-        this.wheels.forEach(wheel => {
-            wheel.rotation.x = this.wheelRotation;
-        });
-
-        // Update Bumper = new THREE.Mesh(bumperGeometry, bumperMaterial);
+        const rearBumper = new THREE.Mesh(bumperGeometry, bumperMaterial);
         rearBumper.position.set(0, 0.35, -1.75);
         rearBumper.castShadow = true;
         rearBumper.receiveShadow = true;
@@ -197,9 +193,7 @@ class Game {
             wheelGroup.add(rim);
 
             this.car.add(wheelGroup);
-            this.wheels.push(wheelGroup true;
-            wheel.receiveShadow = true;
-            this.car.add(wheel);
+            this.wheels.push(wheelGroup);
         });
 
         this.scene.add(this.car);
@@ -237,6 +231,12 @@ class Game {
         if (this.keys['arrowright'] || this.keys['d']) {
             this.carRotation -= turnSpeed;
         }
+
+        // Update wheel rotation based on movement
+        this.wheelRotation += this.carSpeed * 0.15;
+        this.wheels.forEach(wheel => {
+            wheel.rotation.x = this.wheelRotation;
+        });
 
         // Update car position based on rotation and speed
         this.carPosition.x += Math.sin(this.carRotation) * this.carSpeed;
