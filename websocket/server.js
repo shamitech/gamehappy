@@ -379,6 +379,17 @@ io.on('connection', (socket) => {
         const player = game.getPlayers().find(p => p.token === playerToken);
         if (player) {
           const fullGameState = gameServer.getGameStateForPlayer(playerToken);
+          
+          // Determine current screen based on game state
+          let screenType = 'role-screen';
+          if (game.currentPhase) {
+            screenType = game.currentPhase;
+          } else if (player.role) {
+            screenType = 'role-screen';
+          } else {
+            screenType = 'lobby-screen';
+          }
+          
           const adminUpdate = {
             gameCode: game.gameCode,
             playerToken: playerToken,
@@ -386,7 +397,7 @@ io.on('connection', (socket) => {
             role: player.role,
             alive: player.alive,
             phase: game.currentPhase,
-            screen: eventName,
+            screen: screenType,
             action: eventName,
             actionDetails: extractActionDetails(eventName, payload, player),
             state: result.success ? 'Success' : 'Failed',
@@ -1177,7 +1188,21 @@ io.on('connection', (socket) => {
       
       for (const player of players) {
         const playerState = gameServer.getGameStateForPlayer(player.token);
-        console.log(`[ADMIN] Player ${player.name}: role from player.role=${player.role}, role from gameState=${playerState?.playerRole}`);
+        
+        // Determine what screen the player is viewing
+        let screenType = 'role-screen'; // default to role screen
+        if (game.currentPhase && game.currentPhase !== 'not-started') {
+          // If game has started phases, use current phase
+          screenType = game.currentPhase;
+        } else if (player.role) {
+          // If player has role but no game phase, they're viewing role screen
+          screenType = 'role-screen';
+        } else {
+          // If no role yet, they're in lobby
+          screenType = 'lobby-screen';
+        }
+        
+        console.log(`[ADMIN] Player ${player.name}: role from player.role=${player.role}, role from gameState=${playerState?.playerRole}, screen=${screenType}`);
         socket.emit('player-state-update', {
           gameCode: data.gameCode,
           playerToken: player.token,
@@ -1185,7 +1210,7 @@ io.on('connection', (socket) => {
           role: player.role || playerState?.playerRole || 'Unknown',
           alive: player.alive,
           phase: game.currentPhase,
-          screen: game.currentPhase,
+          screen: screenType,
           action: 'join-game',
           actionDetails: {
             playerName: player.name,

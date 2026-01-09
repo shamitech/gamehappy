@@ -647,14 +647,18 @@
             }
 
             renderGameScreen(playerData) {
+                const screen = playerData.screen || 'unknown';
                 const phase = playerData.phase || 'unknown';
                 const role = playerData.role || 'Unknown';
-                const gs = playerData.gameState || {};
                 
                 let html = '';
 
-                // PHASE-BASED SCREENS
-                if (phase.includes('phase-1') || phase === 'night') {
+                // SCREEN-BASED ROUTING (Primary)
+                if (screen === 'role-screen' || screen === 'player-role') {
+                    html = this.renderRoleScreen(playerData);
+                } else if (screen === 'lobby-screen') {
+                    html = this.renderLobbyScreen(playerData);
+                } else if (phase.includes('phase-1') || phase === 'night') {
                     html = this.renderPhase1Screen(playerData);
                 } else if (phase.includes('phase-2') || phase === 'news') {
                     html = this.renderPhase2Screen(playerData);
@@ -668,6 +672,157 @@
                     html = `<p style="color: #888; text-align: center; padding: 20px;">Waiting for phase...</p>`;
                 }
 
+                return html;
+            }
+
+            renderRoleScreen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                
+                const roleEmojis = {
+                    'Syndicate': '🔴',
+                    'Detective': '🔍',
+                    'Body Guard': '🛡️',
+                    'Eye Witness': '👁️',
+                    'Bystander': '👤'
+                };
+                
+                const descriptions = {
+                    'Syndicate': 'You are part of the secret criminal organization. Your goal is to eliminate all innocent citizens without being discovered.',
+                    'Detective': 'You are a skilled investigator working to expose the Syndicate. Use your abilities wisely to uncover the truth.',
+                    'Bystander': 'You are an ordinary citizen caught in the crossfire. Stay vigilant and help identify the Syndicate through observation and deduction.',
+                    'Eye Witness': 'You witnessed a crime and caught a glimpse of the underworld. You see who commits the assassination each round.',
+                    'Body Guard': 'You are a professional protector. Each night, you can choose one player to shield from harm.'
+                };
+                
+                const abilities = {
+                    'Syndicate': [
+                        'Vote each night to select a target',
+                        'Know the identity of your fellow Syndicate members',
+                        'Blend in during the day and mislead investigations'
+                    ],
+                    'Detective': [
+                        'Receive a secret keyword each round',
+                        'Share your findings during day discussions',
+                        'Lead the town to vote out Syndicate members'
+                    ],
+                    'Bystander': [
+                        'Vote during the day to eliminate suspected Syndicate',
+                        'Observe player behavior and discussions',
+                        'Form alliances with other players'
+                    ],
+                    'Eye Witness': [
+                        'Learn the assassin\'s identity each round',
+                        'Receive a keyword to signal the Detective',
+                        'Vote during the day like other citizens'
+                    ],
+                    'Body Guard': [
+                        'Protect one player each night from elimination',
+                        'Cannot protect yourself',
+                        'Cannot protect the same player two nights in a row'
+                    ]
+                };
+                
+                const winConditions = {
+                    'Syndicate': 'Eliminate enough players until Syndicate equals or outnumbers the Town',
+                    'Detective': 'Survive and help eliminate all Syndicate members',
+                    'Bystander': 'Survive and help eliminate all Syndicate members',
+                    'Eye Witness': 'Survive and help eliminate all Syndicate members',
+                    'Body Guard': 'Survive and help eliminate all Syndicate members'
+                };
+                
+                const emoji = roleEmojis[role] || '❓';
+                const desc = descriptions[role] || 'Role description unavailable';
+                const roleAbilities = abilities[role] || [];
+                const winCond = winConditions[role] || 'Unknown';
+                
+                let html = `<div style="padding: 0 5px; display: flex; flex-direction: column; height: 100%;">`;
+                
+                // Header
+                html += `<div style="background: rgba(212,175,55,0.2); padding: 10px; border-radius: 4px; margin-bottom: 12px; text-align: center; border: 1px solid rgba(212,175,55,0.4);">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 3px;">Your Secret Role</div>
+                    <div style="font-size: 14px; font-weight: bold; color: var(--primary-gold);">${emoji} ${role}</div>
+                </div>`;
+                
+                // Role Description
+                html += `<div style="font-size: 10px; color: #aaa; line-height: 1.3; margin-bottom: 10px;">
+                    ${desc}
+                </div>`;
+                
+                // Abilities
+                html += `<div style="margin-bottom: 8px;">
+                    <div style="font-size: 9px; font-weight: bold; color: var(--primary-gold); margin-bottom: 4px;">Your Abilities</div>
+                    <ul style="margin: 0; padding-left: 12px; font-size: 9px; color: #bbb;">`;
+                roleAbilities.forEach(ability => {
+                    html += `<li style="margin-bottom: 2px;">${ability}</li>`;
+                });
+                html += `</ul>
+                </div>`;
+                
+                // Win Condition
+                html += `<div style="margin-bottom: 8px;">
+                    <div style="font-size: 9px; font-weight: bold; color: var(--primary-gold); margin-bottom: 3px;">Win Condition</div>
+                    <div style="font-size: 9px; color: #bbb; line-height: 1.2;">${winCond}</div>
+                </div>`;
+                
+                // Teammates section for Syndicate
+                if (role === 'Syndicate' && gs.syndicate && gs.syndicate.length > 1) {
+                    html += `<div style="margin-bottom: 8px;">
+                        <div style="font-size: 9px; font-weight: bold; color: var(--primary-gold); margin-bottom: 3px;">Your Fellow Members</div>
+                        <ul style="margin: 0; padding-left: 12px; font-size: 9px; color: #bbb;">`;
+                    gs.syndicate.filter(s => s.name !== playerData.playerName).forEach(teammate => {
+                        html += `<li>${teammate.name}</li>`;
+                    });
+                    html += `</ul>
+                    </div>`;
+                }
+                
+                // Ready section
+                html += `<div style="border-top: 1px solid rgba(212,175,55,0.2); padding-top: 8px; margin-top: auto; text-align: center;">
+                    <div style="font-size: 8px; color: #ff9800; margin-bottom: 4px;">⚠️ Memorize your role</div>
+                    <div style="background: rgba(212,175,55,0.3); padding: 6px; border-radius: 3px; border: 1px solid var(--primary-gold); font-size: 10px; font-weight: bold; color: var(--primary-gold); margin-bottom: 4px;">
+                        I'm Ready ▶
+                    </div>
+                    <div style="font-size: 8px; color: var(--text-muted);">
+                        ${gs.readyCount || 0} / ${gs.totalPlayers || 0} ready
+                    </div>
+                </div>
+                </div>`;
+                
+                return html;
+            }
+
+            renderLobbyScreen(playerData) {
+                const gs = playerData.gameState || {};
+                const gameCode = gs.gameCode || '----';
+                const playerCount = (gs.players && gs.players.length) || 0;
+                
+                let html = `<div style="padding: 0 5px; display: flex; flex-direction: column; height: 100%;">`;
+                
+                // Game code
+                html += `<div style="background: rgba(212,175,55,0.2); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-size: 8px; color: var(--text-muted); margin-bottom: 2px;">Game Code</div>
+                    <div style="font-size: 14px; font-weight: bold; color: var(--primary-gold);">${gameCode}</div>
+                </div>`;
+                
+                // Player list
+                html += `<div style="margin-bottom: 10px;">
+                    <div style="font-size: 9px; font-weight: bold; color: var(--primary-gold); margin-bottom: 4px;">Players (${playerCount}/5)</div>
+                    <ul style="margin: 0; padding-left: 12px; font-size: 9px; color: #bbb;">`;
+                if (gs.players) {
+                    gs.players.forEach(p => {
+                        html += `<li>${p.name}</li>`;
+                    });
+                }
+                html += `</ul>
+                </div>`;
+                
+                // Waiting message
+                html += `<div style="border-top: 1px solid rgba(212,175,55,0.2); padding-top: 8px; margin-top: auto; text-align: center; font-size: 9px; color: var(--text-muted);">
+                    Waiting for host to start...
+                </div>
+                </div>`;
+                
                 return html;
             }
 
