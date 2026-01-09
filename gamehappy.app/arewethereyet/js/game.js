@@ -1,12 +1,12 @@
-// Main game engine for Are We There Yet
+// Main game engine for Are We There Yet - Circuit-based driving
 class GameEngine {
     constructor(levelManager) {
         this.levelManager = levelManager;
-        this.gameState = 'map-view'; // map-view, car-drive, results
-        this.mapDisplayTime = 8000; // 8 seconds
-        this.carDriveSpeed = 2000; // 2 seconds per segment
+        this.gameState = 'map-view';
+        this.mapDisplayTime = 8000; // 8 seconds to view the map
+        this.segmentDriveTime = 1500; // 1.5 seconds per road segment
         this.distanceTraveled = 0;
-        this.wrongTurns = 0;
+        this.startTime = 0;
     }
 
     startGame() {
@@ -42,102 +42,175 @@ class GameEngine {
     startCarDrivePhase() {
         this.gameState = 'car-drive';
         this.distanceTraveled = 0;
+        this.startTime = Date.now();
 
         // Hide map phase, show car phase
         document.getElementById('map-phase').classList.remove('active');
         document.getElementById('car-phase').classList.add('active');
         document.getElementById('results-phase').classList.remove('active');
 
-        // Render car
-        this.levelManager.renderCarView();
+        // Render the car view
+        this.renderCarView();
 
-        // Reset to start of path
-        this.levelManager.currentPathIndex = 1; // Skip the start node
-        
-        // Start driving sequence
-        this.drivePath();
+        // Start driving
+        this.driveLoop();
     }
 
-    drivePath() {
-        const driveSegment = () => {
-            const currentNode = this.levelManager.getCurrentPathNode();
-            
-            if (!currentNode) {
-                this.completeLevel();
-                return;
-            }
+    renderCarView() {
+        const roadDisplay = document.getElementById('road-display');
+        roadDisplay.innerHTML = '';
 
-            // Update distance
-            this.distanceTraveled++;
-            document.getElementById('distance-value').textContent = this.distanceTraveled;
+        // Draw a simple road view (bird's eye view of car on road)
+        const road = document.createElement('div');
+        road.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #444 0%, #333 50%, #444 100%);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 80px;
+        `;
 
-            // Check if this is an intersection
-            if (currentNode.correctAction) {
-                this.showIntersection(currentNode);
-            } else {
-                // Just keep driving
-                this.levelManager.currentPathIndex++;
-                setTimeout(driveSegment, this.carDriveSpeed);
-            }
-        };
+        // Draw road markers
+        const roadMarkers = document.createElement('div');
+        roadMarkers.style.cssText = `
+            position: absolute;
+            width: 80%;
+            height: 100%;
+            border-left: 3px dashed #ffeb3b;
+            border-right: 3px dashed #ffeb3b;
+        `;
+        road.appendChild(roadMarkers);
 
-        driveSegment();
+        // Draw car
+        const car = document.createElement('div');
+        car.className = 'car';
+        car.id = 'grandmas-car';
+        car.style.cssText = `
+            width: 70px;
+            height: 90px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+            z-index: 10;
+        `;
+
+        // Windows
+        car.innerHTML = `
+            <div style="position: absolute; top: 8px; left: 8px; width: 20px; height: 16px; background: #87ceeb; border-radius: 2px;"></div>
+            <div style="position: absolute; top: 8px; right: 8px; width: 20px; height: 16px; background: #87ceeb; border-radius: 2px;"></div>
+        `;
+        road.appendChild(car);
+
+        roadDisplay.appendChild(road);
     }
 
-    showIntersection(intersectionNode) {
-        // Show the turn right button and pause
-        const turnBtn = document.getElementById('turn-right-btn');
-        const instructionText = document.getElementById('instruction-text');
+    driveLoop() {
+        if (this.gameState !== 'car-drive') return;
 
-        turnBtn.classList.remove('hidden');
-        instructionText.textContent = 'Choose your action!';
-
-        // Set up handlers for this intersection
-        const handleTurnRight = () => {
-            this.handlePlayerAction('right', intersectionNode, handleTurnRight, handleGoStraight);
-        };
-
-        const handleGoStraight = () => {
-            this.handlePlayerAction('straight', intersectionNode, handleTurnRight, handleGoStraight);
-        };
-
-        // One-time listeners
-        turnBtn.onclick = handleTurnRight;
-        document.addEventListener('keydown', (e) => {
-            if (e.key === ' ') handleGoStraight();
-        }, { once: true });
-    }
-
-    handlePlayerAction(action, intersectionNode, turnHandler, straightHandler) {
-        const turnBtn = document.getElementById('turn-right-btn');
-        turnBtn.classList.add('hidden');
-        turnBtn.onclick = null;
-
-        const result = this.levelManager.moveToNextNode(action);
-
-        if (result.success) {
-            // Correct action
-            const instructionText = document.getElementById('instruction-text');
-            instructionText.textContent = action === 'right' ? '✓ Turned right' : '✓ Going straight';
-            
-            setTimeout(() => {
-                this.distanceTraveled++;
-                document.getElementById('distance-value').textContent = this.distanceTraveled;
-                
-                if (result.levelComplete) {
-                    this.completeLevel();
-                } else {
-                    this.drivePath();
-                }
-            }, 800);
-        } else {
-            // Wrong action
-            this.wrongTurns++;
-            const instructionText = document.getElementById('instruction-text');
-            instructionText.textContent = '✗ Wrong turn! Game Over';
-            
-            setTimeout(() => this.endGame(false), 1500);
+        const current = this.levelManager.getCurrentSegment();
+        if (!current) {
+            this.endGame(false, 'Navigation error');
+            return;
         }
+
+        // Update distance and segment display
+        this.distanceTraveled++;
+        document.getElementById('distance-value').textContent = this.distanceTraveled;
+
+        // Get direction name
+        const dirName = {
+            'north': '↑ North',
+            'south': '↓ South',
+            'east': '→ East',
+            'west': '← West'
+        }[current.direction];
+
+        const instructionText = document.getElementById('instruction-text');
+        instructionText.textContent = `Heading ${dirName}...`;
+
+        // Show turn right button if we can turn
+        const turnBtn = document.getElementById('turn-right-btn');
+        if (current.canTurnRight && !current.autoTurn) {
+            turnBtn.classList.remove('hidden');
+        } else {
+            turnBtn.classList.add('hidden');
+        }
+
+        // Wait for player input or auto-drive if can only go straight
+        if (!current.canTurnRight) {
+            // No choice, auto-move forward
+            setTimeout(() => this.moveForward('straight'), this.segmentDriveTime);
+        } else {
+            // Give player a moment to decide
+            let decided = false;
+
+            const handleTurnRight = () => {
+                if (!decided) {
+                    decided = true;
+                    turnBtn.onclick = null;
+                    document.removeEventListener('keydown', handleKeypress);
+                    this.moveForward('right');
+                }
+            };
+
+            const handleKeypress = (e) => {
+                if ((e.key === ' ' || e.code === 'Space') && !decided) {
+                    decided = true;
+                    turnBtn.onclick = null;
+                    document.removeEventListener('keydown', handleKeypress);
+                    this.moveForward('straight');
+                }
+            };
+
+            turnBtn.onclick = handleTurnRight;
+            document.addEventListener('keydown', handleKeypress);
+
+            // Auto-drive straight after decision time if no input
+            setTimeout(() => {
+                if (!decided) {
+                    decided = true;
+                    turnBtn.onclick = null;
+                    document.removeEventListener('keydown', handleKeypress);
+                    this.moveForward('straight');
+                }
+            }, this.segmentDriveTime);
+        }
+    }
+
+    moveForward(direction) {
+        const result = this.levelManager.moveSegment(direction);
+
+        if (!result.success) {
+            // Crashed or dead end
+            this.endGame(false, result.message);
+            return;
+        }
+
+        if (result.reachedDestination) {
+            // Reached the destination!
+            const instructionText = document.getElementById('instruction-text');
+            instructionText.textContent = `✓ Arrived at ${result.destination}!`;
+            
+            setTimeout(() => this.completeLevel(), 1200);
+            return;
+        }
+
+        if (result.autoTurned) {
+            const instructionText = document.getElementById('instruction-text');
+            instructionText.textContent = '✓ Auto-turn right (forced)';
+        } else if (direction === 'right') {
+            const instructionText = document.getElementById('instruction-text');
+            instructionText.textContent = '✓ Turned right';
+        }
+
+        // Continue driving
+        setTimeout(() => this.driveLoop(), this.segmentDriveTime);
     }
 
     completeLevel() {
@@ -145,7 +218,9 @@ class GameEngine {
         this.endGame(true, score);
     }
 
-    endGame(success, score = 0) {
+    endGame(success, scoreOrMessage) {
+        this.gameState = 'finished';
+
         // Show results phase
         document.getElementById('map-phase').classList.remove('active');
         document.getElementById('car-phase').classList.remove('active');
@@ -158,10 +233,11 @@ class GameEngine {
         if (success) {
             resultTitle.textContent = 'Level Complete!';
             resultMessage.textContent = `Great job! You guided Grandma safely to the ${this.levelManager.currentLevel.destination}.`;
-            scoreValue.textContent = score;
+            scoreValue.textContent = scoreOrMessage;
+            document.getElementById('next-level-btn').style.display = 'block';
         } else {
-            resultTitle.textContent = 'Level Failed!';
-            resultMessage.textContent = 'Grandma couldn\'t complete that turn. Try again!';
+            resultTitle.textContent = 'Oops! Game Over';
+            resultMessage.textContent = scoreOrMessage;
             scoreValue.textContent = '0';
             document.getElementById('next-level-btn').style.display = 'none';
         }

@@ -1,31 +1,47 @@
-// Level definitions and maps
+// Level definitions - Road circuits around blocks
 const LEVELS = {
     level1: {
         id: 1,
         title: "To School",
         destination: "School",
         description: "Help Grandma get to school",
-        map: {
-            width: 4,
-            height: 6,
-            // Grid-based map
-            // S = start, E = end, - = straight, R = right turn
-            // 0,0 is top-left
-            // Represented as a path of coordinates and actions
-            path: [
-                { x: 2, y: 0, type: 'start', direction: 'down' },
-                { x: 2, y: 1, type: 'straight', direction: 'down' },
-                { x: 2, y: 2, type: 'intersection', direction: 'down', correctAction: 'straight' },
-                { x: 2, y: 3, type: 'straight', direction: 'down' },
-                { x: 2, y: 4, type: 'intersection', direction: 'down', correctAction: 'right' },
-                { x: 3, y: 4, type: 'straight', direction: 'right' },
-                { x: 3, y: 5, type: 'end', direction: 'right' }
-            ]
-        },
+        // Circuit-based level: car drives around a block
+        // Each segment is a road piece in the circuit
+        circuit: [
+            // North road (going east)
+            { id: 0, x: 1, y: 0, direction: 'east', canGoStraight: true, canTurnRight: true, nextStraight: 1, nextRight: -1 },
+            { id: 1, x: 2, y: 0, direction: 'east', canGoStraight: true, canTurnRight: true, nextStraight: 2, nextRight: -1 },
+            
+            // Northeast corner - turn right to go south
+            { id: 2, x: 3, y: 0, direction: 'east', canGoStraight: false, canTurnRight: true, nextStraight: -1, nextRight: 3, autoTurn: true },
+            
+            // East road (going south)
+            { id: 3, x: 3, y: 1, direction: 'south', canGoStraight: true, canTurnRight: true, nextStraight: 4, nextRight: -1 },
+            { id: 4, x: 3, y: 2, direction: 'south', canGoStraight: true, canTurnRight: true, nextStraight: 5, nextRight: -1 },
+            
+            // Southeast corner - turn right to go west
+            { id: 5, x: 3, y: 3, direction: 'south', canGoStraight: false, canTurnRight: true, nextStraight: -1, nextRight: 6, autoTurn: true },
+            
+            // South road (going west) - DESTINATION IS HERE
+            { id: 6, x: 2, y: 3, direction: 'west', canGoStraight: true, canTurnRight: true, nextStraight: 7, nextRight: 999, destination: 'School', destinationName: 'School' },
+            { id: 7, x: 1, y: 3, direction: 'west', canGoStraight: true, canTurnRight: true, nextStraight: 8, nextRight: -1 },
+            
+            // Southwest corner - turn right to go north
+            { id: 8, x: 0, y: 3, direction: 'west', canGoStraight: false, canTurnRight: true, nextStraight: -1, nextRight: 9, autoTurn: true },
+            
+            // West road (going north)
+            { id: 9, x: 0, y: 2, direction: 'north', canGoStraight: true, canTurnRight: true, nextStraight: 10, nextRight: -1 },
+            { id: 10, x: 0, y: 1, direction: 'north', canGoStraight: true, canTurnRight: true, nextStraight: 11, nextRight: -1 },
+            
+            // Northwest corner - turn right to go east (back to start)
+            { id: 11, x: 0, y: 0, direction: 'north', canGoStraight: false, canTurnRight: true, nextStraight: -1, nextRight: 0, autoTurn: true }
+        ],
+        startSegment: 0,
+        blockSize: 3, // 4x4 block
         instructions: [
-            "Navigate Grandma's car to the School",
-            "Grandma can only go straight or turn RIGHT",
-            "Watch the road layout carefully!"
+            "Follow the road around the block",
+            "Turn right into the School driveway",
+            "Watch for the driveway sign!"
         ]
     }
 };
@@ -33,9 +49,10 @@ const LEVELS = {
 class LevelManager {
     constructor() {
         this.currentLevel = null;
-        this.currentPathIndex = 0;
+        this.currentSegmentId = 0;
         this.playerScore = 0;
-        this.correctDecisions = 0;
+        this.correctTurns = 0;
+        this.wrongTurns = 0;
     }
 
     getLevel(levelId) {
@@ -44,135 +61,119 @@ class LevelManager {
 
     loadLevel(levelId) {
         this.currentLevel = this.getLevel(levelId);
-        this.currentPathIndex = 0;
-        this.correctDecisions = 0;
+        this.currentSegmentId = this.currentLevel.startSegment;
+        this.correctTurns = 0;
+        this.wrongTurns = 0;
         return this.currentLevel;
     }
 
-    getCurrentPathNode() {
+    getCurrentSegment() {
         if (!this.currentLevel) return null;
-        return this.currentLevel.map.path[this.currentPathIndex];
+        return this.currentLevel.circuit.find(seg => seg.id === this.currentSegmentId);
     }
 
-    getNextPathNode() {
+    getSegmentById(id) {
         if (!this.currentLevel) return null;
-        const nextIndex = this.currentPathIndex + 1;
-        if (nextIndex < this.currentLevel.map.path.length) {
-            return this.currentLevel.map.path[nextIndex];
-        }
-        return null;
+        return this.currentLevel.circuit.find(seg => seg.id === id);
     }
 
-    moveToNextNode(playerAction) {
-        if (!this.currentLevel) return false;
+    moveSegment(direction) {
+        const current = this.getCurrentSegment();
+        if (!current) return { success: false, message: 'Invalid segment' };
 
-        const currentNode = this.getCurrentPathNode();
-        const nextNode = this.getNextPathNode();
-
-        if (!nextNode) {
-            // Reached end
-            return { success: true, levelComplete: true };
+        // Check if trying to go straight when not allowed
+        if (direction === 'straight' && !current.canGoStraight) {
+            // Auto-turn right instead
+            direction = 'right';
         }
 
-        // Check if this is an intersection
-        if (currentNode.correctAction) {
-            if (playerAction === currentNode.correctAction) {
-                this.correctDecisions++;
-                this.currentPathIndex++;
-                return { success: true, correct: true };
-            } else {
-                // Wrong turn
-                return { success: false, correct: false, message: "Wrong turn! Grandma couldn't make that turn." };
-            }
-        } else {
-            // Just move forward
-            this.currentPathIndex++;
-            return { success: true, correct: true };
+        // Auto-turn right if can't go straight
+        if (current.autoTurn && direction === 'straight') {
+            direction = 'right';
         }
-    }
 
-    isLevelComplete() {
-        if (!this.currentLevel) return false;
-        return this.currentPathIndex >= this.currentLevel.map.path.length - 1;
+        // Get next segment
+        const nextId = direction === 'straight' ? current.nextStraight : current.nextRight;
+
+        if (nextId === -1) {
+            // Crashed into dead end
+            this.wrongTurns++;
+            return { success: false, message: "You drove into a dead end!" };
+        }
+
+        if (nextId === 999) {
+            // Reached destination
+            return { success: true, reachedDestination: true, destination: current.destinationName };
+        }
+
+        // Move to next segment
+        this.currentSegmentId = nextId;
+        const nextSegment = this.getSegmentById(nextId);
+
+        return {
+            success: true,
+            segment: nextSegment,
+            autoTurned: current.autoTurn && direction === 'right'
+        };
     }
 
     calculateScore() {
         if (!this.currentLevel) return 0;
-        const totalIntersections = this.currentLevel.map.path.filter(n => n.correctAction).length;
-        return Math.round((this.correctDecisions / totalIntersections) * 100);
+        // Score based on reaching destination with minimal wrong turns
+        return Math.max(0, 100 - (this.wrongTurns * 20));
     }
 
     renderMapView() {
         const mapDisplay = document.getElementById('map-display');
         if (!this.currentLevel) return;
 
-        const map = this.currentLevel.map;
-        
-        // Create a simple ASCII-style map representation
-        let mapHtml = '<svg width="100%" height="100%" viewBox="0 0 400 300" style="background: #fff; border-radius: 8px;">';
-        
-        // Draw grid
-        const cellWidth = 400 / map.width;
-        const cellHeight = 300 / map.height;
-        
-        // Draw path
-        const path = map.path;
-        mapHtml += '<g stroke="#667eea" stroke-width="3" fill="none">';
-        
-        for (let i = 0; i < path.length - 1; i++) {
-            const current = path[i];
-            const next = path[i + 1];
-            
-            const x1 = (current.x + 0.5) * cellWidth;
-            const y1 = (current.y + 0.5) * cellHeight;
-            const x2 = (next.x + 0.5) * cellWidth;
-            const y2 = (next.y + 0.5) * cellHeight;
-            
-            mapHtml += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+        const circuit = this.currentLevel.circuit;
+        const blockSize = this.currentLevel.blockSize;
+
+        // Create SVG map
+        let mapHtml = `<svg width="100%" height="100%" viewBox="0 0 400 400" style="background: #fff; border-radius: 8px;">`;
+
+        const cellSize = 360 / (blockSize + 2);
+
+        // Draw grid/block
+        mapHtml += `<g stroke="#ccc" stroke-width="1">`;
+        for (let i = 0; i <= blockSize + 1; i++) {
+            mapHtml += `<line x1="${20 + i * cellSize}" y1="20" x2="${20 + i * cellSize}" y2="${20 + (blockSize + 1) * cellSize}" />`;
+            mapHtml += `<line x1="20" y1="${20 + i * cellSize}" x2="${20 + (blockSize + 1) * cellSize}" y2="${20 + i * cellSize}" />`;
         }
-        
-        mapHtml += '</g>';
-        
-        // Draw points
-        path.forEach((node, index) => {
-            const x = (node.x + 0.5) * cellWidth;
-            const y = (node.y + 0.5) * cellHeight;
-            
-            let color = '#667eea';
-            let label = '';
-            
-            if (node.type === 'start') {
-                color = '#2ecc71';
-                label = 'START';
-            } else if (node.type === 'end') {
-                color = '#e74c3c';
-                label = 'SCHOOL';
-            } else if (node.correctAction) {
-                color = '#f39c12';
-                label = node.correctAction === 'right' ? '↻' : '↓';
-            }
-            
-            mapHtml += `<circle cx="${x}" cy="${y}" r="8" fill="${color}" />`;
-            if (label) {
-                mapHtml += `<text x="${x}" y="${y}" text-anchor="middle" dy="0.3em" font-size="10" fill="white" font-weight="bold">${label}</text>`;
-            }
-        });
-        
-        mapHtml += '</svg>';
-        
+        mapHtml += `</g>`;
+
+        // Draw roads (thick yellow lines)
+        mapHtml += `<g stroke="#ffeb3b" stroke-width="12" fill="none" stroke-linecap="round">`;
+        for (const segment of circuit) {
+            const x = 20 + segment.x * cellSize + cellSize / 2;
+            const y = 20 + segment.y * cellSize + cellSize / 2;
+
+            // Just mark the position
+            mapHtml += `<circle cx="${x}" cy="${y}" r="6" fill="#ffeb3b" />`;
+        }
+        mapHtml += `</g>`;
+
+        // Draw destination (School)
+        const destSegment = circuit.find(s => s.destination === 'School');
+        if (destSegment) {
+            const x = 20 + destSegment.x * cellSize + cellSize / 2;
+            const y = 20 + destSegment.y * cellSize + cellSize / 2;
+            mapHtml += `<circle cx="${x}" cy="${y}" r="14" fill="none" stroke="#e74c3c" stroke-width="3" />`;
+            mapHtml += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" fill="#e74c3c" font-weight="bold">SCHOOL</text>`;
+        }
+
+        // Draw current position
+        const current = this.getCurrentSegment();
+        if (current) {
+            const x = 20 + current.x * cellSize + cellSize / 2;
+            const y = 20 + current.y * cellSize + cellSize / 2;
+            mapHtml += `<circle cx="${x}" cy="${y}" r="10" fill="#2ecc71" />`;
+        }
+
+        mapHtml += `</svg>`;
+
         mapDisplay.innerHTML = mapHtml;
-    }
-
-    renderCarView() {
-        const roadDisplay = document.getElementById('road-display');
-        if (!roadDisplay) return;
-
-        // Create car element if it doesn't exist
-        if (!roadDisplay.querySelector('.car')) {
-            const car = document.createElement('div');
-            car.className = 'car';
-            roadDisplay.appendChild(car);
-        }
     }
 }
 
