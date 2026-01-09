@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Are We There Yet?</title>
+    <link rel="stylesheet" href="css/style.css?v=20260109">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-container">
+            <h1>Are We There Yet?</h1>
+            <p class="login-message">Please log in to play</p>
+            <div class="login-form">
+                <input type="text" id="username-input" placeholder="Username" autocomplete="off">
+                <input type="password" id="password-input" placeholder="Password" autocomplete="off">
+                <button id="login-btn" class="btn-primary">Log In</button>
+            </div>
+            <p id="login-error" class="error-message"></p>
+            <button id="demo-btn" class="btn-secondary">Demo Admin</button>
+        </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen">
+        <div class="top-bar">
+            <div class="player-info">
+                <span id="player-name">Player</span>
+            </div>
+            <button id="logout-btn" class="btn-logout">Logout</button>
+        </div>
+        <div class="home-content">
+            <h1>Are We There Yet?</h1>
+            <p class="tagline">Help Grandma Navigate!</p>
+            <div class="level-grid">
+                <button id="level-1-btn" class="level-card">
+                    <div class="level-number">1</div>
+                    <div class="level-title">To School</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+            <!-- Map View Phase -->
+            <div id="map-phase" class="phase active">
+                <div class="map-info">
+                    <h2 id="destination-title">Destination: School</h2>
+                    <div id="map-display"></div>
+                    <div class="timer-bar">
+                        <div id="timer-fill" class="timer-fill"></div>
+                    </div>
+                    <p id="timer-text" class="timer-text">8 seconds to memorize the route</p>
+                </div>
+            </div>
+
+            <!-- Car View Phase -->
+            <div id="car-phase" class="phase">
+                <div class="car-view">
+                    <div id="road-display"></div>
+                    <div class="hud">
+                        <div class="distance-counter">
+                            <span>Distance:</span>
+                            <span id="distance-value">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button id="turn-right-btn" class="btn-action hidden">TURN RIGHT</button>
+                    <p id="instruction-text" class="instruction">Follow the route...</p>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="results-phase" class="phase">
+                <div class="results-container">
+                    <h2 id="result-title">Level Complete!</h2>
+                    <div class="result-details">
+                        <p id="result-message">Great job!</p>
+                        <p id="result-stats">Score: <span id="score-value">0</span></p>
+                    </div>
+                    <button id="next-level-btn" class="btn-primary">Next Level</button>
+                    <button id="home-btn" class="btn-secondary">Home</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/levels.js"></script>
+</body>
+</html>
