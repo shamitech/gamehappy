@@ -385,6 +385,9 @@ class NeighborhoodGame {
         this.scene.position.x += worldOffsetX;
         this.scene.position.z += worldOffsetZ;
 
+        // Keep car visually fixed - counteract scene rotation
+        this.car.rotation.y = -this.carRotation;
+
         // Update HUD
         document.getElementById('speed-display').textContent = `Speed: ${(this.carSpeed * 100).toFixed(0)}%`;
         const directions = ['East', 'North', 'West', 'South'];
