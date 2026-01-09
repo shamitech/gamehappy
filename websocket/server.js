@@ -1160,18 +1160,19 @@ io.on('connection', (socket) => {
       
       for (const player of players) {
         const playerState = gameServer.getGameStateForPlayer(player.token);
+        console.log(`[ADMIN] Player ${player.name}: role from player.role=${player.role}, role from gameState=${playerState?.playerRole}`);
         socket.emit('player-state-update', {
           gameCode: data.gameCode,
           playerToken: player.token,
           playerName: player.name,
-          role: player.role,
+          role: player.role || playerState?.playerRole || 'Unknown',
           alive: player.alive,
           phase: game.currentPhase,
           screen: game.currentPhase,
           action: 'join-game',
           actionDetails: {
             playerName: player.name,
-            role: player.role
+            role: player.role || playerState?.playerRole || 'Unknown'
           },
           gameState: playerState
         });

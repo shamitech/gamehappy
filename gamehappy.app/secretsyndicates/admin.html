@@ -694,6 +694,7 @@
                 this.socket.on('player-state-update', (data) => {
                     if (data.gameCode === this.currentMonitoredGame) {
                         const key = data.playerToken;
+                        console.log(`[ADMIN] Player update for ${data.playerName}: role=${data.role}, phase=${data.phase}`, data);
                         if (!this.playerScreens[key]) {
                             this.playerScreens[key] = {};
                             this.playerActions[key] = [];
@@ -807,14 +808,15 @@
             }
 
             formatGameScreenContent(data) {
-                if (!data || !data.gameState) {
+                if (!data) {
                     return '<p style="color: var(--text-muted);">Waiting for game state...</p>';
                 }
 
-                const gs = data.gameState;
+                const gs = data.gameState || {};
                 let html = '';
 
-                // Show player's role clearly
+                // Show player's role clearly - get from data.role which is always sent
+                const role = data.role || 'Unknown';
                 const roleEmojis = {
                     'Syndicate': '🔴',
                     'Detective': '🔍',
@@ -822,8 +824,8 @@
                     'Eye Witness': '👁️',
                     'Bystander': '👤'
                 };
-                const roleEmoji = roleEmojis[data.role] || '❓';
-                html += `<h4>${roleEmoji} You are ${data.role}</h4>`;
+                const roleEmoji = roleEmojis[role] || '❓';
+                html += `<h4>${roleEmoji} You are ${role}</h4>`;
 
                 // Show current phase and what's happening
                 const phase = data.phase || 'unknown';
