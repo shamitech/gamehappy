@@ -67,12 +67,6 @@ class NeighborhoodGame {
         // Road system - 4 blocks
         this.buildRoads();
 
-        // Build houses around the 4 blocks
-        this.buildHouses();
-
-        // Build school
-        this.buildSchool();
-
         // Create the car
         this.createCar();
     }
@@ -258,7 +252,7 @@ class NeighborhoodGame {
     createCar() {
         const group = new THREE.Group();
 
-        // Main body (red box)
+        // Main body (red box) - 8 units long in Z direction, but we'll rotate it to align with our movement
         const bodyGeometry = new THREE.BoxGeometry(4, 3, 8);
         const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 }); // Red
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
@@ -293,6 +287,9 @@ class NeighborhoodGame {
             wheel.castShadow = true;
             group.add(wheel);
         });
+
+        // Rotate group to align with movement direction (car naturally points Z, we move in X)
+        group.rotation.y = Math.PI / 2;
 
         this.car = group;
         this.car.position.set(this.carPosition.x, this.carPosition.y, this.carPosition.z);
