@@ -15,11 +15,11 @@
         <div class="login-container">
             <h1>Are We There Yet?</h1>
             <p class="login-message">Please log in to play</p>
-            <div class="login-form">
+            <form class="login-form" onsubmit="event.preventDefault(); document.getElementById('login-btn').click();">
                 <input type="text" id="username-input" placeholder="Username" autocomplete="off">
                 <input type="password" id="password-input" placeholder="Password" autocomplete="off">
-                <button id="login-btn" class="btn-primary">Log In</button>
-            </div>
+                <button type="submit" id="login-btn" class="btn-primary">Log In</button>
+            </form>
             <p id="login-error" class="error-message"></p>
             <button id="demo-btn" class="btn-secondary">Demo Admin</button>
         </div>
