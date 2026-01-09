@@ -112,7 +112,7 @@ class Game {
                 // Scale large and position so entire car is visible
                 const aspectRatio = 536 / 729;
                 sprite.scale.set(6 * aspectRatio, 6, 1);
-                sprite.position.y = 1.5; // Move up to show entire car
+                sprite.position.y = 0; // Center at ground level
                 
                 this.car.add(sprite);
                 this.carLoaded = true;
