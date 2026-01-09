@@ -88,52 +88,36 @@ class Game {
         this.car = new THREE.Group();
         this.car.position.set(0, 0, 0);
         
-        console.log('THREE available:', typeof THREE !== 'undefined');
-        console.log('THREE.GLTFLoader available:', typeof THREE.GLTFLoader !== 'undefined');
-        
-        if (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined') {
-            console.log('✓ GLTFLoader is available, loading model...');
-            this.loadModel();
-        } else {
-            console.log('✗ GLTFLoader NOT available, using fallback');
-            this.createFallbackCar();
-        }
+        console.log('Loading car sprite from assets/car1.png');
+        this.loadCarSprite();
         
         this.scene.add(this.car);
     }
 
-    loadModel() {
-        console.log('loadModel() called');
-        const loader = new THREE.GLTFLoader();
-        const modelURL = 'https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
+    loadCarSprite() {
+        const textureLoader = new THREE.TextureLoader();
         
-        console.log('Attempting to load:', modelURL);
-
-        loader.load(
-            modelURL,
-            (gltf) => {
-                console.log('✓✓✓ MODEL LOADED SUCCESSFULLY! ✓✓✓', gltf);
-                const model = gltf.scene;
-                model.scale.set(3, 3, 3);
-                model.position.y = -0.5;
+        textureLoader.load(
+            'assets/car1.png',
+            (texture) => {
+                console.log('✓ Car sprite texture loaded!');
                 
-                model.traverse((node) => {
-                    if (node.isMesh) {
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                    }
-                });
+                // Create sprite material with the car image
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
                 
-                this.car.add(model);
+                // Create sprite
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.scale.set(2, 2, 2); // Adjust size as needed
+                sprite.position.y = 0.5;
+                
+                this.car.add(sprite);
                 this.carLoaded = true;
-                console.log('Model added to car group');
+                console.log('Car sprite added to scene');
             },
-            (progress) => {
-                const percent = (progress.loaded / progress.total * 100).toFixed(2);
-                console.log('Loading progress:', percent + '%');
-            },
+            undefined,
             (error) => {
-                console.error('✗✗✗ FAILED TO LOAD MODEL ✗✗✗', error);
+                console.error('✗ Failed to load car sprite:', error);
+                console.log('Using fallback car');
                 this.createFallbackCar();
             }
         );
