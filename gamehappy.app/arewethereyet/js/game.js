@@ -6,6 +6,9 @@ class NeighborhoodGame {
         this.scene.fog = new THREE.Fog(0x87ceeb, 200, 500);
 
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 5, -15);
+        this.camera.lookAt(0, 0, 0);
+
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
@@ -289,7 +292,8 @@ class NeighborhoodGame {
         group.rotation.y = Math.PI / 2;
 
         this.car = group;
-        this.car.position.set(this.carPosition.x, this.carPosition.y, this.carPosition.z);
+        // Car stays at center of screen
+        this.car.position.set(0, 0.5, 0);
         this.scene.add(this.car);
     }
 
@@ -354,7 +358,7 @@ class NeighborhoodGame {
     }
 
     updateCarMovement() {
-        // Turning - right turns clockwise (counterclockwise in our coordinate system), left turns counterclockwise
+        // Turning
         if (this.keys['right'] || this.keys['arrowright']) {
             this.carRotation += this.turnSpeed;
         }
@@ -369,13 +373,17 @@ class NeighborhoodGame {
             this.carSpeed = Math.max(this.carSpeed - this.acceleration * 0.5, 0);
         }
 
-        // Calculate new position
-        this.carPosition.x += Math.cos(this.carRotation) * this.carSpeed;
-        this.carPosition.z += Math.sin(this.carRotation) * this.carSpeed;
+        // Car stays at center, world moves
+        // Rotate scene with car rotation
+        this.scene.rotation.y = this.carRotation;
 
-        // Update car object
-        this.car.position.copy(this.carPosition);
-        this.car.rotation.y = this.carRotation;
+        // Move the world in opposite direction of car movement
+        const worldOffsetX = -Math.cos(this.carRotation) * this.carSpeed;
+        const worldOffsetZ = -Math.sin(this.carRotation) * this.carSpeed;
+
+        // Update all objects in scene (except camera which is fixed)
+        this.scene.position.x += worldOffsetX;
+        this.scene.position.z += worldOffsetZ;
 
         // Update HUD
         document.getElementById('speed-display').textContent = `Speed: ${(this.carSpeed * 100).toFixed(0)}%`;
@@ -409,20 +417,8 @@ class NeighborhoodGame {
     }
 
     updateCamera() {
-        // Camera follows car from behind and above - always positioned opposite to car's forward direction
-        const cameraDistance = 15;
-        const cameraHeight = 10;
-        
-        // Position camera directly behind the car (opposite of rotation direction)
-        const cameraX = this.carPosition.x - Math.cos(this.carRotation) * cameraDistance;
-        const cameraZ = this.carPosition.z - Math.sin(this.carRotation) * cameraDistance;
-
-        this.camera.position.x = cameraX;
-        this.camera.position.y = this.carPosition.y + cameraHeight;
-        this.camera.position.z = cameraZ;
-
-        // Look at a point in front of the car
-        this.camera.lookAt(this.carPosition.x, this.carPosition.y + 2, this.carPosition.z);
+        // Camera is fixed in position - car and world rotate around it
+        // Camera position is already set in constructor
     }
 
     animate() {
