@@ -24,57 +24,11 @@
             padding-bottom: 20px;
         }
 
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-        }
-
-        .screen.active {
-            display: flex;
-            position: relative;
-        }
-
         .container {
             max-width: 100%;
             width: 100%;
             padding: 20px;
             margin: 0 auto;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            background: rgba(0, 0, 0, 0.1);
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .player-info {
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .logout-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .logout-btn:active {
-            background: rgba(255, 255, 255, 0.3);
         }
 
         .header {
@@ -146,97 +100,6 @@
             width: 130px;
         }
 
-        /* Login Screen */
-        #login-screen {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .login-container {
-            background: white;
-            border-radius: 16px;
-            padding: 40px 24px;
-            text-align: center;
-            max-width: 320px;
-            width: 90%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .login-container h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .login-message {
-            color: #666;
-            margin-bottom: 24px;
-            font-size: 14px;
-        }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .login-form input {
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-
-        .login-form input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            font-size: 12px;
-            margin-bottom: 12px;
-            min-height: 16px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-            margin-bottom: 12px;
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            width: 100%;
-        }
-
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-
-        .btn-secondary:active {
-            background: #e0e0e0;
-        }
-
         /* Responsive for larger screens */
         @media (max-width: 400px) {
             .games-grid {
@@ -265,34 +128,22 @@
     </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div id="login-screen" class="screen active">
-        <div class="login-container">
+    <div class="container">
+        <div class="header">
             <h1>GameHappy</h1>
-            <p class="login-message">Log in to play</p>
-            <div class="login-form">
-                <input type="text" id="username-input" placeholder="Username" autocomplete="off">
-                <input type="password" id="password-input" placeholder="Password" autocomplete="off">
-                <button id="login-btn" class="btn-primary">Log In</button>
-            </div>
-            <p id="login-error" class="error-message"></p>
-            <button id="demo-btn" class="btn-secondary">Demo Admin</button>
+            <p>Your Mobile Game Collection</p>
+        </div>
+
+        <div class="games-grid">
+            <!-- Secret Syndicates Game -->
+            <a href="/secretsyndicates/" class="game-card">
+                <div class="game-icon">🕵️</div>
+                <div class="game-name">Secret Syndicates</div>
+            </a>
         </div>
     </div>
-
-    <!-- Home Screen -->
-    <div id="home-screen" class="screen">
-        <div class="top-bar">
-            <div class="player-info">
-                <span id="player-name">Player</span>
-            </div>
-            <button id="logout-btn" class="logout-btn">Logout</button>
-        </div>
-        <div class="container">
-            <div class="header">
-                <h1>GameHappy</h1>
-                <p>Your Mobile Game Collection</p>
-            </div>
+</body>
+</html>
 
         <div class="games-grid">
             <!-- Are We There Yet Game -->
@@ -306,132 +157,6 @@
                 <div class="game-name">Secret Syndicates</div>
             </a>
         </div>
-        </div>
     </div>
-
-    <script>
-        // Simple auth for main GameHappy home
-        class GameHappyAuth {
-            constructor() {
-                this.currentUser = this.loadUser();
-                this.users = this.loadUsers();
-                this.initializeAuth();
-            }
-
-            initializeAuth() {
-                const loginScreen = document.getElementById('login-screen');
-                const homeScreen = document.getElementById('home-screen');
-
-                if (this.currentUser) {
-                    loginScreen.classList.remove('active');
-                    homeScreen.classList.add('active');
-                    document.getElementById('player-name').textContent = this.currentUser.username;
-                } else {
-                    loginScreen.classList.add('active');
-                    homeScreen.classList.remove('active');
-                    this.setupLoginHandlers();
-                }
-            }
-
-            setupLoginHandlers() {
-                document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
-                document.getElementById('demo-btn').addEventListener('click', () => this.handleDemoLogin());
-                
-                document.getElementById('password-input').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.handleLogin();
-                });
-            }
-
-            handleLogin() {
-                const username = document.getElementById('username-input').value.trim();
-                const password = document.getElementById('password-input').value;
-                const errorEl = document.getElementById('login-error');
-
-                if (!username || !password) {
-                    errorEl.textContent = 'Please enter username and password';
-                    return;
-                }
-
-                const user = this.users.find(u => u.username === username);
-                if (user && user.password === password) {
-                    this.loginUser(user);
-                    errorEl.textContent = '';
-                } else {
-                    errorEl.textContent = 'Invalid username or password';
-                }
-            }
-
-            handleDemoLogin() {
-                const demoUser = {
-                    id: 'admin',
-                    username: 'admin',
-                    password: 'admin',
-                    email: 'admin@gamehappy.local'
-                };
-                this.loginUser(demoUser);
-            }
-
-            loginUser(user) {
-                this.currentUser = {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email
-                };
-                this.saveUser(this.currentUser);
-                document.getElementById('login-screen').classList.remove('active');
-                document.getElementById('home-screen').classList.add('active');
-                document.getElementById('player-name').textContent = user.username;
-            }
-
-            logout() {
-                this.currentUser = null;
-                localStorage.removeItem('gamehappy_user');
-                document.getElementById('home-screen').classList.remove('active');
-                document.getElementById('login-screen').classList.add('active');
-                document.getElementById('username-input').value = '';
-                document.getElementById('password-input').value = '';
-                document.getElementById('login-error').textContent = '';
-                this.setupLoginHandlers();
-            }
-
-            saveUser(user) {
-                localStorage.setItem('gamehappy_user', JSON.stringify(user));
-            }
-
-            loadUser() {
-                const stored = localStorage.getItem('gamehappy_user');
-                return stored ? JSON.parse(stored) : null;
-            }
-
-            loadUsers() {
-                return [
-                    {
-                        id: 'admin',
-                        username: 'admin',
-                        password: 'admin',
-                        email: 'admin@gamehappy.local'
-                    }
-                ];
-            }
-
-            isLoggedIn() {
-                return this.currentUser !== null;
-            }
-
-            getCurrentUser() {
-                return this.currentUser;
-            }
-        }
-
-        // Initialize auth when page loads
-        let gameHappyAuth;
-        document.addEventListener('DOMContentLoaded', () => {
-            gameHappyAuth = new GameHappyAuth();
-            
-            document.getElementById('logout-btn').addEventListener('click', () => {
-                gameHappyAuth.logout();
-            });
-        });
-    </script>
 </body>
 </html>
