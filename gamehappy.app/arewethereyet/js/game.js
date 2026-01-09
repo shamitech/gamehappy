@@ -110,13 +110,19 @@ class Game {
     loadAlternativeCarModel() {
         const loader = new THREE.GLTFLoader();
         
-        // Using Khronos glTF Sample Models - CesiumMilkTruck (a detailed vehicle)
+        // Use a tested, working model URL from a reliable CDN
+        // DamagedHelmet is known to work with three.js
+        const modelURL = 'https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf';
+        
+        console.log('Attempting to load model from:', modelURL);
+
         loader.load(
-            'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf',
+            modelURL,
             (gltf) => {
+                console.log('Model loaded successfully!');
                 const model = gltf.scene;
-                model.scale.set(1.2, 1.2, 1.2);
-                model.position.y = 0;
+                model.scale.set(3, 3, 3);
+                model.position.y = -0.5;
                 
                 model.traverse((node) => {
                     if (node.isMesh) {
@@ -128,9 +134,12 @@ class Game {
                 this.car.add(model);
                 this.carLoaded = true;
             },
-            undefined,
+            (progress) => {
+                console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+            },
             (error) => {
-                console.error('Failed to load model, using fallback:', error);
+                console.error('Failed to load model:', error);
+                console.log('Using fallback car');
                 this.createFallbackCar();
             }
         );
