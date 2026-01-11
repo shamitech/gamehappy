@@ -1,4 +1,5 @@
 const SecretSyndicates = require('./SecretSyndicates');
+const FlagGuardians = require('./FlagGuardians');
 
 class GameServer {
     constructor() {
@@ -17,6 +18,8 @@ class GameServer {
         
         if (gameType === 'secretsyndicates') {
             game = new SecretSyndicates(gameCode);
+        } else if (gameType === 'flagguardians') {
+            game = new FlagGuardians(gameCode);
         } else {
             return { success: false, message: 'Unknown game type' };
         }
@@ -169,14 +172,14 @@ class GameServer {
     }
 
     /**
-     * Generate unique 4-letter game code
+     * Generate unique 6-character game code (letters and numbers)
      */
     generateGameCode() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let code;
         do {
             code = '';
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 6; i++) {
                 code += chars.charAt(Math.floor(Math.random() * chars.length));
             }
         } while (this.games.has(code));

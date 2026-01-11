@@ -1040,6 +1040,190 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ===== FLAG GUARDIANS GAME EVENTS =====
+
+  /**
+   * Create Flag Guardians game
+   */
+  socket.on('game:create', (data, callback) => {
+    try {
+      const { playerName } = data;
+      console.log(`Creating Flag Guardians game for player: ${playerName}, socket token: ${playerToken}`);
+
+      const result = gameServer.createGame('flagguardians', playerToken, playerName);
+      
+      if (result.success) {
+        const gameCode = result.gameCode;
+        socket.join(`game-${gameCode}`);
+
+        // Broadcast game created event
+        io.to(`game-${gameCode}`).emit('game:created', {
+          gameCode,
+          playerName,
+          playerToken,
+          players: result.game.players,
+          isHost: result.isHost
+        });
+
+        callback({ 
+          success: true, 
+          gameCode, 
+          playerToken,
+          players: result.game.players
+        });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error creating Flag Guardians game:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
+   * Join Flag Guardians game
+   */
+  socket.on('game:join', (data, callback) => {
+    try {
+      const { gameCode, playerName } = data;
+      console.log(`Player ${playerName} joining Flag Guardians game: ${gameCode}`);
+
+      const result = gameServer.joinGame(gameCode, playerToken, playerName);
+      
+      if (result.success) {
+        socket.join(`game-${gameCode}`);
+
+        // Broadcast player joined
+        const game = gameServer.getGame(gameCode);
+        io.to(`game-${gameCode}`).emit('lobby:player-joined', {
+          playerName,
+          playerToken,
+          players: result.game.players,
+          redTeam: game.redTeam,
+          blueTeam: game.blueTeam
+        });
+
+        callback({ 
+          success: true, 
+          gameCode, 
+          playerToken,
+          players: result.game.players
+        });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error joining Flag Guardians game:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
+   * Select team in Flag Guardians
+   */
+  socket.on('lobby:select-team', (data, callback) => {
+    try {
+      const { gameCode, team } = data;
+      const game = gameServer.getGame(gameCode);
+
+      if (!game) {
+        callback({ success: false, message: 'Game not found' });
+        return;
+      }
+
+      const result = game.selectTeam(playerToken, team);
+      
+      if (result.success) {
+        // Broadcast team selection
+        io.to(`game-${gameCode}`).emit('lobby:updated', {
+          players: game.getPlayers(),
+          redTeam: game.redTeam,
+          blueTeam: game.blueTeam,
+          currentPhase: game.currentPhase
+        });
+
+        callback({ success: true });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error selecting team:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
+   * Start Flag Guardians game
+   */
+  socket.on('game:start', (data, callback) => {
+    try {
+      const { gameCode } = data;
+      const game = gameServer.getGame(gameCode);
+
+      if (!game) {
+        callback({ success: false, message: 'Game not found' });
+        return;
+      }
+
+      if (game.host !== playerToken) {
+        callback({ success: false, message: 'Only host can start game' });
+        return;
+      }
+
+      const result = game.startGame();
+      
+      if (result.success) {
+        // Broadcast game started
+        io.to(`game-${gameCode}`).emit('game:started', {
+          gameState: result.gameState,
+          redTeam: game.redTeam,
+          blueTeam: game.blueTeam,
+          currentRound: game.currentRound
+        });
+
+        callback({ success: true });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error starting game:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
+   * Leave Flag Guardians game
+   */
+  socket.on('game:leave', (data, callback) => {
+    try {
+      const { gameCode } = data;
+      const game = gameServer.getGame(gameCode);
+
+      if (game) {
+        game.removePlayer(playerToken);
+        socket.leave(`game-${gameCode}`);
+
+        if (game.isEmpty()) {
+          gameServer.games.delete(gameCode);
+        } else {
+          // Notify remaining players
+          io.to(`game-${gameCode}`).emit('lobby:player-left', {
+            playerToken,
+            players: game.getPlayers(),
+            redTeam: game.redTeam,
+            blueTeam: game.blueTeam,
+            isHost: game.host
+          });
+        }
+      }
+
+      callback({ success: true });
+    } catch (err) {
+      console.error('Error leaving game:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
   /**
    * Disconnect handler
    */
@@ -1447,7 +1631,7 @@ const PORT = process.env.PORT || 8443;
 
 server.listen(PORT, () => {
   console.log(`[${new Date().toISOString()}] Socket.IO server running at wss://gamehappy.app/websocket`);
-  console.log('Ready to handle: secretsyndicates and future games');
+  console.log('Ready to handle: secretsyndicates, flagguardians, and future games');
 });
 
 // Graceful shutdown handling
