@@ -374,6 +374,14 @@ class Game {
         this.players = data.players;
         this.redTeamPlayers = data.redTeam || [];
         this.blueTeamPlayers = data.blueTeam || [];
+        
+        // Find the host from the players list
+        const hostPlayer = data.players?.find(p => p.isHost);
+        if (hostPlayer) {
+            this.isHost = (hostPlayer.token === this.playerToken);
+            console.log(`[LOBBY UPDATED] Host is: ${hostPlayer.name}, I am host: ${this.isHost}`);
+        }
+        
         this.updateLobbyScreen();
     }
 
@@ -382,6 +390,14 @@ class Game {
         this.players = data.players;
         this.redTeamPlayers = data.redTeam || [];
         this.blueTeamPlayers = data.blueTeam || [];
+        
+        // Find the host from the players list
+        const hostPlayer = data.players?.find(p => p.isHost);
+        if (hostPlayer) {
+            this.isHost = (hostPlayer.token === this.playerToken);
+            console.log(`[PLAYER JOINED] Host is: ${hostPlayer.name}, I am host: ${this.isHost}`);
+        }
+        
         this.updateLobbyTeams();
         this.updatePlayerCount();
     }
@@ -394,6 +410,14 @@ class Game {
         this.players = data.players;
         this.redTeamPlayers = data.redTeam || [];
         this.blueTeamPlayers = data.blueTeam || [];
+        
+        // Find the host from the players list
+        const hostPlayer = data.players?.find(p => p.isHost);
+        if (hostPlayer) {
+            this.isHost = (hostPlayer.token === this.playerToken);
+            console.log(`[PLAYER LEFT] Host is: ${hostPlayer.name}, I am host: ${this.isHost}`);
+        }
+        
         this.updateLobbyTeams();
         this.updatePlayerCount();
     }

@@ -1099,10 +1099,14 @@ io.on('connection', (socket) => {
 
         // Broadcast player joined
         const game = gameServer.getGame(gameCode);
+        const playersWithHost = result.game.players.map(p => ({
+          ...p,
+          isHost: p.token === game.host
+        }));
         io.to(`game-${gameCode}`).emit('lobby:player-joined', {
           playerName,
           playerToken,
-          players: result.game.players,
+          players: playersWithHost,
           redTeam: game.redTeam,
           blueTeam: game.blueTeam
         });
@@ -1139,8 +1143,12 @@ io.on('connection', (socket) => {
       
       if (result.success) {
         // Broadcast team selection
+        const playersWithHost = game.getPlayers().map(p => ({
+          ...p,
+          isHost: p.token === game.host
+        }));
         io.to(`game-${gameCode}`).emit('lobby:updated', {
-          players: game.getPlayers(),
+          players: playersWithHost,
           redTeam: game.redTeam,
           blueTeam: game.blueTeam,
           currentPhase: game.currentPhase
@@ -1211,9 +1219,13 @@ io.on('connection', (socket) => {
           gameServer.games.delete(gameCode);
         } else {
           // Notify remaining players
+          const playersWithHost = game.getPlayers().map(p => ({
+            ...p,
+            isHost: p.token === game.host
+          }));
           io.to(`game-${gameCode}`).emit('lobby:player-left', {
             playerToken,
-            players: game.getPlayers(),
+            players: playersWithHost,
             redTeam: game.redTeam,
             blueTeam: game.blueTeam,
             isHost: game.host
