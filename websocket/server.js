@@ -1048,12 +1048,14 @@ io.on('connection', (socket) => {
   socket.on('game:create', (data, callback) => {
     try {
       const { playerName } = data;
-      console.log(`Creating Flag Guardians game for player: ${playerName}, socket token: ${playerToken}`);
+      console.log(`[GAME:CREATE] Creating Flag Guardians game for player: ${playerName}, socket token: ${playerToken}`);
 
       const result = gameServer.createGame('flagguardians', playerToken, playerName);
+      console.log(`[GAME:CREATE] Game creation result:`, result);
       
       if (result.success) {
         const gameCode = result.gameCode;
+        console.log(`[GAME:CREATE] Game created successfully with code: ${gameCode}`);
         socket.join(`game-${gameCode}`);
 
         // Broadcast game created event
@@ -1061,21 +1063,23 @@ io.on('connection', (socket) => {
           gameCode,
           playerName,
           playerToken,
-          players: result.game.players,
+          players: result.game?.players || [],
           isHost: result.isHost
         });
 
+        console.log(`[GAME:CREATE] Sending callback with success`);
         callback({ 
           success: true, 
           gameCode, 
           playerToken,
-          players: result.game.players
+          players: result.game?.players || []
         });
       } else {
+        console.log(`[GAME:CREATE] Game creation failed: ${result.message}`);
         callback({ success: false, message: result.message });
       }
     } catch (err) {
-      console.error('Error creating Flag Guardians game:', err);
+      console.error('[GAME:CREATE] Error creating Flag Guardians game:', err);
       callback({ success: false, message: 'Server error' });
     }
   });
