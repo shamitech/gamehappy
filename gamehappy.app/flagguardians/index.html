@@ -164,14 +164,13 @@
             </div>
 
             <div class="game-content">
-                <div class="my-team-section">
-                    <h3>Your Team (<span id="my-team-display">---</span>)</h3>
-                    <div class="players-list" id="my-team-players">
-                        <p>Loading...</p>
-                    </div>
+                <!-- Map Display -->
+                <div class="map-container">
+                    <canvas id="game-map-canvas" class="game-map"></canvas>
                 </div>
 
-                <div class="game-actions">
+                <!-- Game Info Sidebar -->
+                <div class="game-info-panel">
                     <div class="flag-status">
                         <div class="flag-item">
                             <span class="flag-emoji">🚩</span>
@@ -182,12 +181,19 @@
                             <p>Enemy Flag: <span id="enemy-flag-status">Defending</span></p>
                         </div>
                     </div>
-                </div>
 
-                <div class="game-messages">
-                    <h4>Game Updates</h4>
-                    <div id="game-log" class="game-log">
-                        <p class="message-info">Game started!</p>
+                    <div class="game-messages">
+                        <h4>Nearby Players</h4>
+                        <div id="visible-players" class="visible-players-list">
+                            <p class="message-info">Looking for enemies...</p>
+                        </div>
+                    </div>
+
+                    <div class="game-messages">
+                        <h4>Game Updates</h4>
+                        <div id="game-log" class="game-log">
+                            <p class="message-info">Game started! Click on The Block to move.</p>
+                        </div>
                     </div>
                 </div>
             </div>

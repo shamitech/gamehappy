@@ -22,6 +22,15 @@ class Game {
         this.blueScore = 0;
         this.currentRound = 1;
         this.gameStarted = false;
+
+        // Map data
+        this.mapConfig = null;
+        this.houses = null;
+        this.playerPosition = null; // {x, y}
+        this.visiblePlayers = [];
+        this.mapCanvas = null;
+        this.canvasCtx = null;
+        this.animationFrameId = null;
         
         this.init();
     }
@@ -109,6 +118,10 @@ class Game {
         this.socket.on('lobby:player-left', (data) => this.onPlayerLeft(data));
         this.socket.on('game:started', (data) => this.onGameStarted(data));
         this.socket.on('game:error', (data) => this.onGameError(data));
+
+        // Map events
+        this.socket.on('map:players-update', (data) => this.onMapPlayersUpdate(data));
+        this.socket.on('map:visible-players', (data) => this.onVisiblePlayersUpdate(data));
     }
 
     // ===== EVENT HANDLERS =====
@@ -426,13 +439,281 @@ class Game {
         console.log('Game started:', data);
         this.gameStarted = true;
         this.currentRound = 1;
+        
+        // Extract map config from game state
+        this.mapConfig = data.mapConfig || data.gameState?.mapConfig;
+        this.houses = data.houses || data.gameState?.houses;
+        this.playerPosition = data.playerPosition || { x: 60, y: this.playerTeam === 'red' ? 100 : 20 };
+        
         this.showScreen('game-screen');
+        this.initializeMapCanvas();
         this.updateGameScreen();
+        this.startMapRendering();
     }
 
     onGameError(data) {
         console.error('Game error:', data);
         this.showMessage(data.message || 'Game error occurred', 'error');
+    }
+
+    onMapPlayersUpdate(data) {
+        console.log('Map players update:', data);
+        // This event notifies all clients of player positions
+        // We don't use it directly - we use the map:visible-players instead
+    }
+
+    onVisiblePlayersUpdate(data) {
+        console.log('Visible players:', data);
+        this.visiblePlayers = data.visiblePlayers || [];
+        this.playerPosition = data.playerPosition || this.playerPosition;
+        
+        // Update visible players in UI
+        this.updateVisiblePlayersList();
+    }
+
+    // ===== MAP RENDERING =====
+    initializeMapCanvas() {
+        this.mapCanvas = document.getElementById('game-map-canvas');
+        if (!this.mapCanvas) {
+            console.error('Map canvas not found!');
+            return;
+        }
+        
+        this.canvasCtx = this.mapCanvas.getContext('2d');
+        this.resizeCanvas();
+        
+        // Handle canvas clicks for movement
+        this.mapCanvas.addEventListener('click', (e) => this.handleMapClick(e));
+        window.addEventListener('resize', () => this.resizeCanvas());
+    }
+
+    resizeCanvas() {
+        const container = this.mapCanvas.parentElement;
+        this.mapCanvas.width = container.offsetWidth;
+        this.mapCanvas.height = container.offsetHeight;
+    }
+
+    startMapRendering() {
+        const render = () => {
+            this.renderMap();
+            this.animationFrameId = requestAnimationFrame(render);
+        };
+        render();
+    }
+
+    stopMapRendering() {
+        if (this.animationFrameId) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+    }
+
+    renderMap() {
+        if (!this.canvasCtx || !this.mapConfig) return;
+
+        const ctx = this.canvasCtx;
+        const canvas = this.mapCanvas;
+
+        // Clear canvas
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Calculate zoom and pan to keep player centered
+        const mapWidth = this.mapConfig.width;
+        const mapHeight = this.mapConfig.height;
+        const zoomLevel = Math.min(
+            canvas.width / (mapWidth * 1.2),
+            canvas.height / (mapHeight * 1.2)
+        );
+        
+        const offsetX = canvas.width / 2 - (this.playerPosition?.x || 60) * zoomLevel;
+        const offsetY = canvas.height / 2 - (this.playerPosition?.y || 60) * zoomLevel;
+
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        ctx.scale(zoomLevel, zoomLevel);
+
+        // Draw background
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, mapWidth, mapHeight);
+
+        // Draw alleyway
+        const alley = this.mapConfig.alleyway;
+        ctx.fillStyle = '#444';
+        ctx.fillRect(alley.x, alley.y, alley.width, alley.height);
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(alley.x, alley.y, alley.width, alley.height);
+
+        // Draw team territories
+        ctx.fillStyle = 'rgba(255, 59, 59, 0.08)';
+        const redTerritory = this.mapConfig.redTerritory;
+        ctx.fillRect(redTerritory.x, redTerritory.y, redTerritory.width, redTerritory.height);
+
+        ctx.fillStyle = 'rgba(59, 126, 255, 0.08)';
+        const blueTerritory = this.mapConfig.blueTerritory;
+        ctx.fillRect(blueTerritory.x, blueTerritory.y, blueTerritory.width, blueTerritory.height);
+
+        // Draw houses
+        if (this.houses) {
+            this.drawHouses(ctx);
+        }
+
+        // Draw visible players
+        this.drawVisiblePlayers(ctx);
+
+        // Draw player (self)
+        this.drawPlayerMarker(ctx, this.playerPosition?.x || 60, this.playerPosition?.y || 60, true);
+
+        // Draw grid (optional - for debugging)
+        this.drawGrid(ctx, mapWidth, mapHeight);
+
+        ctx.restore();
+    }
+
+    drawHouses(ctx) {
+        const drawHouse = (house, color) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(house.x, house.y, house.width, house.yardHeight);
+            ctx.strokeStyle = this.playerTeam === house.team ? '#ff9f3b' : '#3b7eff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(house.x, house.y, house.width, house.yardHeight);
+
+            // Draw house label
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 2px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`H${house.id}`, house.x + house.width / 2, house.y + 4);
+
+            // Draw floors indicator for multi-story
+            if (house.stories > 1) {
+                ctx.fillStyle = '#f39c12';
+                ctx.font = '1px Arial';
+                ctx.fillText(`${house.stories}F`, house.x + house.width / 2, house.y + 2);
+            }
+        };
+
+        if (this.houses.red) {
+            this.houses.red.forEach(house => drawHouse(house, 'rgba(255, 59, 59, 0.2)'));
+        }
+        if (this.houses.blue) {
+            this.houses.blue.forEach(house => drawHouse(house, 'rgba(59, 126, 255, 0.2)'));
+        }
+    }
+
+    drawVisiblePlayers(ctx) {
+        for (let player of this.visiblePlayers) {
+            const color = player.team === 'red' ? '#ff3b3b' : '#3b7eff';
+            this.drawPlayerMarker(ctx, player.position.x, player.position.y, false, color, player.name);
+        }
+    }
+
+    drawPlayerMarker(ctx, x, y, isSelf = false, color = null, label = null) {
+        const actualColor = color || (this.playerTeam === 'red' ? '#ff9f3b' : '#6ba3ff');
+        
+        ctx.fillStyle = actualColor;
+        ctx.beginPath();
+        ctx.arc(x, y, isSelf ? 1.5 : 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw outline
+        ctx.strokeStyle = isSelf ? '#fff' : actualColor;
+        ctx.lineWidth = isSelf ? 0.5 : 0.3;
+        ctx.stroke();
+
+        // Draw name if available
+        if (label) {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 1px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, y - 2);
+        }
+    }
+
+    drawGrid(ctx, mapWidth, mapHeight) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.lineWidth = 0.2;
+
+        // Vertical lines
+        for (let x = 0; x <= mapWidth; x += 10) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, mapHeight);
+            ctx.stroke();
+        }
+
+        // Horizontal lines
+        for (let y = 0; y <= mapHeight; y += 10) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(mapWidth, y);
+            ctx.stroke();
+        }
+    }
+
+    handleMapClick(event) {
+        if (!this.gameStarted || !this.mapCanvas) return;
+
+        const rect = this.mapCanvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+
+        // Convert canvas coordinates to map coordinates
+        const mapWidth = this.mapConfig.width;
+        const mapHeight = this.mapConfig.height;
+        const zoomLevel = Math.min(
+            this.mapCanvas.width / (mapWidth * 1.2),
+            this.mapCanvas.height / (mapHeight * 1.2)
+        );
+        
+        const offsetX = this.mapCanvas.width / 2 - (this.playerPosition?.x || 60) * zoomLevel;
+        const offsetY = this.mapCanvas.height / 2 - (this.playerPosition?.y || 60) * zoomLevel;
+
+        const targetX = (clickX - offsetX) / zoomLevel;
+        const targetY = (clickY - offsetY) / zoomLevel;
+
+        // Emit movement command
+        this.moveToPosition(targetX, targetY);
+    }
+
+    moveToPosition(targetX, targetY) {
+        if (!this.gameCode || !this.playerToken) return;
+
+        // Clamp to map bounds
+        targetX = Math.max(0, Math.min(targetX, this.mapConfig.width - 1));
+        targetY = Math.max(0, Math.min(targetY, this.mapConfig.height - 1));
+
+        this.socket.emit('game:move',
+            {
+                gameCode: this.gameCode,
+                playerToken: this.playerToken,
+                targetX: Math.round(targetX),
+                targetY: Math.round(targetY)
+            },
+            (response) => {
+                if (response.success) {
+                    this.playerPosition = response.position;
+                } else {
+                    console.log('Move failed:', response.message);
+                }
+            }
+        );
+    }
+
+    updateVisiblePlayersList() {
+        const list = document.getElementById('visible-players');
+        if (!list) return;
+
+        if (this.visiblePlayers.length === 0) {
+            list.innerHTML = '<p class="message-info">No enemies nearby...</p>';
+            return;
+        }
+
+        list.innerHTML = this.visiblePlayers.map(player => `
+            <div class="player-item ${player.team === 'red' ? 'enemy' : 'ally'}">
+                ${player.team === 'red' ? '🔴' : '🔵'} ${player.name} (${player.distance}m)
+            </div>
+        `).join('');
     }
 
     // ===== UI UPDATE FUNCTIONS =====

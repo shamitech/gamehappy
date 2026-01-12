@@ -1057,6 +1057,7 @@ io.on('connection', (socket) => {
         const gameCode = result.gameCode;
         console.log(`[GAME:CREATE] Game created successfully with code: ${gameCode}`);
         socket.join(`game-${gameCode}`);
+        socket.join(`player-${playerToken}`); // Join player-specific room for visibility updates
 
         // Broadcast game created event
         io.to(`game-${gameCode}`).emit('game:created', {
@@ -1096,6 +1097,7 @@ io.on('connection', (socket) => {
       
       if (result.success) {
         socket.join(`game-${gameCode}`);
+        socket.join(`player-${playerToken}`); // Join player-specific room for visibility updates
 
         // Broadcast player joined
         const game = gameServer.getGame(gameCode);
@@ -1188,6 +1190,8 @@ io.on('connection', (socket) => {
         // Broadcast game started
         io.to(`game-${gameCode}`).emit('game:started', {
           gameState: result.gameState,
+          mapConfig: game.mapConfig,
+          houses: game.houses,
           redTeam: game.redTeam,
           blueTeam: game.blueTeam,
           currentRound: game.currentRound
@@ -1236,6 +1240,58 @@ io.on('connection', (socket) => {
       callback({ success: true });
     } catch (err) {
       console.error('Error leaving game:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
+   * Player moves on map (Flag Guardians)
+   */
+  socket.on('game:move', (data, callback) => {
+    try {
+      const { gameCode, targetX, targetY } = data;
+      const game = gameServer.getGame(gameCode);
+
+      if (!game) {
+        callback({ success: false, message: 'Game not found' });
+        return;
+      }
+
+      // Validate game type
+      if (game.gameType !== 'flagguardians') {
+        callback({ success: false, message: 'Invalid game type' });
+        return;
+      }
+
+      // Move player
+      const result = game.movePlayer(playerToken, targetX, targetY);
+      
+      if (result.success) {
+        callback({ success: true, position: result.position });
+        
+        // Get visible players for all players in the game
+        const allPlayers = game.getPlayers();
+        for (let player of allPlayers) {
+          const visiblePlayers = game.getVisiblePlayers(player.token);
+          const playerPos = game.playerPositions.get(player.token);
+          
+          // Send visible players update to this player
+          io.to(`player-${player.token}`).emit('map:visible-players', {
+            playerPosition: playerPos,
+            visiblePlayers: visiblePlayers
+          });
+        }
+
+        // Broadcast that a player moved (without position info to non-visible players)
+        io.to(`game-${gameCode}`).emit('map:players-update', {
+          playerToken,
+          moved: true
+        });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error moving player:', err);
       callback({ success: false, message: 'Server error' });
     }
   });
