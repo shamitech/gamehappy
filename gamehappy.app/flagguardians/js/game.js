@@ -191,20 +191,26 @@ class Game {
 
     // ===== GAME CREATION & JOINING =====
     createGame() {
+        console.log('[CREATE GAME] Button clicked');
         const playerName = document.getElementById('input-player-name').value.trim();
+        console.log('[CREATE GAME] Player name:', playerName);
 
         if (!playerName) {
+            console.log('[CREATE GAME] No player name entered');
             this.showMessage('Please enter your name', 'error', 'create-game-screen');
             return;
         }
 
         if (!this.isConnected) {
+            console.log('[CREATE GAME] Not connected to server');
             this.showMessage('Not connected to server', 'error', 'create-game-screen');
             return;
         }
 
+        console.log('[CREATE GAME] Emitting game:create event...');
         this.playerName = playerName;
         this.socket.emit('game:create', { playerName }, (response) => {
+            console.log('[CREATE GAME] Received callback response:', response);
             if (response.success) {
                 this.playerToken = response.playerToken;
                 this.gameCode = response.gameCode;
