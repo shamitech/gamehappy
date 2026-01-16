@@ -2118,12 +2118,15 @@ app.get('/test-results', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 8445;
+const PORT = process.env.PORT || 8443;
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`[${new Date().toISOString()}] Socket.IO server running at wss://gamehappy.app/websocket`);
   console.log('Ready to handle: secretsyndicates, flagguardians, and future games');
 });
+
+// Enable SO_REUSEADDR
+server._server?.setsockopt?.(1, 15, 1);
 
 // Graceful shutdown handling
 process.on('SIGTERM', () => {
