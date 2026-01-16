@@ -13,11 +13,8 @@ const server = https.createServer({
 // Enable SO_REUSEADDR to allow quick restart without port conflict
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error('[ERROR] Port 8443 already in use. Trying again in 3 seconds...');
-    setTimeout(() => {
-      server.close();
-      server.listen(process.env.PORT || 8443);
-    }, 3000);
+    console.error('[ERROR] Port 8443 already in use. Exiting.');
+    process.exit(1);
   }
 });
 
