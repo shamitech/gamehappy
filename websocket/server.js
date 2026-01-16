@@ -814,6 +814,8 @@ io.on('connection', (socket) => {
                           });
                         }
                       }
+                    }
+                  }
                 }, 2000 + Math.random() * 1000); // 2-3 second delay
               }
               
