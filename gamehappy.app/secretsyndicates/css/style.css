@@ -1908,6 +1908,9 @@ h3 {
 
 .how-to-play-content {
     animation: fadeIn 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding-right: 10px;
 }
 
 .how-to-play-content h2 {
@@ -3103,76 +3106,5 @@ h3 {
 .btn-close:hover {
     background: rgba(212, 175, 55, 0.2);
     color: var(--primary-gold);
-}
-
-.rejoin-code-content h2 {
-    font-family: 'Cinzel', serif;
-    font-size: 1.8rem;
-    color: var(--primary-gold);
-    margin-bottom: 15px;
-    margin-top: 10px;
-}
-
-.rejoin-code-content p {
-    color: var(--text-muted);
-    margin-bottom: 20px;
-    line-height: 1.5;
-}
-
-.rejoin-code-display {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
-    border: 2px solid var(--primary-gold);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 25px;
-}
-
-.code-box {
-    background: var(--darker-bg);
-    border: 1px dashed var(--primary-gold);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 12px;
-}
-
-.code-value {
-    font-family: 'Cinzel', serif;
-    font-size: 1.5rem;
-    color: var(--primary-gold);
-    letter-spacing: 2px;
-    word-break: break-all;
-}
-
-.btn-small {
-    width: 100%;
-    padding: 10px;
-    font-size: 0.9rem;
-}
-
-.code-instructions {
-    margin: 25px 0;
-    text-align: center;
-}
-
-.code-instructions p {
-    margin-bottom: 15px;
-}
-
-.qr-code {
-    display: flex;
-    justify-content: center;
-    margin: 15px 0;
-    min-height: 150px;
-}
-
-.code-note {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 20px;
-    font-style: italic;
-}
-
-#btn-dismiss-rejoin-code {
-    width: 100%;
 }
 

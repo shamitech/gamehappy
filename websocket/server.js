@@ -399,10 +399,16 @@ io.on('connection', (socket) => {
               
               let action = null;
               
-              if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
-                action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-              } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
-                action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+              // Use getBotAction if available (preferred approach)
+              if (game.getBotAction) {
+                action = game.getBotAction(botPlayer.token, 1); // phase 1 = night phase
+              } else {
+                // Fallback to specific methods
+                if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                  action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                  action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                }
               }
               
               if (action) {
@@ -415,7 +421,7 @@ io.on('connection', (socket) => {
                 }
               }
               
-              // Mark bot as done with this phase
+              // Always mark bot as done with this phase (regardless of whether action was taken)
               if (game.setPlayerDone) {
                 game.setPlayerDone(botPlayer.token);
                 console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
@@ -753,10 +759,15 @@ io.on('connection', (socket) => {
                   let action = null;
                   
                   if (phaseResult.phase === 'night') {
-                    if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
-                      action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-                    } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
-                      action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                    // Use getBotAction if available (preferred approach)
+                    if (game.getBotAction) {
+                      action = game.getBotAction(botPlayer.token, 'night');
+                    } else {
+                      if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                        action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                      } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                        action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                      }
                     }
                   } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
                     action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
@@ -795,24 +806,24 @@ io.on('connection', (socket) => {
                       });
                       console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`);
                     }
+                  }
+                  
+                  // Always mark bot as done with this phase (regardless of whether action was taken)
+                  if (game.setPlayerDone) {
+                    game.setPlayerDone(botPlayer.token);
+                    console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
                     
-                    // Mark bot as done with this phase
-                    if (game.setPlayerDone) {
-                      game.setPlayerDone(botPlayer.token);
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
-                      
-                      // Check if all players are now done
-                      const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
-                      if (allDone) {
-                        console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
-                        const phaseResult2 = game.advancePhase();
-                        if (phaseResult2.success) {
-                          // Trigger the same phase advancement logic as player-done event
-                          io.to(`game-${gameCode}`).emit('game-event', {
-                            eventName: 'phase-advancing',
-                            payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
-                          });
-                        }
+                    // Check if all players are now done
+                    const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                    if (allDone) {
+                      console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                      const phaseResult2 = game.advancePhase();
+                      if (phaseResult2.success) {
+                        // Trigger the same phase advancement logic as player-done event
+                        io.to(`game-${gameCode}`).emit('game-event', {
+                          eventName: 'phase-advancing',
+                          payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
+                        });
                       }
                     }
                   }
@@ -981,10 +992,15 @@ io.on('connection', (socket) => {
                   let action = null;
                   
                   if (phaseResult.phase === 'night') {
-                    if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
-                      action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-                    } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
-                      action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                    // Use getBotAction if available (preferred approach)
+                    if (game.getBotAction) {
+                      action = game.getBotAction(botPlayer.token, 'night');
+                    } else {
+                      if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                        action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                      } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                        action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                      }
                     }
                   } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
                     action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
@@ -1007,24 +1023,24 @@ io.on('connection', (socket) => {
                       const result = gameServer.handleGameEvent(botPlayer.token, 'trial-vote', { vote: action.vote });
                       console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`, result);
                     }
+                  }
+                  
+                  // Always mark bot as done with this phase (regardless of whether action was taken)
+                  if (game.setPlayerDone) {
+                    game.setPlayerDone(botPlayer.token);
+                    console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
                     
-                    // Mark bot as done with this phase
-                    if (game.setPlayerDone) {
-                      game.setPlayerDone(botPlayer.token);
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
-                      
-                      // Check if all players are now done
-                      const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
-                      if (allDone) {
-                        console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
-                        const phaseResult2 = game.advancePhase();
-                        if (phaseResult2.success) {
-                          // Trigger the same phase advancement logic as player-done event
-                          io.to(`game-${gameCode}`).emit('game-event', {
-                            eventName: 'phase-advancing',
-                            payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
-                          });
-                        }
+                    // Check if all players are now done
+                    const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                    if (allDone) {
+                      console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                      const phaseResult2 = game.advancePhase();
+                      if (phaseResult2.success) {
+                        // Trigger the same phase advancement logic as player-done event
+                        io.to(`game-${gameCode}`).emit('game-event', {
+                          eventName: 'phase-advancing',
+                          payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
+                        });
                       }
                     }
                   }
@@ -1240,10 +1256,15 @@ io.on('connection', (socket) => {
                   let action = null;
                   
                   if (phaseResult.phase === 'night') {
-                    if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
-                      action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
-                    } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
-                      action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                    // Use getBotAction if available (preferred approach)
+                    if (game.getBotAction) {
+                      action = game.getBotAction(botPlayer.token, 'night');
+                    } else {
+                      if (botRole === 'Syndicate' && game.getBotSyndicateNightAction) {
+                        action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
+                      } else if (botRole === 'Bodyguard' && game.getBotBodyGuardAction) {
+                        action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
+                      }
                     }
                   } else if (phaseResult.phase === 'accusation' && game.getBotAccusationVote) {
                     action = game.getBotAccusationVote(botPlayer.token, alivePlayers);
@@ -1266,24 +1287,24 @@ io.on('connection', (socket) => {
                       const result = gameServer.handleGameEvent(botPlayer.token, 'trial-vote', { vote: action.vote });
                       console.log(`[${gameCode}] Bot ${botPlayer.name} voted ${action.vote} on trial`, result);
                     }
+                  }
+                  
+                  // Always mark bot as done with this phase (regardless of whether action was taken)
+                  if (game.setPlayerDone) {
+                    game.setPlayerDone(botPlayer.token);
+                    console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
                     
-                    // Mark bot as done with this phase
-                    if (game.setPlayerDone) {
-                      game.setPlayerDone(botPlayer.token);
-                      console.log(`[${gameCode}] Bot ${botPlayer.name} marked as done for phase`);
-                      
-                      // Check if all players are now done
-                      const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
-                      if (allDone) {
-                        console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
-                        const phaseResult2 = game.advancePhase();
-                        if (phaseResult2.success) {
-                          // Trigger the same phase advancement logic as player-done event
-                          io.to(`game-${gameCode}`).emit('game-event', {
-                            eventName: 'phase-advancing',
-                            payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
-                          });
-                        }
+                    // Check if all players are now done
+                    const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+                    if (allDone) {
+                      console.log(`[${gameCode}] ALL PLAYERS DONE (including bots)! Auto-advancing phase`);
+                      const phaseResult2 = game.advancePhase();
+                      if (phaseResult2.success) {
+                        // Trigger the same phase advancement logic as player-done event
+                        io.to(`game-${gameCode}`).emit('game-event', {
+                          eventName: 'phase-advancing',
+                          payload: { fromPhase: game.currentPhase, toPhase: phaseResult2.phase }
+                        });
                       }
                     }
                   }

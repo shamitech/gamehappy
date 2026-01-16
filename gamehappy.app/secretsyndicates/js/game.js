@@ -303,36 +303,6 @@ class Game {
         return `${baseUrl}?${params.toString()}`;
     }
 
-    showRejoinCodeModal() {
-        const modal = document.getElementById('rejoin-code-modal');
-        if (!modal) return;
-        
-        // Generate and display rejoin code
-        const rejoinCode = this.generateRejoinCode();
-        const codeElement = document.getElementById('rejoin-code-value');
-        if (codeElement) {
-            codeElement.textContent = rejoinCode;
-        }
-        
-        // Generate QR code (using simple text-based representation for now)
-        // In production, you'd use a library like qrcode.js
-        const qrContainer = document.getElementById('rejoin-qr-code');
-        if (qrContainer) {
-            const rejoinUrl = this.generateRejoinUrl();
-            // Create a simple QR code placeholder (you can integrate actual QR library here)
-            qrContainer.innerHTML = `<div style="background: white; padding: 10px; border-radius: 5px; color: black; font-size: 0.7rem; word-break: break-all; max-width: 150px; margin: auto;">QR Code would be generated for: ${rejoinUrl}</div>`;
-        }
-        
-        modal.style.display = 'flex';
-    }
-
-    hideRejoinCodeModal() {
-        const modal = document.getElementById('rejoin-code-modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-    }
-
     checkForRejoinSession() {
         // Check if user is trying to rejoin via URL parameters
         const urlParams = new URLSearchParams(window.location.search);
@@ -424,11 +394,6 @@ class Game {
                 console.log('Game started:', data);
                 this.showScreen('role-screen');
                 this.displayRoleIntro(data.gameState);
-                
-                // Show rejoin code modal after a brief delay
-                setTimeout(() => {
-                    this.showRejoinCodeModal();
-                }, 1500);
             });
 
             this.socket.on('game-state-updated', (data) => {
@@ -651,36 +616,6 @@ class Game {
                 this.gameCode = null;
                 this.playerToken = null;
                 this.showScreen('home-screen');
-            });
-        }
-
-        // Rejoin code modal buttons
-        const btnCloseRejoinCode = document.getElementById('btn-close-rejoin-code');
-        if (btnCloseRejoinCode) {
-            btnCloseRejoinCode.addEventListener('click', () => {
-                this.hideRejoinCodeModal();
-            });
-        }
-
-        const btnCopyRejoinCode = document.getElementById('btn-copy-rejoin-code');
-        if (btnCopyRejoinCode) {
-            btnCopyRejoinCode.addEventListener('click', () => {
-                const codeValue = document.getElementById('rejoin-code-value')?.textContent;
-                if (codeValue) {
-                    navigator.clipboard.writeText(codeValue).then(() => {
-                        btnCopyRejoinCode.textContent = '✓ Copied!';
-                        setTimeout(() => {
-                            btnCopyRejoinCode.textContent = '📋 Copy Code';
-                        }, 2000);
-                    });
-                }
-            });
-        }
-
-        const btnDismissRejoinCode = document.getElementById('btn-dismiss-rejoin-code');
-        if (btnDismissRejoinCode) {
-            btnDismissRejoinCode.addEventListener('click', () => {
-                this.hideRejoinCodeModal();
             });
         }
 
@@ -3006,22 +2941,6 @@ class Game {
         } else if (data.verdict === 'ASSASSINATED') {
             title.textContent = '🔪 You Have Been Assassinated';
             reason.textContent = 'You did not survive the night.';
-            
-            // Special message for eliminated hosts
-            if (data.isHostAssassinated) {
-                const hostMessage = document.getElementById('eliminated-host-message');
-                if (hostMessage) {
-                    hostMessage.style.display = 'block';
-                    hostMessage.innerHTML = '<p style="font-size: 16px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #fff;"><strong>📋 Important:</strong> Since you are the host, you will still need to read the murder stories for the remaining rounds. Please keep your device open and ready to read each story when prompted.</p>';
-                } else {
-                    // Create the message if it doesn't exist
-                    const messageEl = document.createElement('div');
-                    messageEl.id = 'eliminated-host-message';
-                    messageEl.style.cssText = 'margin-top: 20px; padding-top: 20px; border-top: 2px solid #fff;';
-                    messageEl.innerHTML = '<p style="font-size: 16px;"><strong>📋 Important:</strong> Since you are the host, you will still need to read the murder stories for the remaining rounds. Please keep your device open and ready to read each story when prompted.</p>';
-                    document.getElementById('eliminated-screen').appendChild(messageEl);
-                }
-            }
         }
         
         roleEl.textContent = data.role;
