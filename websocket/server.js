@@ -440,7 +440,7 @@ io.on('connection', (socket) => {
                   }
                 }
               }
-            }, 2000 + Math.random() * 1000);
+            }, 100 + Math.random() * 100);
           }
         }
 
@@ -827,7 +827,7 @@ io.on('connection', (socket) => {
                       }
                     }
                   }
-                }, 2000 + Math.random() * 1000); // 2-3 second delay
+                }, 100 + Math.random() * 100); // 100-200ms delay
               }
               
               // Clear playersDone for the new phase
@@ -1044,7 +1044,7 @@ io.on('connection', (socket) => {
                       }
                     }
                   }
-                }, 2000 + Math.random() * 1000); // 2-3 second delay
+                }, 100 + Math.random() * 100); // 100-200ms delay
               }
               
               // Clear elimination trackers after sending events
@@ -1308,7 +1308,7 @@ io.on('connection', (socket) => {
                       }
                     }
                   }
-                }, 2000 + Math.random() * 1000); // 2-3 second delay
+                }, 100 + Math.random() * 100); // 100-200ms delay
               }
               
               // CRITICAL: Clear tracking for new round
