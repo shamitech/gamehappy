@@ -10,6 +10,17 @@ const server = https.createServer({
   cert: fs.readFileSync('cert.pem')
 }, app);
 
+// Enable SO_REUSEADDR to allow quick restart without port conflict
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error('[ERROR] Port 8443 already in use. Trying again in 3 seconds...');
+    setTimeout(() => {
+      server.close();
+      server.listen(process.env.PORT || 8443);
+    }, 3000);
+  }
+});
+
 const io = new Server(server, {
   path: '/websocket',
   cors: {
