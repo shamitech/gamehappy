@@ -425,9 +425,10 @@ io.on('connection', (socket) => {
             
             let action = null;
             
-            // Get bot action based on role and phase
+            // Get bot action for CURRENT PHASE
+            const currentPhase = game.currentPhase;
             if (game.getBotAction) {
-              action = game.getBotAction(botPlayer.token, 'night'); 
+              action = game.getBotAction(botPlayer.token, currentPhase); 
             } else if (game.getBotSyndicateNightAction && botRole === 'Syndicate') {
               action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
             } else if (game.getBotBodyGuardAction && botRole === 'BodyGuard') {
@@ -443,9 +444,13 @@ io.on('connection', (socket) => {
                 gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
               } else if (action.type === 'bodyguardProtect') {
                 gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+              } else if (action.type === 'accusationVote') {
+                gameServer.handleGameEvent(botPlayer.token, 'cast-accusation', { targetToken: action.target });
+              } else if (action.type === 'trialVote') {
+                gameServer.handleGameEvent(botPlayer.token, 'cast-trial-vote', { vote: action.vote });
               }
             } else {
-              console.log(`[${gameCode}] [ADD-BOTS] Bot ${botPlayer.name} [${botRole}] - no action (passive role)`);
+              console.log(`[${gameCode}] [ADD-BOTS] Bot ${botPlayer.name} [${botRole}] - no action (passive role or phase)`);
             }
             
             // ALWAYS mark bot as done
@@ -1408,6 +1413,7 @@ io.on('connection', (socket) => {
         
         // Auto-perform bot actions for current phase
         console.log(`[${game.gameCode}] [PLAYER-READY] Starting bot action loop...`);
+        console.log(`[${game.gameCode}] [PLAYER-READY] Current game phase: ${game.currentPhase}`);
         console.log(`[${game.gameCode}] [PLAYER-READY] game.getBotPlayers exists? ${!!game.getBotPlayers}`);
         
         const botPlayersPhase = game.getBotPlayers ? game.getBotPlayers() : [];
@@ -1427,9 +1433,10 @@ io.on('connection', (socket) => {
           
           let action = null;
           
-          // Get bot action based on role and phase
+          // Get bot action for CURRENT PHASE, not always 'night'
+          const currentPhase = game.currentPhase;
           if (game.getBotAction) {
-            action = game.getBotAction(botPlayer.token, 'night'); 
+            action = game.getBotAction(botPlayer.token, currentPhase); 
           } else if (game.getBotSyndicateNightAction && botRole === 'Syndicate') {
             action = game.getBotSyndicateNightAction(botPlayer.token, alivePlayers);
           } else if (game.getBotBodyGuardAction && botRole === 'BodyGuard') {
@@ -1445,9 +1452,13 @@ io.on('connection', (socket) => {
               gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
             } else if (action.type === 'bodyguardProtect') {
               gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+            } else if (action.type === 'accusationVote') {
+              gameServer.handleGameEvent(botPlayer.token, 'cast-accusation', { targetToken: action.target });
+            } else if (action.type === 'trialVote') {
+              gameServer.handleGameEvent(botPlayer.token, 'cast-trial-vote', { vote: action.vote });
             }
           } else {
-            console.log(`[${game.gameCode}] [PLAYER-READY] Bot ${botPlayer.name} [${botRole}] - no action (passive role)`);
+            console.log(`[${game.gameCode}] [PLAYER-READY] Bot ${botPlayer.name} [${botRole}] - no action (passive role or phase)`);
           }
           
           // ALWAYS mark bot as done
