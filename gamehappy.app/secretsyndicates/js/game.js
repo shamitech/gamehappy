@@ -15,6 +15,7 @@ class Game {
         this.isReady = false;
         this.reconnecting = false;
         this.startGameInProgress = false;
+        this.isConnected = false;
         
         // Elimination tracking
         this.isEliminated = false;
@@ -57,11 +58,19 @@ class Game {
                 console.log(`[TEST MODE] Loaded as ${playerName} (${testToken}) in game ${gameCode}`);
             }
         } else {
-            // Normal mode - load from session
-            this.loadSession();
+            // Normal mode - check for rejoin URL first, then load from session
+            if (!this.checkForRejoinSession()) {
+                this.loadSession();
+            }
         }
         
         this.bindEvents();
+        
+        // Show rejoin screen if there's an active session
+        if (!testToken && !this.isConnected) {
+            this.showRejoinScreenIfAvailable();
+        }
+        
         this.connect();
     }
     
@@ -239,6 +248,109 @@ class Game {
         this.playerToken = null;
     }
 
+    // Rejoin Code Management
+    generateRejoinCode() {
+        // Format: GAME-XXXX-XXXX (friendly format)
+        if (!this.gameCode) return null;
+        
+        // Use a combination of game code and partial token for unique code
+        const gamePart = this.gameCode.substring(0, 4).toUpperCase();
+        const tokenPart = (this.playerToken || '').substring(0, 4).toUpperCase();
+        const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+        
+        const rejoinCode = `${gamePart}-${tokenPart}-${randomPart}`;
+        
+        // Store it for later reference
+        this.currentRejoinCode = rejoinCode;
+        return rejoinCode;
+    }
+
+    generateRejoinUrl() {
+        // Create a URL that can be used to rejoin the game
+        const baseUrl = window.location.origin + window.location.pathname;
+        const params = new URLSearchParams({
+            rejoin: this.gameCode,
+            token: this.playerToken,
+            name: this.playerName
+        });
+        return `${baseUrl}?${params.toString()}`;
+    }
+
+    showRejoinCodeModal() {
+        const modal = document.getElementById('rejoin-code-modal');
+        if (!modal) return;
+        
+        // Generate and display rejoin code
+        const rejoinCode = this.generateRejoinCode();
+        const codeElement = document.getElementById('rejoin-code-value');
+        if (codeElement) {
+            codeElement.textContent = rejoinCode;
+        }
+        
+        // Generate QR code (using simple text-based representation for now)
+        // In production, you'd use a library like qrcode.js
+        const qrContainer = document.getElementById('rejoin-qr-code');
+        if (qrContainer) {
+            const rejoinUrl = this.generateRejoinUrl();
+            // Create a simple QR code placeholder (you can integrate actual QR library here)
+            qrContainer.innerHTML = `<div style="background: white; padding: 10px; border-radius: 5px; color: black; font-size: 0.7rem; word-break: break-all; max-width: 150px; margin: auto;">QR Code would be generated for: ${rejoinUrl}</div>`;
+        }
+        
+        modal.style.display = 'flex';
+    }
+
+    hideRejoinCodeModal() {
+        const modal = document.getElementById('rejoin-code-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    checkForRejoinSession() {
+        // Check if user is trying to rejoin via URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const rejoinGameCode = urlParams.get('rejoin');
+        const rejoinToken = urlParams.get('token');
+        const rejoinName = urlParams.get('name');
+        
+        if (rejoinGameCode && rejoinToken) {
+            console.log('Rejoin attempt detected from URL parameters');
+            this.gameCode = rejoinGameCode;
+            this.playerToken = rejoinToken;
+            this.playerName = rejoinName || 'Unknown';
+            this.saveSession();
+            return true;
+        }
+        
+        return false;
+    }
+
+    showRejoinScreenIfAvailable() {
+        // Check if there's an active session
+        const sessionData = this.getSessionData();
+        if (sessionData) {
+            try {
+                const session = JSON.parse(sessionData);
+                // Check if session is recent (within 24 hours)
+                const sessionAge = Date.now() - (session.createdAt || 0);
+                const dayInMs = 24 * 60 * 60 * 1000;
+                
+                if (sessionAge < dayInMs) {
+                    // Show rejoin screen
+                    document.getElementById('rejoin-game-code').textContent = session.gameCode;
+                    document.getElementById('rejoin-player-name').textContent = session.playerName;
+                    this.showScreen('rejoin-screen');
+                    return;
+                }
+            } catch (e) {
+                console.error('Error parsing session:', e);
+            }
+        }
+        
+        // No active session, show home screen
+        this.showScreen('home-screen');
+    }
+
     // WebSocket Connection
     connect() {
         this.updateConnectionStatus('connecting');
@@ -258,6 +370,7 @@ class Game {
 
             this.socket.on('connect', () => {
                 console.log('Connected to server via Socket.IO');
+                this.isConnected = true;
                 this.updateConnectionStatus('connected');
                 
                 // Try to reconnect to existing game if we have a token
@@ -284,6 +397,11 @@ class Game {
                 console.log('Game started:', data);
                 this.showScreen('role-screen');
                 this.displayRoleIntro(data.gameState);
+                
+                // Show rejoin code modal after a brief delay
+                setTimeout(() => {
+                    this.showRejoinCodeModal();
+                }, 1500);
             });
 
             this.socket.on('game-state-updated', (data) => {
@@ -490,6 +608,54 @@ class Game {
         document.getElementById('btn-close-how-to-play').addEventListener('click', () => {
             this.showScreen('home-screen');
         });
+
+        // Rejoin screen buttons
+        const btnRejoinGame = document.getElementById('btn-rejoin-game');
+        if (btnRejoinGame) {
+            btnRejoinGame.addEventListener('click', () => {
+                this.attemptReconnect();
+            });
+        }
+
+        const btnRejoinNewGame = document.getElementById('btn-rejoin-new-game');
+        if (btnRejoinNewGame) {
+            btnRejoinNewGame.addEventListener('click', () => {
+                this.clearSession();
+                this.gameCode = null;
+                this.playerToken = null;
+                this.showScreen('home-screen');
+            });
+        }
+
+        // Rejoin code modal buttons
+        const btnCloseRejoinCode = document.getElementById('btn-close-rejoin-code');
+        if (btnCloseRejoinCode) {
+            btnCloseRejoinCode.addEventListener('click', () => {
+                this.hideRejoinCodeModal();
+            });
+        }
+
+        const btnCopyRejoinCode = document.getElementById('btn-copy-rejoin-code');
+        if (btnCopyRejoinCode) {
+            btnCopyRejoinCode.addEventListener('click', () => {
+                const codeValue = document.getElementById('rejoin-code-value')?.textContent;
+                if (codeValue) {
+                    navigator.clipboard.writeText(codeValue).then(() => {
+                        btnCopyRejoinCode.textContent = '✓ Copied!';
+                        setTimeout(() => {
+                            btnCopyRejoinCode.textContent = '📋 Copy Code';
+                        }, 2000);
+                    });
+                }
+            });
+        }
+
+        const btnDismissRejoinCode = document.getElementById('btn-dismiss-rejoin-code');
+        if (btnDismissRejoinCode) {
+            btnDismissRejoinCode.addEventListener('click', () => {
+                this.hideRejoinCodeModal();
+            });
+        }
 
         // Create game
         document.getElementById('btn-create-lobby').addEventListener('click', () => {

@@ -2908,3 +2908,215 @@ h3 {
     font-weight: bold;
 }
 
+/* Rejoin Screen */
+.rejoin-container {
+    text-align: center;
+    padding: 40px 20px;
+    animation: slideIn 0.4s ease;
+}
+
+.rejoin-container h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.5rem;
+    color: var(--primary-gold);
+    margin-bottom: 10px;
+    text-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.rejoin-subtitle {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-bottom: 30px;
+}
+
+.rejoin-info {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(212, 175, 55, 0.05) 100%);
+    border: 2px solid var(--primary-gold);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.info-value {
+    color: var(--primary-gold);
+    font-weight: bold;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+}
+
+.rejoin-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.rejoin-actions .btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+}
+
+.rejoin-help {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    background: rgba(139, 0, 0, 0.1);
+    border-left: 3px solid var(--accent-red);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.help-text {
+    margin: 0;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Rejoin Code Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border: 2px solid var(--primary-gold);
+    border-radius: 15px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: slideIn 0.4s ease;
+}
+
+.btn-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 2rem;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--primary-gold);
+}
+
+.rejoin-code-content h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    color: var(--primary-gold);
+    margin-bottom: 15px;
+    margin-top: 10px;
+}
+
+.rejoin-code-content p {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.rejoin-code-display {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
+    border: 2px solid var(--primary-gold);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.code-box {
+    background: var(--darker-bg);
+    border: 1px dashed var(--primary-gold);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+}
+
+.code-value {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    color: var(--primary-gold);
+    letter-spacing: 2px;
+    word-break: break-all;
+}
+
+.btn-small {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+.code-instructions {
+    margin: 25px 0;
+    text-align: center;
+}
+
+.code-instructions p {
+    margin-bottom: 15px;
+}
+
+.qr-code {
+    display: flex;
+    justify-content: center;
+    margin: 15px 0;
+    min-height: 150px;
+}
+
+.code-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+#btn-dismiss-rejoin-code {
+    width: 100%;
+}
+
