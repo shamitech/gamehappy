@@ -2967,6 +2967,36 @@ h3 {
     font-style: italic;
 }
 
+/* Bot Action Notification */
+.bot-action-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(212, 175, 55, 0.9);
+    color: var(--dark-bg);
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    z-index: 10000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    animation: slideDown 0.3s ease;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateX(-50%) translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
 /* Rejoin Screen */
 .rejoin-container {
     text-align: center;

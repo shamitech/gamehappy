@@ -447,6 +447,24 @@ class Game {
                 // Server will handle phase advancement, just wait for next on-phase-start event
             });
 
+            // Bot action notifications
+            this.socket.on('player-done-notification', (data) => {
+                console.log('Player done notification received:', data);
+                // Update the done counter if we have an element for it
+                this.updateDoneCounter();
+            });
+
+            // Bot action performed notifications
+            this.socket.on('game-event', (data) => {
+                console.log('Game event received:', data);
+                if (data.eventName === 'bot-action-performed') {
+                    console.log(`Bot action: ${data.payload.playerName} ${data.payload.action}`);
+                    this.showBotActionNotification(data.payload);
+                } else if (data.eventName === 'phase-advancing') {
+                    console.log('Phase advancing:', data.payload);
+                }
+            });
+
             this.socket.on('player-left', (data) => {
                 console.log('Player left:', data);
                 this.updateLobby(data.game);
@@ -558,6 +576,42 @@ class Game {
                 textEl.textContent = 'Disconnected';
                 break;
         }
+    }
+
+    updateDoneCounter() {
+        // Find the done count element and increment it or update based on server state
+        const countEl = document.getElementById('done-count');
+        if (countEl) {
+            // Request current game state if needed, or just trigger a UI update
+            // The counter will be updated via gameState updates
+            console.log('Done counter update triggered');
+        }
+    }
+
+    showBotActionNotification(payload) {
+        // Show a temporary notification that a bot performed an action
+        console.log(`[BOT ACTION] ${payload.playerName} ${payload.action}`);
+        
+        // Create or update action notification element
+        let actionNotif = document.getElementById('bot-action-notification');
+        if (!actionNotif) {
+            actionNotif = document.createElement('div');
+            actionNotif.id = 'bot-action-notification';
+            actionNotif.className = 'bot-action-notification';
+            document.body.appendChild(actionNotif);
+        }
+        
+        actionNotif.textContent = `${payload.playerName} ${payload.action}`;
+        actionNotif.style.display = 'block';
+        actionNotif.style.opacity = '1';
+        
+        // Fade out after 2 seconds
+        setTimeout(() => {
+            actionNotif.style.opacity = '0';
+            setTimeout(() => {
+                actionNotif.style.display = 'none';
+            }, 300);
+        }, 2000);
     }
 
     // Event Binding

@@ -413,8 +413,24 @@ io.on('connection', (socket) => {
               console.log(`[${gameCode}] Bot ${botPlayer.name} executing action:`, action);
               if (action.type === 'nightVote') {
                 gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
+                // Broadcast bot action to all players
+                io.to(`game-${gameCode}`).emit('game-event', {
+                  eventName: 'bot-action-performed',
+                  payload: {
+                    playerName: botPlayer.name,
+                    action: 'voted for assassination target'
+                  }
+                });
               } else if (action.type === 'bodyguardProtect') {
                 gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
+                // Broadcast bot action to all players
+                io.to(`game-${gameCode}`).emit('game-event', {
+                  eventName: 'bot-action-performed',
+                  payload: {
+                    playerName: botPlayer.name,
+                    action: 'chose protection target'
+                  }
+                });
               }
             } else {
               console.log(`[${gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for night phase (OK - passive role)`);
@@ -424,6 +440,13 @@ io.on('connection', (socket) => {
             if (game.setPlayerDone) {
               game.setPlayerDone(botPlayer.token);
               console.log(`[${gameCode}] Bot ${botPlayer.name} marked done for phase`);
+              
+              // Broadcast to all players that this bot is done (for UI counter updates)
+              io.to(`game-${gameCode}`).emit('player-done-notification', {
+                playerToken: botPlayer.token,
+                playerName: botPlayer.name,
+                isDone: true
+              });
             }
           }
           
