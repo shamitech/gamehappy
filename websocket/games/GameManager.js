@@ -126,6 +126,70 @@ class GameManager {
     }
 
     /**
+     * Add bot players to the game
+     */
+    addBotPlayers(count) {
+        const botNames = [
+            'Echo', 'Cipher', 'Nexus', 'Venom', 'Raven', 'Shadow', 'Phantom', 'Ghost',
+            'Specter', 'Whisper', 'Wraith', 'Shade', 'Reaper', 'Oracle', 'Sentinel'
+        ];
+        
+        const addedBots = [];
+        let attemptedCount = 0;
+        
+        for (let i = 0; i < count && attemptedCount < count * 2; i++) {
+            attemptedCount++;
+            
+            // Generate unique bot name
+            let botName = botNames[i % botNames.length];
+            if (i >= botNames.length) {
+                botName += ` ${Math.floor(i / botNames.length)}`;
+            }
+            
+            // Generate unique token for bot
+            const botToken = `bot_${this.gameCode}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Add bot as player
+            const result = this.addPlayer(botToken, botName);
+            if (result.success) {
+                // Mark as bot in player data
+                const playerData = this.players.get(botToken);
+                playerData.isBot = true;
+                playerData.botToken = botToken;
+                addedBots.push({ token: botToken, name: botName });
+            }
+        }
+        
+        return {
+            success: addedBots.length > 0,
+            botsAdded: addedBots,
+            count: addedBots.length
+        };
+    }
+
+    /**
+     * Get all bot players
+     */
+    getBotPlayers() {
+        return Array.from(this.players.values()).filter(p => p.isBot);
+    }
+
+    /**
+     * Check if a player is a bot
+     */
+    isBot(playerToken) {
+        const player = this.players.get(playerToken);
+        return player && player.isBot === true;
+    }
+
+    /**
+     * Get all human players
+     */
+    getHumanPlayers() {
+        return Array.from(this.players.values()).filter(p => !p.isBot);
+    }
+
+    /**
      * Get game info for lobby
      */
     getLobbyInfo() {

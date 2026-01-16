@@ -322,6 +322,56 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Add bot players to game
+   */
+  socket.on('add-bots', (data, callback) => {
+    try {
+      const { gameCode, botCount } = data;
+      console.log(`[${gameCode}] Host requesting to add ${botCount} bot(s)`);
+
+      const game = gameServer.games.get(gameCode);
+      if (!game) {
+        return callback({ success: false, message: 'Game not found' });
+      }
+
+      // Verify host is requesting this
+      if (game.host !== playerToken) {
+        return callback({ success: false, message: 'Only host can add bots' });
+      }
+
+      // Check total won't exceed 5 players (or configure max as needed)
+      const totalWillBe = game.getPlayerCount() + botCount;
+      if (totalWillBe > 5) {
+        return callback({ success: false, message: `Cannot exceed 5 players (would have ${totalWillBe})` });
+      }
+
+      // Add bots to the game
+      const result = game.addBotPlayers(botCount);
+
+      if (result.success) {
+        // Broadcast updated player list to all players in game
+        io.to(`game-${gameCode}`).emit('player-joined', {
+          game: game.getLobbyInfo(),
+          botsAdded: result.botsAdded
+        });
+
+        console.log(`[${gameCode}] Successfully added ${result.count} bot(s)`);
+        callback({ 
+          success: true, 
+          message: `Added ${result.count} bot(s)`,
+          botsAdded: result.botsAdded,
+          totalPlayers: game.getPlayerCount()
+        });
+      } else {
+        callback({ success: false, message: 'Failed to add bots' });
+      }
+    } catch (err) {
+      console.error('Error adding bots:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
    * Leave current game
    */
   socket.on('leave-game', (callback) => {
