@@ -443,43 +443,63 @@ io.on('connection', (socket) => {
               console.log(`[${gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for night phase (OK - passive role)`);
             }
             
-            // Mark bot as done by emitting player-done event (same as human clicking done)
-            console.log(`[${gameCode}] Bot ${botPlayer.name} emitting player-done event`);
-            const doneResult = gameServer.handleGameEvent(botPlayer.token, 'player-done', {});
-            
-            if (doneResult.success) {
-              // Broadcast to all players that this bot is done with updated game state
+            // Mark bot as done directly
+            if (game.setPlayerDone) {
+              game.setPlayerDone(botPlayer.token);
+              console.log(`[${gameCode}] Bot ${botPlayer.name} marked done for phase`);
+              
+              // Get updated game state and broadcast it
               const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
               
+              // Broadcast updated game state so counter updates for all players
+              io.to(`game-${gameCode}`).emit('game-state-updated', {
+                gameState: updatedGameState
+              });
+              
+              // Broadcast individual bot done notification
               io.to(`game-${gameCode}`).emit('player-done-notification', {
                 playerToken: botPlayer.token,
                 playerName: botPlayer.name,
                 isDone: true,
                 doneCount: updatedGameState.doneCount
               });
-              
-              // Broadcast updated game state so counter updates
-              io.to(`game-${gameCode}`).emit('game-state-updated', {
-                gameState: updatedGameState,
-                eventResult: doneResult
-              });
             }
           }
           
-          // Check if all players are done
-          const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
-          console.log(`[${gameCode}] All players done check: ${allDone}`);
-          
-          if (allDone) {
-            console.log(`[${gameCode}] AUTO-ADVANCING PHASE!`);
-            const phaseResult = game.advancePhase();
-            if (phaseResult.success) {
-              io.to(`game-${gameCode}`).emit('game-event', {
-                eventName: 'phase-advancing',
-                payload: { fromPhase: game.currentPhase, toPhase: phaseResult.phase }
-              });
+          // After all bots have marked done, check if EVERYONE is done and advance
+          setTimeout(() => {
+            const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+            console.log(`[${gameCode}] All players done check after bot actions: ${allDone}`);
+            
+            if (allDone) {
+              console.log(`[${gameCode}] ALL PLAYERS DONE! Auto-advancing phase`);
+              const phaseResult = game.advancePhase();
+              if (phaseResult.success) {
+                // Broadcast phase advance event
+                io.to(`game-${gameCode}`).emit('game-event', {
+                  eventName: 'phase-advancing',
+                  payload: { 
+                    fromPhase: game.currentPhase, 
+                    toPhase: phaseResult.phase,
+                    gameEnded: phaseResult.gameEnded 
+                  }
+                });
+                
+                // Send phase start to all players
+                for (const [socketId, playerSocket] of io.sockets.sockets) {
+                  const pToken = playerSocket.handshake.query.token || socketId;
+                  if (game.hasPlayer(pToken)) {
+                    const pGameState = gameServer.getGameStateForPlayer(pToken);
+                    playerSocket.emit('on-phase-start', {
+                      phase: phaseResult.phase,
+                      phaseState: pGameState,
+                      phaseName: phaseResult.phaseName || `Phase ${phaseResult.phase}`
+                    });
+                  }
+                }
+              }
             }
-          }
+          }, 100);
         }
 
         console.log(`[${gameCode}] Successfully added ${result.count} bot(s)`);
@@ -1465,43 +1485,63 @@ io.on('connection', (socket) => {
             console.log(`[${game.gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for this phase (OK - passive role)`);
           }
           
-          // Mark bot as done by emitting player-done event (same as human clicking done)
-          console.log(`[${game.gameCode}] Bot ${botPlayer.name} emitting player-done event`);
-          const doneResult = gameServer.handleGameEvent(botPlayer.token, 'player-done', {});
-          
-          if (doneResult.success) {
-            // Broadcast to all players that this bot is done with updated game state
+          // Mark bot as done directly
+          if (game.setPlayerDone) {
+            game.setPlayerDone(botPlayer.token);
+            console.log(`[${game.gameCode}] Bot ${botPlayer.name} marked done for phase`);
+            
+            // Get updated game state and broadcast it
             const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
             
+            // Broadcast updated game state so counter updates for all players
+            io.to(`game-${game.gameCode}`).emit('game-state-updated', {
+              gameState: updatedGameState
+            });
+            
+            // Broadcast individual bot done notification
             io.to(`game-${game.gameCode}`).emit('player-done-notification', {
               playerToken: botPlayer.token,
               playerName: botPlayer.name,
               isDone: true,
               doneCount: updatedGameState.doneCount
             });
-            
-            // Broadcast updated game state so counter updates
-            io.to(`game-${game.gameCode}`).emit('game-state-updated', {
-              gameState: updatedGameState,
-              eventResult: doneResult
-            });
           }
         }
         
-        // Check if all players are done
-        const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
-        console.log(`[${game.gameCode}] All players done check: ${allDone}`);
-        
-        if (allDone) {
-          console.log(`[${game.gameCode}] AUTO-ADVANCING PHASE!`);
-          const phaseResult = game.advancePhase();
-          if (phaseResult.success) {
-            io.to(`game-${game.gameCode}`).emit('game-event', {
-              eventName: 'phase-advancing',
-              payload: { fromPhase: game.currentPhase, toPhase: phaseResult.phase }
-            });
+        // After all bots have marked done, check if EVERYONE is done and advance
+        setTimeout(() => {
+          const allDone = game.allPlayersDone && typeof game.allPlayersDone === 'function' ? game.allPlayersDone() : false;
+          console.log(`[${game.gameCode}] All players done check after bot actions: ${allDone}`);
+          
+          if (allDone) {
+            console.log(`[${game.gameCode}] ALL PLAYERS DONE! Auto-advancing phase`);
+            const phaseResult = game.advancePhase();
+            if (phaseResult.success) {
+              // Broadcast phase advance event
+              io.to(`game-${game.gameCode}`).emit('game-event', {
+                eventName: 'phase-advancing',
+                payload: { 
+                  fromPhase: game.currentPhase, 
+                  toPhase: phaseResult.phase,
+                  gameEnded: phaseResult.gameEnded 
+                }
+              });
+              
+              // Send phase start to all players
+              for (const [socketId, playerSocket] of io.sockets.sockets) {
+                const pToken = playerSocket.handshake.query.token || socketId;
+                if (game.hasPlayer(pToken)) {
+                  const pGameState = gameServer.getGameStateForPlayer(pToken);
+                  playerSocket.emit('on-phase-start', {
+                    phase: phaseResult.phase,
+                    phaseState: pGameState,
+                    phaseName: phaseResult.phaseName || `Phase ${phaseResult.phase}`
+                  });
+                }
+              }
+            }
           }
-        }
+        }, 100);
       } else {
         console.log(`[${game.gameCode}] Not all players ready yet`);
       }
