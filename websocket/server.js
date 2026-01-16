@@ -443,15 +443,14 @@ io.on('connection', (socket) => {
               console.log(`[${gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for night phase (OK - passive role)`);
             }
             
-            // Always mark bot as done - whether they had an action or not
-            if (game.setPlayerDone) {
-              game.setPlayerDone(botPlayer.token);
-              console.log(`[${gameCode}] Bot ${botPlayer.name} marked done for phase`);
-              
-              // Get updated game state for all players and broadcast it
+            // Mark bot as done by emitting player-done event (same as human clicking done)
+            console.log(`[${gameCode}] Bot ${botPlayer.name} emitting player-done event`);
+            const doneResult = gameServer.handleGameEvent(botPlayer.token, 'player-done', {});
+            
+            if (doneResult.success) {
+              // Broadcast to all players that this bot is done with updated game state
               const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
               
-              // Broadcast to all players that this bot is done (for UI counter updates)
               io.to(`game-${gameCode}`).emit('player-done-notification', {
                 playerToken: botPlayer.token,
                 playerName: botPlayer.name,
@@ -459,9 +458,10 @@ io.on('connection', (socket) => {
                 doneCount: updatedGameState.doneCount
               });
               
-              // Also broadcast updated game state so counter updates
+              // Broadcast updated game state so counter updates
               io.to(`game-${gameCode}`).emit('game-state-updated', {
-                gameState: updatedGameState
+                gameState: updatedGameState,
+                eventResult: doneResult
               });
             }
           }
@@ -1465,15 +1465,14 @@ io.on('connection', (socket) => {
             console.log(`[${game.gameCode}] Bot ${botPlayer.name} [${botRole}] has no action for this phase (OK - passive role)`);
           }
           
-          // Always mark bot as done - whether they had an action or not
-          if (game.setPlayerDone) {
-            game.setPlayerDone(botPlayer.token);
-            console.log(`[${game.gameCode}] Bot ${botPlayer.name} marked done for phase`);
-            
-            // Get updated game state for all players and broadcast it
+          // Mark bot as done by emitting player-done event (same as human clicking done)
+          console.log(`[${game.gameCode}] Bot ${botPlayer.name} emitting player-done event`);
+          const doneResult = gameServer.handleGameEvent(botPlayer.token, 'player-done', {});
+          
+          if (doneResult.success) {
+            // Broadcast to all players that this bot is done with updated game state
             const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
             
-            // Broadcast to all players that this bot is done (for UI counter updates)
             io.to(`game-${game.gameCode}`).emit('player-done-notification', {
               playerToken: botPlayer.token,
               playerName: botPlayer.name,
@@ -1481,9 +1480,10 @@ io.on('connection', (socket) => {
               doneCount: updatedGameState.doneCount
             });
             
-            // Also broadcast updated game state so counter updates
+            // Broadcast updated game state so counter updates
             io.to(`game-${game.gameCode}`).emit('game-state-updated', {
-              gameState: updatedGameState
+              gameState: updatedGameState,
+              eventResult: doneResult
             });
           }
         }
