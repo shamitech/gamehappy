@@ -448,11 +448,20 @@ io.on('connection', (socket) => {
               game.setPlayerDone(botPlayer.token);
               console.log(`[${gameCode}] Bot ${botPlayer.name} marked done for phase`);
               
+              // Get updated game state for all players and broadcast it
+              const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
+              
               // Broadcast to all players that this bot is done (for UI counter updates)
               io.to(`game-${gameCode}`).emit('player-done-notification', {
                 playerToken: botPlayer.token,
                 playerName: botPlayer.name,
-                isDone: true
+                isDone: true,
+                doneCount: updatedGameState.doneCount
+              });
+              
+              // Also broadcast updated game state so counter updates
+              io.to(`game-${gameCode}`).emit('game-state-updated', {
+                gameState: updatedGameState
               });
             }
           }
@@ -1461,11 +1470,20 @@ io.on('connection', (socket) => {
             game.setPlayerDone(botPlayer.token);
             console.log(`[${game.gameCode}] Bot ${botPlayer.name} marked done for phase`);
             
+            // Get updated game state for all players and broadcast it
+            const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
+            
             // Broadcast to all players that this bot is done (for UI counter updates)
             io.to(`game-${game.gameCode}`).emit('player-done-notification', {
               playerToken: botPlayer.token,
               playerName: botPlayer.name,
-              isDone: true
+              isDone: true,
+              doneCount: updatedGameState.doneCount
+            });
+            
+            // Also broadcast updated game state so counter updates
+            io.to(`game-${game.gameCode}`).emit('game-state-updated', {
+              gameState: updatedGameState
             });
           }
         }
