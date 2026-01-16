@@ -397,14 +397,23 @@ io.on('connection', (socket) => {
           }
           
           // Auto-perform bot actions for night phase (phase 1)
-          const botPlayersNight = game.getBotPlayers ? game.getBotPlayers() : [];
-          console.log(`[${gameCode}] Found ${botPlayersNight.length} bots to process in add-bots handler`);
+          console.log(`[${gameCode}] [ADD-BOTS] Starting bot action loop...`);
+          console.log(`[${gameCode}] [ADD-BOTS] game.getBotPlayers exists? ${!!game.getBotPlayers}`);
           
-          for (const botPlayer of botPlayersNight) {
-            const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
-            const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+          const botPlayersNight = game.getBotPlayers ? game.getBotPlayers() : [];
+          console.log(`[${gameCode}] [ADD-BOTS] Found ${botPlayersNight.length} bots to process`);
+          console.log(`[${gameCode}] [ADD-BOTS] Bot list:`, botPlayersNight.map(b => ({ name: b.name, token: b.token.substring(0, 10), isBot: b.isBot })));
+          
+          for (let botIdx = 0; botIdx < botPlayersNight.length; botIdx++) {
+            const botPlayer = botPlayersNight[botIdx];
+            console.log(`[${gameCode}] [ADD-BOTS] === BOT ${botIdx + 1}/${botPlayersNight.length} ===`);
+            console.log(`[${gameCode}] [ADD-BOTS] Bot: ${botPlayer.name}, token: ${botPlayer.token.substring(0, 15)}`);
             
-            console.log(`[${gameCode}] [ADD-BOTS] Processing bot ${botPlayer.name} [${botRole}]`);
+            const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+            console.log(`[${gameCode}] [ADD-BOTS] Role: ${botRole}`);
+            
+            const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+            console.log(`[${gameCode}] [ADD-BOTS] Alive players: ${alivePlayers.length}`);
             
             let action = null;
             
@@ -417,26 +426,37 @@ io.on('connection', (socket) => {
               action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
             }
             
+            console.log(`[${gameCode}] [ADD-BOTS] Action result: ${action ? JSON.stringify(action) : 'null'}`);
+            
             // Execute action if bot has one
             if (action) {
-              console.log(`[${gameCode}] [ADD-BOTS] Bot ${botPlayer.name} executing action:`, action);
+              console.log(`[${gameCode}] [ADD-BOTS] Executing action for ${botPlayer.name}`);
               if (action.type === 'nightVote') {
                 gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
               } else if (action.type === 'bodyguardProtect') {
                 gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
               }
             } else {
-              console.log(`[${gameCode}] [ADD-BOTS] Bot ${botPlayer.name} [${botRole}] - no action for phase (passive role)`);
+              console.log(`[${gameCode}] [ADD-BOTS] Bot ${botPlayer.name} [${botRole}] - no action (passive role)`);
             }
             
             // ALWAYS mark bot as done
-            console.log(`[${gameCode}] [ADD-BOTS] Marking ${botPlayer.name} done...`);
-            if (game.setPlayerDone) {
-              game.setPlayerDone(botPlayer.token);
-              const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
-              console.log(`[${gameCode}] [ADD-BOTS] ${botPlayer.name} marked done. doneCount now: ${updatedGameState.doneCount}/${updatedGameState.totalPlayers}`);
-              
-              io.to(`game-${gameCode}`).emit('game-state-updated', { gameState: updatedGameState });
+            console.log(`[${gameCode}] [ADD-BOTS] About to mark ${botPlayer.name} as done...`);
+            try {
+              if (game.setPlayerDone) {
+                game.setPlayerDone(botPlayer.token);
+                console.log(`[${gameCode}] [ADD-BOTS] setPlayerDone called successfully`);
+                
+                const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
+                console.log(`[${gameCode}] [ADD-BOTS] ${botPlayer.name} done. doneCount: ${updatedGameState.doneCount}/${updatedGameState.totalPlayers}`);
+                
+                io.to(`game-${gameCode}`).emit('game-state-updated', { gameState: updatedGameState });
+                console.log(`[${gameCode}] [ADD-BOTS] game-state-updated emitted`);
+              } else {
+                console.log(`[${gameCode}] [ADD-BOTS] ERROR: setPlayerDone method not found!`);
+              }
+            } catch (botErr) {
+              console.error(`[${gameCode}] [ADD-BOTS] ERROR marking bot done:`, botErr);
             }
           }
           
@@ -1379,15 +1399,23 @@ io.on('connection', (socket) => {
         }
         
         // Auto-perform bot actions for current phase
-        console.log(`[${game.gameCode}] [PLAYER-READY] Auto-performing bot actions for phase`);
+        console.log(`[${game.gameCode}] [PLAYER-READY] Starting bot action loop...`);
+        console.log(`[${game.gameCode}] [PLAYER-READY] game.getBotPlayers exists? ${!!game.getBotPlayers}`);
+        
         const botPlayersPhase = game.getBotPlayers ? game.getBotPlayers() : [];
         console.log(`[${game.gameCode}] [PLAYER-READY] Found ${botPlayersPhase.length} bots to process`);
+        console.log(`[${game.gameCode}] [PLAYER-READY] Bot list:`, botPlayersPhase.map(b => ({ name: b.name, token: b.token.substring(0, 10), isBot: b.isBot })));
         
-        for (const botPlayer of botPlayersPhase) {
-          const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
-          const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+        for (let botIdx = 0; botIdx < botPlayersPhase.length; botIdx++) {
+          const botPlayer = botPlayersPhase[botIdx];
+          console.log(`[${game.gameCode}] [PLAYER-READY] === BOT ${botIdx + 1}/${botPlayersPhase.length} ===`);
+          console.log(`[${game.gameCode}] [PLAYER-READY] Bot: ${botPlayer.name}, token: ${botPlayer.token.substring(0, 15)}`);
           
-          console.log(`[${game.gameCode}] [PLAYER-READY] Processing bot ${botPlayer.name} [${botRole}]`);
+          const botRole = game.getPlayerRole ? game.getPlayerRole(botPlayer.token) : null;
+          console.log(`[${game.gameCode}] [PLAYER-READY] Role: ${botRole}`);
+          
+          const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+          console.log(`[${game.gameCode}] [PLAYER-READY] Alive players: ${alivePlayers.length}`);
           
           let action = null;
           
@@ -1400,26 +1428,37 @@ io.on('connection', (socket) => {
             action = game.getBotBodyGuardAction(botPlayer.token, alivePlayers);
           }
           
+          console.log(`[${game.gameCode}] [PLAYER-READY] Action result: ${action ? JSON.stringify(action) : 'null'}`);
+          
           // Execute action if bot has one
           if (action) {
-            console.log(`[${game.gameCode}] [PLAYER-READY] Bot ${botPlayer.name} executing action:`, action);
+            console.log(`[${game.gameCode}] [PLAYER-READY] Executing action for ${botPlayer.name}`);
             if (action.type === 'nightVote') {
               gameServer.handleGameEvent(botPlayer.token, 'night-vote', { target: action.target });
             } else if (action.type === 'bodyguardProtect') {
               gameServer.handleGameEvent(botPlayer.token, 'bodyguard-protect', { targetToken: action.target });
             }
           } else {
-            console.log(`[${game.gameCode}] [PLAYER-READY] Bot ${botPlayer.name} [${botRole}] - no action for phase (passive role)`);
+            console.log(`[${game.gameCode}] [PLAYER-READY] Bot ${botPlayer.name} [${botRole}] - no action (passive role)`);
           }
           
           // ALWAYS mark bot as done
-          console.log(`[${game.gameCode}] [PLAYER-READY] Marking ${botPlayer.name} done...`);
-          if (game.setPlayerDone) {
-            game.setPlayerDone(botPlayer.token);
-            const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
-            console.log(`[${game.gameCode}] [PLAYER-READY] ${botPlayer.name} marked done. doneCount now: ${updatedGameState.doneCount}/${updatedGameState.totalPlayers}`);
-            
-            io.to(`game-${game.gameCode}`).emit('game-state-updated', { gameState: updatedGameState });
+          console.log(`[${game.gameCode}] [PLAYER-READY] About to mark ${botPlayer.name} as done...`);
+          try {
+            if (game.setPlayerDone) {
+              game.setPlayerDone(botPlayer.token);
+              console.log(`[${game.gameCode}] [PLAYER-READY] setPlayerDone called successfully`);
+              
+              const updatedGameState = gameServer.getGameStateForPlayer(botPlayer.token);
+              console.log(`[${game.gameCode}] [PLAYER-READY] ${botPlayer.name} done. doneCount: ${updatedGameState.doneCount}/${updatedGameState.totalPlayers}`);
+              
+              io.to(`game-${game.gameCode}`).emit('game-state-updated', { gameState: updatedGameState });
+              console.log(`[${game.gameCode}] [PLAYER-READY] game-state-updated emitted`);
+            } else {
+              console.log(`[${game.gameCode}] [PLAYER-READY] ERROR: setPlayerDone method not found!`);
+            }
+          } catch (botErr) {
+            console.error(`[${game.gameCode}] [PLAYER-READY] ERROR marking bot done:`, botErr);
           }
         }
         
