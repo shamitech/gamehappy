@@ -2053,7 +2053,7 @@ class Game {
             
             // CRITICAL: Always start fresh on Phase 2 - button should be enabled and ready to click
             // Do NOT check data.amReady as this is only set on client-side reconnection, not on new game start
-            newBtn.disabled = true;  // Disabled until player clicks "I'm Ready"
+            newBtn.disabled = false;  // Enabled so player can click "I'm Ready"
             newBtn.textContent = "I'm Ready";
             document.getElementById('phase2-ready-hint').textContent = 'Click when ready to proceed to the discussion phase';
         }
@@ -2441,6 +2441,15 @@ class Game {
             // Initialize "I'm Done" section
             console.log('initPhase1: Calling initImDoneSection');
             this.initImDoneSection(state);
+            
+            // Ensure "I'm Ready" button is enabled when entering Phase 1
+            // This button appears in the role banner and should be clickable
+            const readyBtn = document.getElementById('btn-ready');
+            if (readyBtn) {
+                readyBtn.disabled = false;
+                readyBtn.textContent = "I'm Ready";
+                console.log('initPhase1: Enabled btn-ready button');
+            }
             
             // Show persistent case notes for detectives
             this.showPersistentCaseNotesPanel(state);
