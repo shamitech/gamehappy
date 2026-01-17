@@ -1142,8 +1142,8 @@ io.on('connection', (socket) => {
           game.verdictReadyPlayers.add(pToken);
           console.log(`[${game.gameCode}] Player ${pToken} acknowledged verdict. Ready: ${game.verdictReadyPlayers.size}/${alivePlayers.length}`);
           
-          // Broadcast updated count to all players
-          io.sockets.emit('verdict-ready-count', {
+          // Broadcast updated count to all players in this game room
+          io.to(`game-${game.gameCode}`).emit('verdict-ready-count', {
             readyCount: game.verdictReadyPlayers.size,
             totalPlayers: alivePlayers.length
           });
