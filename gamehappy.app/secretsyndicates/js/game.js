@@ -3235,7 +3235,7 @@ class Game {
     }
 
     handleGameEnded(data) {
-        console.log('Game ended event:', data);
+        console.log('[GAME-ENDED] Game ended event:', data);
         
         // Clear session since game is over
         this.clearSession();
@@ -3246,10 +3246,15 @@ class Game {
         });
         
         // Create or show results screen
+        console.log('[GAME-ENDED] Looking for existing results-screen');
         let resultsScreen = document.getElementById('results-screen');
         if (!resultsScreen) {
+            console.log('[GAME-ENDED] No existing results screen, creating one');
             this.createResultsScreen();
             resultsScreen = document.getElementById('results-screen');
+            console.log('[GAME-ENDED] Created results screen, element:', resultsScreen);
+        } else {
+            console.log('[GAME-ENDED] Using existing results screen');
         }
         
         resultsScreen.style.display = 'block';
@@ -3505,6 +3510,7 @@ class Game {
     }
 
     createResultsScreen() {
+        console.log('[CREATE-RESULTS] Creating results screen');
         const screen = document.createElement('div');
         screen.id = 'results-screen';
         screen.className = 'screen';
@@ -3545,20 +3551,27 @@ class Game {
         
         const container = document.querySelector('.container');
         if (container) {
+            console.log('[CREATE-RESULTS] Appending to .container');
             container.appendChild(screen);
         } else {
+            console.log('[CREATE-RESULTS] No .container found, appending to body');
             document.body.appendChild(screen);
         }
         
-        // Bind play again button
+        // Bind play again button - with delays if needed
+        console.log('[CREATE-RESULTS] Looking for btn-play-again');
         const playAgainBtn = document.getElementById('btn-play-again');
+        console.log('[CREATE-RESULTS] playAgainBtn element:', playAgainBtn);
+        
         if (playAgainBtn) {
-            playAgainBtn.addEventListener('click', () => {
-                console.log('[PLAY-AGAIN-BTN] Play Again button clicked');
+            console.log('[CREATE-RESULTS] Attaching click listener to btn-play-again');
+            playAgainBtn.addEventListener('click', (e) => {
+                console.log('[PLAY-AGAIN-BTN] Click event fired!', e);
                 this.playAgain();
             });
+            console.log('[CREATE-RESULTS] Click listener attached successfully');
         } else {
-            console.warn('[PLAY-AGAIN-BTN] btn-play-again not found in DOM');
+            console.warn('[CREATE-RESULTS] btn-play-again not found in DOM after appending');
         }
     }
     
