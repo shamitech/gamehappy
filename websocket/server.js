@@ -1528,6 +1528,115 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Player acknowledges verdict - clicks "I Understand" button
+   */
+  socket.on('verdictReady', (data, callback) => {
+    try {
+      console.log(`[VERDICT] verdictReady received from ${playerToken}`);
+      const game = gameServer.getPlayerGame(playerToken);
+      
+      if (!game) {
+        console.log(`[VERDICT] Player not in a game`);
+        if (typeof callback === 'function') callback({ success: false, message: 'Player not in a game' });
+        return;
+      }
+
+      const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
+      
+      if (!game.verdictReadyPlayers) {
+        game.verdictReadyPlayers = new Set();
+      }
+      
+      game.verdictReadyPlayers.add(playerToken);
+      console.log(`[VERDICT] [${game.gameCode}] Player ${playerToken} acknowledged verdict. Ready: ${game.verdictReadyPlayers.size}/${alivePlayers.length}`);
+      
+      // Broadcast updated count to all players in this game room
+      io.to(`game-${game.gameCode}`).emit('verdict-ready-count', {
+        readyCount: game.verdictReadyPlayers.size,
+        totalPlayers: alivePlayers.length
+      });
+      console.log(`[VERDICT] [${game.gameCode}] Broadcast verdict-ready-count: ${game.verdictReadyPlayers.size}/${alivePlayers.length}`);
+      
+      // Check if all players are ready
+      if (game.verdictReadyPlayers.size >= alivePlayers.length) {
+        console.log(`[VERDICT] [${game.gameCode}] ALL PLAYERS ACKNOWLEDGED VERDICT! Advancing to next phase from ${game.currentPhase}`);
+        
+        // Advance the phase (which will execute the verdict and start next round)
+        const phaseResult = game.advancePhase();
+        if (phaseResult.success) {
+          console.log(`[VERDICT] [${game.gameCode}] Phase advanced to: ${phaseResult.phase}`);
+          
+          // Check if game ended
+          if (phaseResult.gameEnded && phaseResult.winCondition) {
+            console.log(`[VERDICT] [${game.gameCode}] GAME ENDED: ${phaseResult.winCondition.winner} wins`);
+            
+            // Send game-ended event to all players
+            for (const [socketId, playerSocket] of io.sockets.sockets) {
+              const pToken = playerSocket.handshake.query.token || socketId;
+              if (game.hasPlayer(pToken)) {
+                const pGameState = gameServer.getGameStateForPlayer(pToken);
+                const enhancedPlayers = pGameState.players.map(p => ({
+                  ...p,
+                  role: game.getPlayerRole(p.token)
+                }));
+                playerSocket.emit('game-ended', {
+                  winner: phaseResult.winCondition.winner,
+                  winType: phaseResult.winCondition.winType,
+                  details: phaseResult.winCondition.details,
+                  finalRound: pGameState.currentRound,
+                  playerRole: pGameState.playerRole,
+                  allPlayers: enhancedPlayers,
+                  votingHistory: game.votingHistory || {}
+                });
+              }
+            }
+            if (typeof callback === 'function') callback({ success: true });
+            return;
+          }
+          
+          // Send on-phase-start event to each player
+          for (const [socketId, playerSocket] of io.sockets.sockets) {
+            const pToken = playerSocket.handshake.query.token || socketId;
+            
+            if (game.hasPlayer(pToken)) {
+              const pGameState = gameServer.getGameStateForPlayer(pToken);
+              const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
+                               phaseResult.phase === 'murder' ? 'Murder Discovery' :
+                               phaseResult.phase === 'trial' ? 'Trial Phase' : 
+                               phaseResult.phase === 'accusation' ? 'Accusation Vote' :
+                               phaseResult.phase === 'verdict' ? 'Verdict Phase' : phaseResult.phase;
+              
+              const phaseData = {
+                phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : phaseResult.phase === 'trial' ? 3 : phaseResult.phase === 'accusation' ? 4 : phaseResult.phase === 'verdict' ? 5 : 1,
+                phaseState: pGameState,
+                phaseName: phaseName
+              };
+              
+              if (phaseResult.phase === 'verdict' && pGameState.accusedName) {
+                phaseData.accusedName = pGameState.accusedName;
+                phaseData.guiltyCount = pGameState.guiltyVotes || 0;
+                phaseData.notGuiltyCount = pGameState.notGuiltyVotes || 0;
+              }
+              
+              playerSocket.emit('on-phase-start', phaseData);
+            }
+          }
+          
+          // Clear trackers for new phase
+          game.verdictReadyPlayers = new Set();
+          game.playersDone.clear();
+          console.log(`[VERDICT] [${game.gameCode}] Cleared verdict and phase trackers`);
+        }
+      }
+      
+      if (typeof callback === 'function') callback({ success: true });
+    } catch (err) {
+      console.error(`[VERDICT] Error handling verdictReady:`, err);
+      if (typeof callback === 'function') callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
    * Player rejoin attempt - when they reconnect after refresh
    */
   socket.on('rejoin-game', (data) => {
