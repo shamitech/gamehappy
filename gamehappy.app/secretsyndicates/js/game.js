@@ -3595,26 +3595,30 @@ class Game {
             playAgainHostOnly.style.display = 'block';
             waitingForHost.style.display = 'none';
             
-            // Wait a tick to ensure button is in DOM
-            setTimeout(() => {
-                const playAgainBtn = document.getElementById('btn-play-again');
-                console.log('[CREATE-RESULTS] Looking for btn-play-again, found:', playAgainBtn);
+            // Attach listener immediately without setTimeout
+            const playAgainBtn = document.getElementById('btn-play-again');
+            console.log('[CREATE-RESULTS] Button element:', playAgainBtn);
+            
+            if (playAgainBtn) {
+                const self = this;
+                console.log('[CREATE-RESULTS] Attaching click listener');
                 
-                if (playAgainBtn) {
-                    console.log('[CREATE-RESULTS] Button found, attaching listener directly');
-                    
-                    // Just attach the listener directly, don't clone
-                    const self = this;
-                    playAgainBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED ==========');
-                        self.playAgain();
-                    });
-                    console.log('[CREATE-RESULTS] Click listener attached successfully');
-                } else {
-                    console.warn('[CREATE-RESULTS] btn-play-again NOT FOUND in DOM');
-                }
-            }, 100);
+                // Remove any existing listeners by cloning
+                const newBtn = playAgainBtn.cloneNode(true);
+                playAgainBtn.parentNode.replaceChild(newBtn, playAgainBtn);
+                
+                // Add listener to new button
+                newBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED ==========');
+                    self.playAgain();
+                });
+                
+                console.log('[CREATE-RESULTS] Click listener attached successfully');
+            } else {
+                console.warn('[CREATE-RESULTS] btn-play-again NOT FOUND');
+            }
         } else {
             console.log('[CREATE-RESULTS] Non-host player - showing waiting message');
             playAgainHostOnly.style.display = 'none';
