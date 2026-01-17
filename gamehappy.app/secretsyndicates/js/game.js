@@ -2796,6 +2796,12 @@ class Game {
     displayVerdictScreen(data) {
         console.log('Displaying verdict screen with data:', data);
         
+        // If player is eliminated, don't show verdict screen - show elimination screen instead
+        if (this.isEliminated) {
+            console.log('Player is eliminated - not showing verdict screen');
+            return;
+        }
+        
         // Hide phase 5 screen and show verdict screen
         const phase5Screen = document.getElementById('phase5-screen');
         const verdictScreen = document.getElementById('verdict-result-screen');
