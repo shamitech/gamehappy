@@ -4253,6 +4253,9 @@ class Game {
         document.getElementById('btn-syndicate-lock').disabled = true;
         document.getElementById('btn-syndicate-lock').textContent = '✓ Assassin Locked';
         document.getElementById('syndicate-lock-status').textContent = 'Waiting for other Syndicate members...';
+        
+        // Check if actions are complete and enable done button if so
+        this.checkActionsComplete();
     }
 
     // ---- Detective Functions ----
