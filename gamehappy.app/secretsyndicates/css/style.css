@@ -135,9 +135,10 @@ body {
 .btn-warning {
     background: rgba(212, 175, 55, 0.2);
     color: var(--primary-gold);
-    border: 1px solid var(--primary-gold);
-    font-size: 0.9rem;
-    margin-top: 10px;
+    border: 2px solid var(--primary-gold) !important;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Cinzel', serif;
 }
 
 .btn-warning:hover {

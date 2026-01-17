@@ -732,11 +732,17 @@ class Game {
         });
 
         // Rejoin Game button (from home screen)
-        document.getElementById('btn-rejoin-available').addEventListener('click', () => {
-            this.showScreen('rejoin-code-screen');
-            document.getElementById('rejoin-code').value = '';
-            document.getElementById('rejoin-code-error').textContent = '';
-        });
+        const btnRejoinAvailable = document.getElementById('btn-rejoin-available');
+        if (btnRejoinAvailable) {
+            btnRejoinAvailable.addEventListener('click', () => {
+                console.log('[REJOIN-BTN] Rejoin button clicked');
+                this.showScreen('rejoin-code-screen');
+                document.getElementById('rejoin-code').value = '';
+                document.getElementById('rejoin-code-error').textContent = '';
+            });
+        } else {
+            console.warn('[REJOIN-BTN] btn-rejoin-available not found in DOM');
+        }
 
         // How to Play button
         document.getElementById('btn-how-to-play').addEventListener('click', () => {
