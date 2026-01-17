@@ -2312,10 +2312,10 @@ class Game {
         switch (this.role) {
             case 'Syndicate':
                 // Syndicate MUST complete BOTH actions:
-                // 1. Choose and lock in a target
-                // 2. Choose and lock in an assassin
-                const hasTarget = this.syndicateState?.target !== null && this.syndicateState?.target !== undefined;
-                const hasAssassin = this.syndicateState?.assassin !== null && this.syndicateState?.assassin !== undefined;
+                // 1. Choose and lock in a target (myRecommendation)
+                // 2. Choose and lock in an assassin (myAssassinVote)
+                const hasTarget = this.syndicateState?.myRecommendation !== null && this.syndicateState?.myRecommendation !== undefined;
+                const hasAssassin = this.syndicateState?.myAssassinVote !== null && this.syndicateState?.myAssassinVote !== undefined;
                 const targetLocked = this.syndicateState?.lockedIn === true;
                 const assassinLocked = this.syndicateState?.assassinLockedIn === true;
                 
