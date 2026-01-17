@@ -2311,11 +2311,27 @@ class Game {
         
         switch (this.role) {
             case 'Syndicate':
-                // Syndicate is done when voting is complete (target/assassin determined)
-                // OR when they've locked in (waiting for server resolution)
-                complete = this.syndicateState?.complete === true || this.syndicateState?.lockedIn === true;
+                // Syndicate MUST complete BOTH actions:
+                // 1. Choose and lock in a target
+                // 2. Choose and lock in an assassin
+                const hasTarget = this.syndicateState?.target !== null && this.syndicateState?.target !== undefined;
+                const hasAssassin = this.syndicateState?.assassin !== null && this.syndicateState?.assassin !== undefined;
+                const targetLocked = this.syndicateState?.lockedIn === true;
+                const assassinLocked = this.syndicateState?.assassinLockedIn === true;
+                
+                // Both must be locked in
+                complete = hasTarget && hasAssassin && targetLocked && assassinLocked;
+                
                 if (!complete) {
-                    hint.textContent = 'Lock in your choice to enable';
+                    if (!hasTarget) {
+                        hint.textContent = 'Choose a target first';
+                    } else if (!targetLocked) {
+                        hint.textContent = 'Lock in your target choice';
+                    } else if (!hasAssassin) {
+                        hint.textContent = 'Choose an assassin';
+                    } else if (!assassinLocked) {
+                        hint.textContent = 'Lock in your assassin choice';
+                    }
                 }
                 break;
                 
