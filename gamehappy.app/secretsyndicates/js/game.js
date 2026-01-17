@@ -3551,28 +3551,62 @@ class Game {
         }
         
         // Bind play again button
-        document.getElementById('btn-play-again').addEventListener('click', () => this.playAgain());
+        const playAgainBtn = document.getElementById('btn-play-again');
+        if (playAgainBtn) {
+            playAgainBtn.addEventListener('click', () => {
+                console.log('[PLAY-AGAIN-BTN] Play Again button clicked');
+                this.playAgain();
+            });
+        } else {
+            console.warn('[PLAY-AGAIN-BTN] btn-play-again not found in DOM');
+        }
     }
     
     playAgain() {
         const statusEl = document.getElementById('play-again-status');
         const btn = document.getElementById('btn-play-again');
         
-        if (!this.socket || !this.socket.connected) {
-            statusEl.textContent = 'Not connected to server. Please refresh the page.';
+        console.log('[PLAY-AGAIN] Button clicked');
+        console.log('[PLAY-AGAIN] Socket:', this.socket);
+        console.log('[PLAY-AGAIN] Socket connected:', this.socket?.connected);
+        console.log('[PLAY-AGAIN] Game code:', this.gameCode);
+        
+        if (!this.socket) {
+            const msg = 'Socket not initialized. Please refresh the page.';
+            console.error('[PLAY-AGAIN]', msg);
+            statusEl.textContent = msg;
+            return;
+        }
+        
+        if (!this.socket.connected) {
+            const msg = 'Not connected to server. Please refresh the page.';
+            console.error('[PLAY-AGAIN]', msg);
+            statusEl.textContent = msg;
+            return;
+        }
+        
+        if (!this.gameCode) {
+            const msg = 'No game code found. Cannot play again.';
+            console.error('[PLAY-AGAIN]', msg);
+            statusEl.textContent = msg;
             return;
         }
         
         btn.disabled = true;
         statusEl.textContent = 'Creating new lobby...';
         
+        console.log('[PLAY-AGAIN] Emitting play-again event with gameCode:', this.gameCode);
+        
         this.socket.emit('play-again', { gameCode: this.gameCode }, (response) => {
-            if (response.success) {
-                console.log('Play again - new game created:', response.gameCode);
+            console.log('[PLAY-AGAIN] Response received:', response);
+            if (response && response.success) {
+                console.log('[PLAY-AGAIN] New game created:', response.gameCode);
                 // Will receive 'play-again-lobby' event with new game info
             } else {
                 btn.disabled = false;
-                statusEl.textContent = response.message || 'Failed to create new game';
+                const msg = response?.message || 'Failed to create new game';
+                console.error('[PLAY-AGAIN] Error:', msg);
+                statusEl.textContent = msg;
             }
         });
     }
