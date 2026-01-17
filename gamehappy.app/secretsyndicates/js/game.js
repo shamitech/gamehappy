@@ -3542,8 +3542,13 @@ class Game {
                     <div id="players-table-container" class="players-table-container"></div>
                     
                     <div class="results-actions" style="margin-top: 40px; text-align: center;">
-                        <button id="btn-play-again" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); color: var(--primary-gold); border: 2px solid var(--primary-gold); border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-weight: 600;">Play Again</button>
-                        <p id="play-again-status" style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;"></p>
+                        <div id="play-again-host-only" style="display: none;">
+                            <button id="btn-play-again" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); color: var(--primary-gold); border: 2px solid var(--primary-gold); border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-weight: 600;">Play Again</button>
+                            <p id="play-again-status" style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;"></p>
+                        </div>
+                        <div id="waiting-for-host" style="display: none;">
+                            <p style="color: var(--text-muted); font-size: 1rem;">Waiting for host to start new game...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3558,20 +3563,33 @@ class Game {
             document.body.appendChild(screen);
         }
         
-        // Bind play again button - with delays if needed
-        console.log('[CREATE-RESULTS] Looking for btn-play-again');
-        const playAgainBtn = document.getElementById('btn-play-again');
-        console.log('[CREATE-RESULTS] playAgainBtn element:', playAgainBtn);
+        // Bind play again button - only for host
+        console.log('[CREATE-RESULTS] isHost:', this.isHost);
+        const playAgainHostOnly = document.getElementById('play-again-host-only');
+        const waitingForHost = document.getElementById('waiting-for-host');
         
-        if (playAgainBtn) {
-            console.log('[CREATE-RESULTS] Attaching click listener to btn-play-again');
-            playAgainBtn.addEventListener('click', (e) => {
-                console.log('[PLAY-AGAIN-BTN] Click event fired!', e);
-                this.playAgain();
-            });
-            console.log('[CREATE-RESULTS] Click listener attached successfully');
+        if (this.isHost) {
+            console.log('[CREATE-RESULTS] Host detected - showing Play Again button');
+            playAgainHostOnly.style.display = 'block';
+            waitingForHost.style.display = 'none';
+            
+            const playAgainBtn = document.getElementById('btn-play-again');
+            console.log('[CREATE-RESULTS] playAgainBtn element:', playAgainBtn);
+            
+            if (playAgainBtn) {
+                console.log('[CREATE-RESULTS] Attaching click listener to btn-play-again');
+                playAgainBtn.addEventListener('click', (e) => {
+                    console.log('[PLAY-AGAIN-BTN] Click event fired!', e);
+                    this.playAgain();
+                });
+                console.log('[CREATE-RESULTS] Click listener attached successfully');
+            } else {
+                console.warn('[CREATE-RESULTS] btn-play-again not found in DOM after appending');
+            }
         } else {
-            console.warn('[CREATE-RESULTS] btn-play-again not found in DOM after appending');
+            console.log('[CREATE-RESULTS] Non-host player - showing waiting message');
+            playAgainHostOnly.style.display = 'none';
+            waitingForHost.style.display = 'block';
         }
     }
     
