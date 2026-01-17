@@ -3088,6 +3088,9 @@ class Game {
     handleGameEnded(data) {
         console.log('Game ended event:', data);
         
+        // Clear session since game is over
+        this.clearSession();
+        
         // Hide all game screens
         document.querySelectorAll('.screen').forEach(screen => {
             screen.style.display = 'none';
@@ -3549,6 +3552,10 @@ class Game {
     
     handlePlayAgainLobby(data) {
         console.log('handlePlayAgainLobby called with:', data);
+        
+        // Update session for new game
+        this.gameCode = data.gameCode;
+        this.saveSession();
         
         // Reset all local state
         this.isEliminated = false;
