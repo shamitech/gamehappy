@@ -2020,6 +2020,19 @@ class Game {
     initPhase2ReadySection(data) {
         this.phase2Ready = false;
         
+        // Defensive: Ensure we have valid data, not stale from previous game
+        // If data is missing critical properties, reset to fresh state
+        if (!data || typeof data !== 'object' || (!data.alivePlayers && !data.players)) {
+            console.warn('[PHASE2] initPhase2ReadySection called with invalid data, resetting button state:', data);
+            const btn = document.getElementById('btn-phase2-ready');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "I'm Ready";
+                btn.classList.remove('selected', 'confirmed');
+            }
+            return;
+        }
+        
         // Set total players
         const totalEl = document.getElementById('phase2-ready-total');
         const countEl = document.getElementById('phase2-ready-count');
@@ -2038,17 +2051,11 @@ class Game {
             
             newBtn.addEventListener('click', () => this.markPhase2Ready());
             
-            // Check if already ready (reconnection case)
-            if (data.amReady) {
-                this.phase2Ready = true;
-                newBtn.disabled = true;
-                newBtn.textContent = "✓ Ready";
-                document.getElementById('phase2-ready-hint').textContent = 'Waiting for other players...';
-            } else {
-                newBtn.disabled = false;
-                newBtn.textContent = "I'm Ready";
-                document.getElementById('phase2-ready-hint').textContent = 'Click when ready to proceed to the discussion phase';
-            }
+            // CRITICAL: Always start fresh on Phase 2 - button should be enabled and ready to click
+            // Do NOT check data.amReady as this is only set on client-side reconnection, not on new game start
+            newBtn.disabled = true;  // Disabled until player clicks "I'm Ready"
+            newBtn.textContent = "I'm Ready";
+            document.getElementById('phase2-ready-hint').textContent = 'Click when ready to proceed to the discussion phase';
         }
     }
 
@@ -3815,6 +3822,7 @@ class Game {
         // This includes all phase states and ready flags
         this.isEliminated = false;
         this.eliminationData = null;
+        this.phase2Data = null;  // Clear Phase 2 data to prevent state carryover
         this.phase3Done = false;
         this.phase4Voted = false;
         this.phase5Voted = false;
