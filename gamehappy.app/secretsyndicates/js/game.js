@@ -3536,9 +3536,7 @@ class Game {
                     <div id="players-table-container" class="players-table-container"></div>
                     
                     <div class="results-actions" style="margin-top: 40px; text-align: center;">
-                        <button id="btn-play-again" class="btn btn-primary" style="padding: 15px 40px; font-size: 1.1rem;">
-                            🔄 Play Again
-                        </button>
+                        <button id="btn-play-again" class="btn btn-primary">🔄 Play Again</button>
                         <p id="play-again-status" style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;"></p>
                     </div>
                 </div>
@@ -3704,7 +3702,6 @@ class Game {
         
         // Update session for new game
         this.gameCode = data.gameCode;
-        this.saveSession();
         
         // Reset all local state
         this.isEliminated = false;
@@ -3723,14 +3720,16 @@ class Game {
         this.caseNotes = {};
         this.selectedCaseNotesPlayer = null;
         this.role = null;
+        this.playerRole = null;
         this.votingHistory = {};
+        this.lastGameState = null;  // Clear previous game state
         
         // Update game code and host status
         this.gameCode = data.gameCode;
         this.isHost = data.isHost;
         console.log('New game code:', this.gameCode, 'isHost:', this.isHost);
         
-        // Save new session
+        // Save new session with cleared gameState
         this.saveSession();
         
         // Hide all screens
