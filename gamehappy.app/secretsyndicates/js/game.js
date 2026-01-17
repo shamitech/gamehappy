@@ -3625,12 +3625,9 @@ class Game {
     }
     
     playAgain() {
-        console.log('[PLAY-AGAIN] Button clicked, emitting play-again event');
+        console.log('[PLAY-AGAIN] Emitting play-again event');
         if (this.socket && this.socket.connected && this.gameCode) {
             this.socket.emit('play-again', { gameCode: this.gameCode });
-            console.log('[PLAY-AGAIN] Event emitted');
-        } else {
-            console.error('[PLAY-AGAIN] Cannot emit: socket=' + !!this.socket + ', connected=' + (this.socket?.connected) + ', gameCode=' + this.gameCode);
         }
     }
     
@@ -3757,10 +3754,31 @@ class Game {
     handlePlayAgainLobby(data) {
         console.log('[PLAY-AGAIN-LOBBY] Received new game:', data);
         
-        // Update to new game
+        // The playerToken may have been cleared by handleGameEnded, 
+        // but we still have it from the server event - recover from session or use the token we remember
+        // The server is sending us the same token back (it's identifying us by it)
+        // so we know we're the right player
+        
+        // Recover playerToken from session storage before we lost it
+        const savedSession = this.getSessionData();
+        if (savedSession) {
+            try {
+                const session = JSON.parse(savedSession);
+                if (session.playerToken && !this.playerToken) {
+                    console.log('[PLAY-AGAIN-LOBBY] Recovering playerToken from cleared session:', session.playerToken);
+                    this.playerToken = session.playerToken;
+                }
+            } catch (e) {
+                console.error('[PLAY-AGAIN-LOBBY] Error recovering playerToken:', e);
+            }
+        }
+        
+        // Update to new game - KEEP the playerToken!
         this.gameCode = data.gameCode;
         this.isHost = data.isHost;
         this.isReady = false;
+        
+        console.log('[PLAY-AGAIN-LOBBY] Using playerToken:', this.playerToken, 'for new game:', this.gameCode);
         
         // Clear all game-specific state
         this.isEliminated = false;
@@ -3782,7 +3800,7 @@ class Game {
         this.votingHistory = {};
         this.lastGameState = null;
         
-        // Save session
+        // Save session with new game code and preserved playerToken
         this.saveSession();
         
         // Show lobby
@@ -3790,7 +3808,7 @@ class Game {
         this.showScreen('lobby-screen');
         this.updateLobby(data.game);
         
-        console.log('[PLAY-AGAIN-LOBBY] Switched to new lobby, code:', this.gameCode);
+        console.log('[PLAY-AGAIN-LOBBY] Switched to new lobby, code:', this.gameCode, 'token:', this.playerToken);
     }
     
     onPlayAgain(data) {
