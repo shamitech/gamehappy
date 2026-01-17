@@ -3565,7 +3565,7 @@ class Game {
                     
                     <div class="results-actions" style="margin-top: 40px; text-align: center;">
                         <div id="play-again-host-only" style="display: none;">
-                            <button id="btn-play-again" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); color: var(--primary-gold); border: 2px solid var(--primary-gold); border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; display: block; margin: 0 auto;" onclick="window.game?.playAgain?.(); return false;">Play Again</button>
+                            <button id="btn-play-again" class="btn btn-primary" style="padding: 12px 30px; font-size: 1rem; background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%); color: var(--primary-gold); border: 2px solid var(--primary-gold); border-radius: 6px; cursor: pointer; transition: all 0.3s ease; font-weight: 600; display: block; margin: 0 auto;">Play Again</button>
                             <p id="play-again-status" style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;"></p>
                         </div>
                         <div id="waiting-for-host" style="display: none;">
@@ -3601,28 +3601,18 @@ class Game {
                 console.log('[CREATE-RESULTS] Looking for btn-play-again, found:', playAgainBtn);
                 
                 if (playAgainBtn) {
-                    console.log('[CREATE-RESULTS] Button found, checking properties');
-                    console.log('[CREATE-RESULTS] Button HTML:', playAgainBtn.outerHTML);
-                    console.log('[CREATE-RESULTS] Button visible:', playAgainBtn.offsetHeight > 0);
+                    console.log('[CREATE-RESULTS] Button found, attaching listener directly');
                     
-                    console.log('[CREATE-RESULTS] Removing old listeners if any');
-                    const newBtn = playAgainBtn.cloneNode(true);
-                    playAgainBtn.parentNode.replaceChild(newBtn, playAgainBtn);
-                    
-                    const finalBtn = document.getElementById('btn-play-again');
-                    console.log('[CREATE-RESULTS] Final button element:', finalBtn);
-                    
-                    if (finalBtn) {
-                        console.log('[CREATE-RESULTS] Attaching click listener');
-                        finalBtn.addEventListener('click', (e) => {
-                            console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED ==========', e);
-                            this.playAgain();
-                        });
-                        console.log('[CREATE-RESULTS] Click listener attached successfully');
-                    }
+                    // Just attach the listener directly, don't clone
+                    const self = this;
+                    playAgainBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('[PLAY-AGAIN-BTN] ========== CLICK FIRED ==========');
+                        self.playAgain();
+                    });
+                    console.log('[CREATE-RESULTS] Click listener attached successfully');
                 } else {
                     console.warn('[CREATE-RESULTS] btn-play-again NOT FOUND in DOM');
-                    console.warn('[CREATE-RESULTS] All button elements:', document.querySelectorAll('button'));
                 }
             }, 100);
         } else {
