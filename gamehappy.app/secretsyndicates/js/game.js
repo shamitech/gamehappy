@@ -3598,6 +3598,12 @@ class Game {
             // Attach listener immediately without setTimeout
             const playAgainBtn = document.getElementById('btn-play-again');
             console.log('[CREATE-RESULTS] Button element:', playAgainBtn);
+            console.log('[CREATE-RESULTS] Button styles:', {
+                display: window.getComputedStyle(playAgainBtn).display,
+                pointerEvents: window.getComputedStyle(playAgainBtn).pointerEvents,
+                visibility: window.getComputedStyle(playAgainBtn).visibility,
+                opacity: window.getComputedStyle(playAgainBtn).opacity
+            });
             
             if (playAgainBtn) {
                 const self = this;
@@ -3606,6 +3612,11 @@ class Game {
                 // Remove any existing listeners by cloning
                 const newBtn = playAgainBtn.cloneNode(true);
                 playAgainBtn.parentNode.replaceChild(newBtn, playAgainBtn);
+                
+                // Add test listener first
+                newBtn.addEventListener('mousedown', function(e) {
+                    console.log('[PLAY-AGAIN-BTN] MOUSEDOWN fired!', e);
+                });
                 
                 // Add listener to new button
                 newBtn.addEventListener('click', function(e) {
