@@ -3599,52 +3599,13 @@ class Game {
     }
     
     playAgain() {
-        const statusEl = document.getElementById('play-again-status');
-        const btn = document.getElementById('btn-play-again');
-        
-        console.log('[PLAY-AGAIN] Button clicked');
-        console.log('[PLAY-AGAIN] Socket:', this.socket);
-        console.log('[PLAY-AGAIN] Socket connected:', this.socket?.connected);
-        console.log('[PLAY-AGAIN] Game code:', this.gameCode);
-        
-        if (!this.socket) {
-            const msg = 'Socket not initialized. Please refresh the page.';
-            console.error('[PLAY-AGAIN]', msg);
-            statusEl.textContent = msg;
-            return;
+        console.log('[PLAY-AGAIN] Button clicked, emitting play-again event');
+        if (this.socket && this.socket.connected && this.gameCode) {
+            this.socket.emit('play-again', { gameCode: this.gameCode });
+            console.log('[PLAY-AGAIN] Event emitted');
+        } else {
+            console.error('[PLAY-AGAIN] Cannot emit: socket=' + !!this.socket + ', connected=' + (this.socket?.connected) + ', gameCode=' + this.gameCode);
         }
-        
-        if (!this.socket.connected) {
-            const msg = 'Not connected to server. Please refresh the page.';
-            console.error('[PLAY-AGAIN]', msg);
-            statusEl.textContent = msg;
-            return;
-        }
-        
-        if (!this.gameCode) {
-            const msg = 'No game code found. Cannot play again.';
-            console.error('[PLAY-AGAIN]', msg);
-            statusEl.textContent = msg;
-            return;
-        }
-        
-        btn.disabled = true;
-        statusEl.textContent = 'Creating new lobby...';
-        
-        console.log('[PLAY-AGAIN] Emitting play-again event with gameCode:', this.gameCode);
-        
-        this.socket.emit('play-again', { gameCode: this.gameCode }, (response) => {
-            console.log('[PLAY-AGAIN] Response received:', response);
-            if (response && response.success) {
-                console.log('[PLAY-AGAIN] New game created:', response.gameCode);
-                // Will receive 'play-again-lobby' event with new game info
-            } else {
-                btn.disabled = false;
-                const msg = response?.message || 'Failed to create new game';
-                console.error('[PLAY-AGAIN] Error:', msg);
-                statusEl.textContent = msg;
-            }
-        });
     }
     
     onNextRoundStart(data) {
@@ -3768,18 +3729,19 @@ class Game {
     }
     
     handlePlayAgainLobby(data) {
-        console.log('handlePlayAgainLobby called with:', data);
+        console.log('[PLAY-AGAIN-LOBBY] Received new game:', data);
         
-        // Update session for new game
+        // Update to new game
         this.gameCode = data.gameCode;
+        this.isHost = data.isHost;
+        this.isReady = false;
         
-        // Reset all local state
+        // Clear all game-specific state
         this.isEliminated = false;
         this.eliminationData = null;
         this.phase3Done = false;
         this.phase4Voted = false;
         this.phase5Voted = false;
-        this.isReady = false;
         this.startGameInProgress = false;
         this.syndicateState = null;
         this.detectiveState = null;
@@ -3792,30 +3754,17 @@ class Game {
         this.role = null;
         this.playerRole = null;
         this.votingHistory = {};
-        this.lastGameState = null;  // Clear previous game state
+        this.lastGameState = null;
         
-        // Update game code and host status
-        this.gameCode = data.gameCode;
-        this.isHost = data.isHost;
-        console.log('New game code:', this.gameCode, 'isHost:', this.isHost);
-        
-        // Save new session with cleared gameState
+        // Save session
         this.saveSession();
         
-        // Notify server of new game room
-        if (this.socket && this.socket.connected) {
-            console.log('[PLAY-AGAIN-LOBBY] Notifying server of game change:', this.gameCode);
-            this.socket.emit('join-game', { gameCode: this.gameCode });
-        }
-        
-        // Hide all screens
-        document.querySelectorAll('.screen').forEach(screen => {
-            screen.style.display = 'none';
-        });
-        
-        // Show lobby screen
+        // Show lobby
+        document.querySelectorAll('.screen').forEach(screen => screen.style.display = 'none');
         this.showScreen('lobby-screen');
         this.updateLobby(data.game);
+        
+        console.log('[PLAY-AGAIN-LOBBY] Switched to new lobby, code:', this.gameCode);
     }
     
     onPlayAgain(data) {
