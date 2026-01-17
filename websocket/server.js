@@ -868,10 +868,10 @@ io.on('connection', (socket) => {
             }
           }
         } else if (eventName === 'accusation-vote') {
-          // Broadcast vote count to all players
+          // Broadcast vote count to players in this game only
           const alivePlayers = game.getAlivePlayers ? game.getAlivePlayers() : [];
           const accusationVotes = game.accusationVotes ? game.accusationVotes.size : 0;
-          io.sockets.emit('phase4-vote-update', {
+          io.to(`game-${game.gameCode}`).emit('phase4-vote-update', {
             voteCount: accusationVotes,
             totalPlayers: alivePlayers.length
           });
@@ -1094,8 +1094,8 @@ io.on('connection', (socket) => {
           const trialVotes = game.trialVotes ? game.trialVotes.size : 0;
           const guiltyVotes = game.trialVotes ? Array.from(game.trialVotes.values()).filter(v => v === 'guilty').length : 0;
           
-          // Broadcast vote counts to all players
-          io.sockets.emit('phase5-vote-update', {
+          // Broadcast vote counts to players in this game only
+          io.to(`game-${game.gameCode}`).emit('phase5-vote-update', {
             guiltyCount: guiltyVotes,
             notGuiltyCount: trialVotes - guiltyVotes,
             totalVotes: trialVotes,
@@ -1115,8 +1115,8 @@ io.on('connection', (socket) => {
             const accusedName = game.accusedPlayer ? 
               (game.getPlayers().find(p => p.token === game.accusedPlayer)?.name || 'Unknown') : 'Unknown';
             
-            // Emit verdict result to all players
-            io.sockets.emit('verdict-result', {
+            // Emit verdict result to players in this game only
+            io.to(`game-${game.gameCode}`).emit('verdict-result', {
               accusedName: accusedName,
               guiltyCount: guiltyVotes,
               notGuiltyCount: notGuiltyCount,
