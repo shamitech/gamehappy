@@ -12,6 +12,8 @@ class GameServer implements MessageComponentInterface
     protected $playerConnections;
     protected $playerTokens; // token => [gameCode, playerName]
     protected $disconnectedPlayers; // token => [gameCode, playerData, disconnectTime]
+    protected $availableKeywords;
+    protected $availableActions;
 
     public function __construct()
     {
