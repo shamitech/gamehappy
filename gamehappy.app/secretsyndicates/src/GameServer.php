@@ -21,11 +21,13 @@ class GameServer implements MessageComponentInterface
         $this->playerTokens = [];
         $this->disconnectedPlayers = [];
         $this->availableKeywords = $this->initializeKeywords();
+        $this->availableActions = $this->initializeActions();
     }
 
     private function initializeKeywords()
     {
         return [
+            // Original keywords
             'Umbrella', 'Compass', 'Telescope', 'Shovel', 'Pickaxe',
             'Lantern', 'Rope', 'Hammer', 'Wrench', 'Pliers',
             'Scissors', 'Torch', 'Whistle', 'Bell', 'Horn',
@@ -45,8 +47,242 @@ class GameServer implements MessageComponentInterface
             'Plate', 'Bowl', 'Cup', 'Glass', 'Goblet',
             'Pitcher', 'Jug', 'Vial', 'Urn', 'Amphora',
             'Bottle', 'Flask', 'Tankard', 'Chalice', 'Grail',
-            'Dish', 'Trencher', 'Mug', 'Stein', 'Flagon'
+            'Dish', 'Trencher', 'Mug', 'Stein', 'Flagon',
+            
+            // New hilarious and moderately obscure keywords
+            'Platypus', 'Wombat', 'Narwhal', 'Armadillo', 'Pangolin',
+            'Capybara', 'Tapir', 'Quokka', 'Okapi', 'Echidna',
+            'Basilisk', 'Lemur', 'Numbat', 'Emu', 'Kiwi',
+            'Yak', 'Alpaca', 'Llama', 'Vicuña', 'Guanaco',
+            'Chinchilla', 'Axolotl', 'Manatee', 'Dugong', 'Badger',
+            'Anteater', 'Aardvark', 'Meerkat', 'Porcupine', 'Hedgehog',
+            'Sloth', 'Loris', 'Gibbon', 'Macaque', 'Baboon',
+            'Tarantula', 'Centipede', 'Millipede', 'Scorpion', 'Cricket',
+            'Grasshopper', 'Mantis', 'Beetle', 'Dragonfly', 'Cicada',
+            'Moth', 'Firefly', 'Ladybug', 'Caterpillar', 'Butterfly',
+            
+            'Spaghetti', 'Gnocchi', 'Ravioli', 'Tortellini', 'Lasagna',
+            'Linguine', 'Fettuccine', 'Pappardelle', 'Rigatoni', 'Penne',
+            'Orzo', 'Farfalle', 'Rotini', 'Ziti', 'Cannoli',
+            'Tiramisu', 'Gelato', 'Biscotti', 'Panettone', 'Focaccia',
+            'Ciabatta', 'Bruschetta', 'Calzone', 'Panini', 'Risotto',
+            'Polenta', 'Osso Buco', 'Carpaccio', 'Crostini', 'Frittata',
+            
+            'Kumquat', 'Persimmon', 'Papaya', 'Guava', 'Dragonfruit',
+            'Durian', 'Rambutan', 'Lychee', 'Longan', 'Cherimoya',
+            'Horseradish', 'Rutabaga', 'Parsnip', 'Kohlrabi', 'Jicama',
+            'Taro', 'Cassava', 'Yuca', 'Daikon', 'Turnip',
+            
+            'Piccolo', 'Oboe', 'Clarinet', 'Saxophone', 'Bassoon',
+            'Trombone', 'Tuba', 'Cornet', 'Bugle', 'Bagpipe',
+            'Mandolin', 'Lute', 'Banjo', 'Ukulele', 'Sitar',
+            'Koto', 'Shamisen', 'Oud', 'Zither', 'Dulcimer',
+            'Accordion', 'Harmonica', 'Theremin', 'Synthesizer', 'Xylophone',
+            
+            'Hobgoblin', 'Imp', 'Sprite', 'Banshee', 'Wraith',
+            'Specter', 'Phantom', 'Poltergeist', 'Liche', 'Ghoul',
+            'Gargoyle', 'Chimera', 'Phoenix', 'Griffin', 'Kraken',
+            'Minotaur', 'Pegasus', 'Sphinx', 'Harpy', 'Siren',
+            
+            'Periscope', 'Binoculars', 'Monocle', 'Spectacles', 'Goggles',
+            'Lens', 'Magnifier', 'Kaleidoscope', 'Viewfinder', 'Microscope',
+            'Telescope', 'Sextant', 'Protractor', 'Compass', 'Plumb',
+            
+            'Lutefisk', 'Haggis', 'Schnitzel', 'Wiener', 'Bratwurst',
+            'Kielbasa', 'Chorizo', 'Pepperoni', 'Mortadella', 'Prosciutto',
+            'Pancetta', 'Guanciale', 'Lard', 'Fatback', 'Bacon',
+            
+            'Hullabaloo', 'Ruckus', 'Brouhaha', 'Shenanigans', 'Tomfoolery',
+            'Whimsical', 'Peculiar', 'Quirky', 'Zany', 'Wacky',
+            'Dainty', 'Rickety', 'Scamper', 'Bumble', 'Doozy',
+            'Hodgepodge', 'Rigmarole', 'Baloney', 'Bonkers', 'Kooky',
+            'Nifty', 'Snazzy', 'Razzle', 'Pizzazz', 'Gobbledygook',
+            'Doohickey', 'Whatchamacallit', 'Thingamajig', 'Doodad', 'Gadget',
+            'Gizmo', 'Thingummy', 'Contraption', 'Gimmick', 'Trinket',
+            'Knickknack', 'Bauble', 'Gewgaw', 'Tchotchke', 'Bibelot',
+            'Jiggery', 'Trickery', 'Buffoon', 'Jokester', 'Nincompoop',
+            'Rapscallion', 'Scallywag', 'Rogue', 'Scamp', 'Rascal'
         ];
+    }
+
+    private function initializeActions()
+    {
+        return [
+            // Original 50 gestures and actions players can perform
+            '👁️ Cover your eyes and peek between fingers',
+            '🔴 Touch your nose three times',
+            '🤐 Place a finger to your lips',
+            '👂 Tap your ear',
+            '🙌 Wave with both hands slowly',
+            '💫 Snap your fingers twice',
+            '✌️ Make a peace sign',
+            '👍 Give a thumbs up',
+            '🤔 Scratch your chin thoughtfully',
+            '😤 Sigh loudly',
+            '🎭 Cover your face dramatically',
+            '💁 Shrug with exaggerated confusion',
+            '🧐 Look over an imaginary shoulder',
+            '👀 Look side to side carefully',
+            '🗣️ Clear your throat loudly',
+            '💬 Whisper to yourself',
+            '🎪 Do a little spin in your chair',
+            '🖐️ Hold up your hand like a stop sign',
+            '👊 Make a fist and tap the table',
+            '🤲 Cup your hands together',
+            '🎯 Point at the ground',
+            '💎 Pretend to examine something',
+            '🚶 Get up and take a step',
+            '⏸️ Pause for a long moment',
+            '🎵 Hum a few notes',
+            '😮 Look shocked',
+            '🤨 Raise one eyebrow',
+            '👁️ Wink',
+            '🔗 Link your hands together',
+            '🌊 Make a wave motion with your hand',
+            '📞 Pretend to hold a phone to your ear',
+            '🎬 Clap once sharply',
+            '🔑 Pretend to turn a key',
+            '🧩 Make a clicking motion with your fingers',
+            '💭 Look up at the ceiling',
+            '🎪 Juggle an imaginary object',
+            '🎸 Pretend to play an instrument',
+            '🕷️ Walk your fingers across the table',
+            '🦗 Make a cricket chirping sound',
+            '🎱 Tap the table twice then once',
+            '⚡ Suddenly sit up straight',
+            '🎲 Roll imaginary dice',
+            '🎯 Pretend to shoot a bow and arrow',
+            '🎨 Make a painting motion',
+            '🧲 Move your hand as if pulled magnetically',
+            '🌀 Make a circular motion with your hand',
+            '🔄 Spin your chair slowly',
+            '📐 Make an L-shape with your arms',
+            '🎪 Do a quarter turn clockwise',
+            
+            // New 100 additional actions
+            '👋 Wave goodbye with one hand',
+            '🤚 Raise your hand like in class',
+            '💪 Flex your arm muscle',
+            '🙏 Press your hands together in prayer position',
+            '🤷 Shrug one shoulder',
+            '🤦 Slap your forehead',
+            '🤥 Bite your lip',
+            '😲 Gasp audibly',
+            '🤐 Zip your lips motion',
+            '🤫 Make a "shush" gesture',
+            '👊 Bump fists together',
+            '✊ Make a fist and hold it up',
+            '🖕 Point two fingers forward',
+            '🤞 Cross your fingers',
+            '🤟 Make a rock sign',
+            '☝️ Point upward',
+            '👇 Point downward',
+            '🙌 Raise both hands in celebration',
+            '🤝 Shake an imaginary hand',
+            '💅 Pretend to file your nails',
+            '🤳 Pretend to take a selfie',
+            '📸 Make a camera frame with your hands',
+            '🔭 Pretend to look through a telescope',
+            '🎥 Make a movie camera motion',
+            '🎞️ Make a film reel motion',
+            '📺 Make a rectangle with your hands',
+            '📻 Pretend to turn a dial',
+            '⏱️ Tap an imaginary watch',
+            '⏰ Make a ringing bell motion',
+            '🔔 Shake your head side to side',
+            '🚪 Pretend to open a door',
+            '🔓 Pretend to unlock something',
+            '🗝️ Pretend to put a key in your pocket',
+            '🎁 Pretend to unwrap a gift',
+            '🎀 Make a bow motion',
+            '💝 Place your hand on your heart',
+            '💔 Make a heart break motion',
+            '🤢 Look like you might be sick',
+            '🤮 Make gagging sounds',
+            '😵 Spin around slightly',
+            '🥴 Look confused and cross-eyed',
+            '😴 Yawn widely',
+            '🥱 Pretend to stretch',
+            '🧘 Sit in a meditation pose',
+            '🏃 Make running motions in place',
+            '🤸 Pretend to do a cartwheel',
+            '🧗 Make climbing motions',
+            '🏊 Make swimming motions',
+            '🚴 Pretend to pedal a bike',
+            '🤾 Throw an imaginary ball',
+            '⛹️ Bounce an imaginary basketball',
+            '🏌️ Pretend to swing a golf club',
+            '🎣 Pretend to cast a fishing line',
+            '🏹 Pretend to shoot an arrow',
+            '🎳 Pretend to roll bowling ball',
+            '🧗 Make rock climbing hand movements',
+            '🤺 Make fencing motions',
+            '🥊 Make boxing motions',
+            '🥋 Make martial arts movements',
+            '🤼 Pretend to wrestle',
+            '🤹 Pretend to juggle',
+            '🎪 Make circus tent shape with arms',
+            '🎭 Make theatre masks face',
+            '🎬 Make director's frame with hands',
+            '🎤 Hold an imaginary microphone',
+            '🎧 Pretend to put on headphones',
+            '🎼 Draw musical notes in the air',
+            '🎹 Pretend to play piano',
+            '🎺 Pretend to play trumpet',
+            '🎷 Pretend to play saxophone',
+            '🥁 Pretend to play drums',
+            '🎻 Pretend to play violin',
+            '🪕 Pretend to play banjo',
+            '🥁 Tap a beat on your leg',
+            '⛸️ Pretend to ice skate in place',
+            '🛹 Pretend to skateboard',
+            '🛼 Pretend to roller skate',
+            '🚣 Make rowing motions',
+            '🧗 Make climbing wall moves',
+            '🪂 Pretend to skydive',
+            '🪂 Make parachute opening motion',
+            '🏄 Pretend to surf',
+            '🚣 Make kayaking paddle motion',
+            '🧩 Interlock your fingers',
+            '💥 Clap your hands loudly',
+            '👏 Clap slowly three times',
+            '🤏 Make "tiny" motion with fingers',
+            '🙅 Shake your head "no"',
+            '🙆 Nod your head "yes"',
+            '🙇 Bow deeply',
+            '🙋 Raise your hand to speak',
+            '🙍 Look down sadly',
+            '🙎 Pout your lips',
+            '😐 Make a flat line mouth',
+            '😑 Look expressionless',
+            '🤨 Raise your eyebrow skeptically',
+            '😏 Smirk to one side',
+            '😒 Roll your eyes',
+            '😮‍💨 Breathe out heavily',
+            '🫡 Salute with your hand'
+        ];
+    }
+
+    private function selectSignalForEyeWitness()
+    {
+        // 50/50 chance of getting a word or action
+        if (rand(0, 1) === 0) {
+            // Select a keyword
+            $keyword = $this->availableKeywords[array_rand($this->availableKeywords)];
+            return [
+                'type' => 'word',
+                'value' => $keyword,
+                'instruction' => "Use this word subtly during discussions"
+            ];
+        } else {
+            // Select an action
+            $action = $this->availableActions[array_rand($this->availableActions)];
+            return [
+                'type' => 'action',
+                'value' => $action,
+                'instruction' => "Perform this action subtly during discussions"
+            ];
+        }
     }
 
     private function generatePlayerToken()
@@ -1695,7 +1931,86 @@ class GameServer implements MessageComponentInterface
             "{$victim} was discovered dead in the subway tunnel. The tracks tell no tales, but someone out there knows the truth." . ($hasEyewitness ? " A transit worker or late passenger could have information." : ""),
             "The luxury penthouse has become a crime scene. {$victim} lies dead, surrounded by elegance that now feels sinister." . ($hasEyewitness ? " The doorman or a neighbor might have seen something." : ""),
             "A gruesome discovery was made in the downtown alley behind the restaurant district. {$victim} is gone, cut down in a moment of violence." . ($hasEyewitness ? " Someone from a nearby business could have witnessed it." : ""),
-            "{$victim} won't be walking these city streets anymore. Found dead in circumstances that suggest premeditation. Someone executed this perfectly." . ($hasEyewitness ? " A vigilant observer might hold the key to justice." : "")
+            "{$victim} won't be walking these city streets anymore. Found dead in circumstances that suggest premeditation. Someone executed this perfectly." . ($hasEyewitness ? " A vigilant observer might hold the key to justice." : ""),
+            // New funny and surprising stories
+            "{$victim} was found dead in the gym, tangled in a treadmill cord. The irony of dying while exercising will not be lost on anyone." . ($hasEyewitness ? " A trainer saw someone tampering with the equipment." : ""),
+            "The bowling alley's lane 7 is now a crime scene. {$victim} was struck down in the most dramatic way possible—a 7-10 split will never seem innocent again." . ($hasEyewitness ? " A bowler in lane 8 may have seen the attack." : ""),
+            "{$victim} was found floating face-down in the community pool. The 'No Running' signs did nothing to prevent this tragedy." . ($hasEyewitness ? " A lifeguard was on duty and might have seen something." : ""),
+            "A shocking discovery in the karaoke bar: {$victim}, silent forever, found slumped over a microphone mid-song. 'My Heart Will Go On' took on a new meaning." . ($hasEyewitness ? " The DJ might have noticed something unusual." : ""),
+            "{$victim} was discovered in the pottery studio, suspiciously covered in clay. The spinning wheel tells a dark tale." . ($hasEyewitness ? " An art student was working late in the next room." : ""),
+            "The mini-golf course's 18th hole now harbors a terrible secret. {$victim} was found near the windmill, having met quite the unexpected hazard." . ($hasEyewitness ? " A golfer on the 17th green might have heard a commotion." : ""),
+            "{$victim} was found dead in the bread aisle of the supermarket. Authorities are baffled by how no one saw the attack in the middle of shopping hours." . ($hasEyewitness ? " A stock clerk was nearby and may have witnessed it." : ""),
+            "The yoga studio became a crime scene when {$victim} was found in downward dog position...permanently. The chakras are definitely unbalanced now." . ($hasEyewitness ? " An instructor was setting up for the next class." : ""),
+            "{$victim} was discovered dead in the library's romance section. How fitting and utterly tragic." . ($hasEyewitness ? " A librarian filing books nearby might know more." : ""),
+            "A terrible accident at the aquarium: {$victim} was found unconscious in the tank with the piranhas. Wait, piranhas aren't even in this aquarium..." . ($hasEyewitness ? " An employee might have moved something suspicious." : ""),
+            "{$victim} was found dead in the furniture store, positioned perfectly on a display bed. They won't be getting up from this nap." . ($hasEyewitness ? " A furniture salesman was working the floor." : ""),
+            "The dog park has turned tragic. {$victim} was found among the canines, much less friendly than intended." . ($hasEyewitness ? " A dog owner nearby might have seen the attacker." : ""),
+            "{$victim} was discovered dead in the movie theater during the opening credits. Talk about dying to see the ending." . ($hasEyewitness ? " An usher was cleaning the adjacent theater." : ""),
+            "Authorities found {$victim} at the petting zoo, oddly stiff among the goats. The goats are traumatized." . ($hasEyewitness ? " A zookeeper was making rounds." : ""),
+            "{$victim} was found dead hanging from the carousel at the fair. The music box still plays obliviously." . ($hasEyewitness ? " A carnival worker was nearby." : ""),
+            "The smoothie bar became a crime scene. {$victim} was found blended into the counter...wait, that's not possible. But they're definitely dead." . ($hasEyewitness ? " A barista was working the blender." : ""),
+            "{$victim} was discovered dead in the self-checkout aisle. They never did finish paying." . ($hasEyewitness ? " A customer nearby may have seen the killer." : ""),
+            "Police found {$victim} dead in the wax museum, positioned next to the serial killer exhibit. The wax figures have never looked so lifelike...or so concerned." . ($hasEyewitness ? " A tour guide was in the nearby room." : ""),
+            "{$victim} was found dead at the farmer's market, buried under a pile of organic vegetables. The irony of dying among health food is tragic." . ($hasEyewitness ? " A vendor was stocking nearby produce." : ""),
+            "The nail salon is now a crime scene. {$victim} was found with freshly manicured nails in their final moments. At least they died looking good." . ($hasEyewitness ? " A technician was working at the next station." : ""),
+            "{$victim} was discovered dead in the escape room. They were never meant to escape like this." . ($hasEyewitness ? " A staff member monitoring cameras might have seen something." : ""),
+            "Authorities found {$victim} at the paintball arena, covered in so much paint they look like a walking masterpiece. A final artistic statement." . ($hasEyewitness ? " A ref was watching the games." : ""),
+            "{$victim} was found dead in the laser tag arena, still wearing the vest. The lights were flashing when they discovered the body." . ($hasEyewitness ? " Another player was in the arena." : ""),
+            "The trampoline park's big bounce turned tragic. {$victim} was found motionless in the foam pit. The Syndicate has perfected their dark humor." . ($hasEyewitness ? " A supervisor was watching the floor." : ""),
+            "{$victim} was discovered dead at the batting cages, positioned between the pitching machine and destiny." . ($hasEyewitness ? " An employee was managing the machines." : ""),
+            "A shocking crime in the meditation center: {$victim}, found in lotus position, but finding no inner peace." . ($hasEyewitness ? " An instructor was in the adjacent studio." : ""),
+            "{$victim} was found dead in the ice cream parlor. Their body temperature will never again require freezer storage." . ($hasEyewitness ? " A server was behind the counter." : ""),
+            "The cooking class turned deadly. {$victim} was found slumped over the cutting board. The lesson on 'knife skills' took a dark turn." . ($hasEyewitness ? " Another student was at the next station." : ""),
+            "{$victim} was discovered at the jump rope competition, having made one final jump. They won't be competing in the next round." . ($hasEyewitness ? " A spectator was watching from the sidelines." : ""),
+            "Police found {$victim} dead in the coffee shop, slumped over with a final sip of cappuccino. Their last morning ritual turned out to be their last ever." . ($hasEyewitness ? " A barista was making drinks." : ""),
+            "{$victim} was found dead at the knitting circle, tangled in yarn like a final macabre project." . ($hasEyewitness ? " A fellow knitter was nearby." : ""),
+            "The ping-pong tournament has been cancelled. {$victim} was found dead in the recreation room, the ball still bouncing eerily across the table." . ($hasEyewitness ? " Another player was waiting for their match." : ""),
+            "{$victim} was discovered dead in the flower shop, surrounded by roses. The arrangement of death is almost beautiful." . ($hasEyewitness ? " A florist was arranging nearby." : ""),
+            "Authorities found {$victim} at the photography studio, posed in front of a white background like one final portrait. The Syndicate sure knows how to frame a scene." . ($hasEyewitness ? " A photographer was in the other room." : ""),
+            "{$victim} was found dead at the driving range, having hit their final ball straight into the rough of eternity." . ($hasEyewitness ? " A range attendant was on duty." : ""),
+            "The dentist's office is now a crime scene. {$victim} was found in the chair. At least their teeth will be clean forever." . ($hasEyewitness ? " A dental assistant was nearby." : ""),
+            "{$victim} was discovered dead in the gift wrapping station at the mall. Ironic that they've been wrapped for delivery to their final destination." . ($hasEyewitness ? " A mall employee was working nearby." : ""),
+            "Police found {$victim} dead in the bookclub, face-first in the selected novel. They'll never finish the story." . ($hasEyewitness ? " A fellow reader was nearby." : ""),
+            "{$victim} was found dead at the bus stop, eternally waiting for a ride that will never come." . ($hasEyewitness ? " A commuter was at the stop." : ""),
+            "The glass blowing studio became a crime scene. {$victim} was found near the furnace, perfectly preserved and absolutely deceased." . ($hasEyewitness ? " An artist was working nearby." : ""),
+            "{$victim} was discovered dead in the thrift store, surrounded by someone else's discarded memories. How fitting." . ($hasEyewitness ? " A volunteer was organizing items." : ""),
+            "Authorities found {$victim} dead in the juice bar, having had their final smoothie shake. The blender was still on." . ($hasEyewitness ? " A staff member was present." : ""),
+            "{$victim} was found at the chess tournament, positioned like a fallen piece on the board. Checkmate." . ($hasEyewitness ? " An opponent was at the same table." : ""),
+            "The wedding dress shop is now a crime scene. {$victim} was found tangled in tulle and tragedy." . ($hasEyewitness ? " A seamstress was in the back." : ""),
+            "{$victim} was discovered dead at the ice skating rink, frozen in their final moment. The ice is even colder now." . ($hasEyewitness ? " A skate attendant was nearby." : ""),
+            "Police found {$victim} in the museum's dinosaur exhibit, positioned next to T-Rex for a final photo that will never exist." . ($hasEyewitness ? " A docent was giving tours." : ""),
+            "{$victim} was found dead at the slot machines, having lost their final bet to death itself." . ($hasEyewitness ? " A casino worker was at the adjacent machine." : ""),
+            "The bath bomb store smells of tragedy today. {$victim} was found amid colorful spheres of relaxation. They'll get no more bubble baths." . ($hasEyewitness ? " A staff member was working." : ""),
+            "{$victim} was discovered dead in the dance studio, frozen in their final pose. The music will never play for them again." . ($hasEyewitness ? " Another dancer was taking class." : ""),
+            "Authorities found {$victim} at the vintage arcade, hands still on a controller. High score: Dead." . ($hasEyewitness ? " A gamer was at the next machine." : ""),
+            "{$victim} was found dead in the greenhouse, surrounded by blooming flowers and wilting dreams." . ($hasEyewitness ? " A horticulturist was working nearby." : ""),
+            "The protest march has turned tragic. {$victim} was found on the street, having marched no further." . ($hasEyewitness ? " A fellow protester saw the attacker." : ""),
+            "{$victim} was discovered dead in the candle-making workshop, now a permanent decoration." . ($hasEyewitness ? " An artisan was working nearby." : ""),
+            "Police found {$victim} at the lottery ticket counter, just minutes after purchasing their final unlucky ticket." . ($hasEyewitness ? " A cashier was working." : ""),
+            "{$victim} was found dead in the comic book store, clutching their last purchased issue. They'll never reach the final panel." . ($hasEyewitness ? " A customer was browsing." : ""),
+            "The dog grooming salon is now a crime scene. {$victim} was found among soapy water and sorrow." . ($hasEyewitness ? " A groomer was in another room." : ""),
+            "{$victim} was discovered dead at the flea market, bargained down to their final price." . ($hasEyewitness ? " A vendor was nearby." : ""),
+            "Authorities found {$victim} in the drum circle, the rhythm section now incomplete. The beat goes on, but they don't." . ($hasEyewitness ? " A drummer was playing." : ""),
+            "{$victim} was found dead in the nail salon waiting area, magazine still in hand, reading an article they'll never finish." . ($hasEyewitness ? " A staff member was present." : ""),
+            "The pottery wheel stopped spinning when {$victim} was found. Art class will never be the same." . ($hasEyewitness ? " A student was cleaning nearby." : ""),
+            "{$victim} was discovered dead in the fortune teller's booth. They didn't see this future coming." . ($hasEyewitness ? " A fortune teller was nearby." : ""),
+            "Police found {$victim} at the staring contest, having achieved permanent eye contact with death." . ($hasEyewitness ? " A judge was monitoring." : ""),
+            "{$victim} was found dead in the origami class, folded into oblivion. The paper cranes watched silently." . ($hasEyewitness ? " An instructor was present." : ""),
+            "The juggling convention took a dark turn. {$victim} was found motionless. The balls will juggle without them." . ($hasEyewitness ? " A fellow juggler saw the attack." : ""),
+            "{$victim} was discovered dead in the library's restricted section. Some books carry a price too high." . ($hasEyewitness ? " A librarian was cataloging nearby." : ""),
+            "Authorities found {$victim} at the puzzle competition, their final piece never fitting into place." . ($hasEyewitness ? " A competitor was nearby." : ""),
+            "{$victim} was found dead in the tie-dye workshop, stained with more than just dye. A colorful end to a twisted story." . ($hasEyewitness ? " An artist was working nearby." : ""),
+            "The meditation bell rang for the last time as {$victim} was found in the temple. They've achieved eternal peace, albeit not the kind intended." . ($hasEyewitness ? " A monk was chanting." : ""),
+            "{$victim} was discovered dead at the farmers stand, covered in produce. They'll be composted with the organic waste." . ($hasEyewitness ? " A farmer was tending the stand." : ""),
+            "Police found {$victim} in the haunted house attraction. The 'actors' didn't realize the final death was real." . ($hasEyewitness ? " An employee was monitoring." : ""),
+            "{$victim} was found dead in the wedding chapel—but it wasn't their wedding day. Now they're married to death itself." . ($hasEyewitness ? " A clergy member was present." : ""),
+            "The soap making workshop smells of lavender and lifelessness. {$victim} is now part of the final batch." . ($hasEyewitness ? " An apprentice was nearby." : ""),
+            "{$victim} was discovered dead in the sushi bar, positioned on a cutting board. Raw and regrettable." . ($hasEyewitness ? " A chef was preparing nearby." : ""),
+            "Authorities found {$victim} at the badminton court, their racket dropped forever. The shuttlecock will fly without them." . ($hasEyewitness ? " An opponent was on the court." : ""),
+            "{$victim} was found dead in the vinyl record store, forever playing their final song." . ($hasEyewitness ? " A employee was stocking records." : ""),
+            "The taxidermy shop now displays something unexpected. {$victim} was found among the stuffed animals, adding to the collection." . ($hasEyewitness ? " An artist was working nearby." : ""),
+            "{$victim} was discovered dead in the board game café, positioned mid-move. The game is no longer winnable without them." . ($hasEyewitness ? " A fellow player was at the table." : ""),
+            "Police found {$victim} at the balloon animal workshop, surrounded by squeaky rubber. The clown makeup of irony is tragic." . ($hasEyewitness ? " A performer was nearby." : "")
         ];
         
         return $stories[array_rand($stories)];
@@ -2881,12 +3196,13 @@ class GameServer implements MessageComponentInterface
                 'verdict' => 'GUILTY'
             ];
             
-            // Broadcast elimination (without revealing role - that's only shown at game end)
+            // Broadcast elimination (including role so it's revealed immediately)
             $this->broadcastToGame($gameCode, [
                 'action' => 'playerEliminated',
                 'playerId' => $accusedId,
                 'playerName' => $accusedName,
-                'verdict' => 'GUILTY'
+                'verdict' => 'GUILTY',
+                'role' => $accusedRole
             ]);
             
             // Check win conditions
