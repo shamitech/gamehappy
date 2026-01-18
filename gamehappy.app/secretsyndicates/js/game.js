@@ -762,19 +762,6 @@ class Game {
             this.showScreen('join-screen');
         });
 
-        // Rejoin Game button (from home screen)
-        const btnRejoinAvailable = document.getElementById('btn-rejoin-available');
-        if (btnRejoinAvailable) {
-            btnRejoinAvailable.addEventListener('click', () => {
-                console.log('[REJOIN-BTN] Rejoin button clicked');
-                this.showScreen('rejoin-code-screen');
-                document.getElementById('rejoin-code').value = '';
-                document.getElementById('rejoin-code-error').textContent = '';
-            });
-        } else {
-            console.warn('[REJOIN-BTN] btn-rejoin-available not found in DOM');
-        }
-
         // How to Play button
         document.getElementById('btn-how-to-play').addEventListener('click', () => {
             this.showScreen('how-to-play-screen');
