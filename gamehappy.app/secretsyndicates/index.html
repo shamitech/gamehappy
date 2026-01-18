@@ -76,7 +76,8 @@
                         <p class="role-team">Team: Syndicate</p>
                         <p>You are part of the secret criminal organization. Your goal is to eliminate all innocent citizens without being discovered.</p>
                         <ul>
-                            <li>Vote each night to select an assassin and target</li>
+                            <li>Vote each night to select who will be the assassin (another Syndicate member)</li>
+                            <li>The chosen assassin then votes for who to eliminate</li>
                             <li>Know the identity of your fellow Syndicate members</li>
                             <li>Blend in during the day and mislead investigations</li>
                         </ul>
@@ -110,10 +111,11 @@
                     <div class="role-card optional">
                         <h4>🟡 Eye Witness <span class="optional-badge">Optional</span></h4>
                         <p class="role-team">Team: Town</p>
-                        <p>You witnessed a crime and caught a glimpse of the underworld. You see who commits the assassination each round.</p>
+                        <p>You witnessed a crime and caught a glimpse of the underworld. Each round, you learn who carried out the assassination.</p>
                         <ul>
-                            <li>Learn the assassin's identity and their victim each round</li>
-                            <li>Receive a keyword to secretly signal the Detective</li>
+                            <li>After each murder, learn the assassin's identity</li>
+                            <li>Receive a secret keyword from the Detective to help you communicate</li>
+                            <li>Use the keyword to signal suspicion about the assassin during discussion</li>
                             <li>Vote during the day like other citizens</li>
                         </ul>
                         <p class="win-condition">Win: Survive and help eliminate all Syndicate members</p>
@@ -139,7 +141,7 @@
                         <h4>Phase 1: Night Phase</h4>
                         <p>The city sleeps, but evil never rests...</p>
                         <ul>
-                            <li><strong>Syndicate:</strong> Vote to choose who will be the assassin, then vote for their target</li>
+                            <li><strong>Syndicate:</strong> Vote to choose an assassin, then that assassin votes for their target</li>
                             <li><strong>Body Guard:</strong> Choose a player to protect (if enabled)</li>
                             <li><strong>Detective:</strong> Receives their secret keyword for the round</li>
                             <li><strong>Others:</strong> Wait for the night to pass</li>
@@ -147,23 +149,25 @@
                     </div>
 
                     <div class="phase-card">
-                        <h4>Phase 2: News Report</h4>
-                        <p>The morning news breaks with the night's events...</p>
+                        <h4>Phase 2: Murder Discovery</h4>
+                        <p>The morning brings grim news...</p>
                         <ul>
-                            <li>A news story reveals who was assassinated (or saved)</li>
-                            <li><strong>Eye Witness:</strong> Learns the assassin's identity and receives the keyword</li>
-                            <li>All players prepare for the discussion</li>
+                            <li>A murder story reveals who was assassinated (or saved by the Body Guard)</li>
+                            <li><strong>Eye Witness:</strong> Learns the assassin's identity and receives the secret keyword</li>
+                            <li><strong>Detective:</strong> Has their keyword to communicate with the Eye Witness</li>
+                            <li>All players prepare for discussion</li>
                         </ul>
                     </div>
 
                     <div class="phase-card">
-                        <h4>Phase 3: Group Discussion</h4>
-                        <p>The town gathers to discuss the crime...</p>
+                        <h4>Phase 3: Trial Phase (Discussion & Deliberation)</h4>
+                        <p>The town gathers to discuss the crime and deliberate...</p>
                         <ul>
                             <li>Players discuss who they suspect</li>
                             <li>Share information (or spread misinformation!)</li>
-                            <li>The Eye Witness may try to signal the Detective using the keyword</li>
+                            <li>The Eye Witness may try to signal the Detective using the secret keyword</li>
                             <li>Syndicate members should deflect suspicion</li>
+                            <li>Mark yourself as "Done" when ready to proceed to voting</li>
                         </ul>
                     </div>
 
@@ -171,20 +175,21 @@
                         <h4>Phase 4: Accusation Vote</h4>
                         <p>Time to point fingers...</p>
                         <ul>
-                            <li>Each player votes for who they think is Syndicate</li>
-                            <li>The player with the most votes goes on trial</li>
+                            <li>Each player votes for who they think is a Syndicate member</li>
+                            <li>The player with the most votes goes on trial in the Verdict Phase</li>
                             <li>If there's a tie, a random player from the tied votes is selected</li>
                         </ul>
                     </div>
 
                     <div class="phase-card">
-                        <h4>Phase 5: Trial Vote</h4>
-                        <p>The accused faces judgment...</p>
+                        <h4>Phase 5: Verdict Phase</h4>
+                        <p>The accused faces final judgment...</p>
                         <ul>
-                            <li>Players vote <strong>Guilty</strong> or <strong>Not Guilty</strong></li>
-                            <li>Majority Guilty = Player is eliminated</li>
-                            <li>Majority Not Guilty or Tie = Player survives</li>
-                            <li>The eliminated player's role is revealed</li>
+                            <li>Players vote <strong>Guilty</strong> or <strong>Not Guilty</strong> on the accused player</li>
+                            <li><strong>Guilty (majority):</strong> Player is eliminated and their role is revealed</li>
+                            <li><strong>Not Guilty (majority):</strong> Player survives and the game continues to the next round</li>
+                            <li><strong>Tie:</strong> Player survives</li>
+                            <li>After the verdict, a new round begins with another Night Phase</li>
                         </ul>
                     </div>
                 </section>
