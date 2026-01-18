@@ -3380,19 +3380,31 @@ class Game {
                 const accusedPlayer = accused ? allPlayers.find(p => p.token === accused) : null;
                 const accusedName = accusedPlayer ? accusedPlayer.name : '-';
                 
-                // Determine verdict display
-                let verdictIcon = '';
+                // Build display text showing both accused and verdict
+                let verdictText = '';
+                let verdictColor = '';
+                let verdictBg = '';
                 if (verdict === 'guilty') {
-                    verdictIcon = '✓';
+                    verdictText = 'Guilty';
+                    verdictColor = '#4ade80';
+                    verdictBg = '#2d5a2d';
                 } else if (verdict === 'not guilty') {
-                    verdictIcon = '✗';
+                    verdictText = 'Not Guilty';
+                    verdictColor = '#ff6b6b';
+                    verdictBg = '#5a2d2d';
+                } else {
+                    verdictText = 'Abstain';
+                    verdictColor = '#999';
+                    verdictBg = '#3a3a3a';
                 }
                 
                 roundCells.push({
                     accused: accusedName,
-                    verdict: verdictIcon,
+                    verdict: verdictText,
+                    verdictBg: verdictBg,
+                    verdictColor: verdictColor,
                     display: accusedName,
-                    displayWithVerdict: verdictIcon
+                    displayWithVerdict: verdictText
                 });
             }
             
@@ -3437,7 +3449,7 @@ class Game {
         // Build table headers with rounds
         const roundHeaders = [];
         for (let i = 1; i <= maxRounds; i++) {
-            roundHeaders.push(`<th style="text-align: center; font-size: 0.9em;"><div style="min-width: 100px;">Round ${i}</div><div style="font-size: 0.8em; font-weight: normal; color: var(--text-muted);">Accused/Vote</div></th>`);
+            roundHeaders.push(`<th style="text-align: center; font-size: 0.9em;"><div style="min-width: 140px;">Round ${i}</div><div style="font-size: 0.75em; font-weight: normal; color: var(--text-muted);">Accused | Vote</div></th>`);
         }
 
         const tableHTML = `
@@ -3451,7 +3463,7 @@ class Game {
                                 <th>Role</th>
                                 <th>Status</th>
                                 ${roundHeaders.join('')}
-                                <th style="min-width: 200px;">Suspicion</th>
+                                <th style="min-width: 160px;">Suspicion Level</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -3469,16 +3481,18 @@ class Game {
                                         </span>
                                     </td>
                                     ${player.roundCells.map(cell => `
-                                        <td class="round-data" style="text-align: center; padding: 8px;">
+                                        <td class="round-data" style="text-align: center; padding: 8px; font-size: 0.85em;">
                                             <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap; flex-direction: column;">
-                                                <span style="background: #4a5f8f; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; white-space: nowrap;">${cell.display}</span>
-                                                ${cell.displayWithVerdict === '✓' ? `<span style="background: #2d5a2d; color: #4ade80; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">✓ Not Guilty</span>` : ''}
-                                                ${cell.displayWithVerdict === '✗' ? `<span style="background: #5a2d2d; color: #ff6b6b; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em;">✗ Guilty</span>` : ''}
+                                                <div style="background: #4a5f8f; color: white; padding: 6px 8px; border-radius: 4px; font-size: 0.8em; white-space: nowrap; font-weight: 500;">📍 ${cell.display}</div>
+                                                <div style="background: ${cell.verdictBg}; color: ${cell.verdictColor}; padding: 6px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75em; white-space: nowrap;">✓ ${cell.verdict}</div>
                                             </div>
                                         </td>
                                     `).join('')}
-                                    <td class="suspicion-cell" style="min-width: 140px;">
-                                        <span class="suspicion-level ${player.suspicionLevel}">${player.suspicionDisplay}</span>
+                                    <td class="suspicion-cell" style="min-width: 160px;">
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <span class="suspicion-level ${player.suspicionLevel}" style="padding: 6px 8px; border-radius: 4px; font-weight: 600; text-align: center;">${player.suspicionDisplay}</span>
+                                            <span style="font-size: 0.75em; color: var(--text-muted);">Score: ${player.suspicionScore}%</span>
+                                        </div>
                                     </td>
                                 </tr>
                             `).join('')}
