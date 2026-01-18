@@ -810,13 +810,6 @@ class Game {
         });
 
         // Rejoin screen buttons
-        const btnRejoinGame = document.getElementById('btn-rejoin-game');
-        if (btnRejoinGame) {
-            btnRejoinGame.addEventListener('click', () => {
-                this.attemptReconnect();
-            });
-        }
-
         const btnRejoinNewGame = document.getElementById('btn-rejoin-new-game');
         if (btnRejoinNewGame) {
             btnRejoinNewGame.addEventListener('click', () => {
