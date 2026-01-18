@@ -225,7 +225,7 @@ class GameServer implements MessageComponentInterface
             '🤹 Pretend to juggle',
             '🎪 Make circus tent shape with arms',
             '🎭 Make theatre masks face',
-            '🎬 Make director's frame with hands',
+            '🎬 Make director\'s frame with hands',
             '🎤 Hold an imaginary microphone',
             '🎧 Pretend to put on headphones',
             '🎼 Draw musical notes in the air',
