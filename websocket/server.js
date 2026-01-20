@@ -2337,12 +2337,12 @@ app.get('/test-auto-game', (req, res) => {
 function broadcastActiveGames() {
   const activeGames = [];
   
-  // Collect active Secret Syndicates games
-  if (gameServer.games && gameServer.games.secret_syndicates) {
-    Object.values(gameServer.games.secret_syndicates).forEach(game => {
+  // Collect all active games from the Map
+  if (gameServer.games && gameServer.games.size > 0) {
+    for (const [gameCode, game] of gameServer.games) {
       if (game && game.state !== 'ended') {
         activeGames.push({
-          gameType: 'Secret Syndicates',
+          gameType: game.gameType || 'Secret Syndicates',
           gameId: game.gameCode,
           players: game.players?.map(p => p.name) || [],
           currentRound: game.round || 1,
@@ -2350,9 +2350,10 @@ function broadcastActiveGames() {
           playerCount: game.players?.length || 0
         });
       }
-    });
+    }
   }
 
+  console.log(`[BROADCAST] Sending ${activeGames.length} active games to admin dashboard`);
   // Broadcast to all connected clients
   io.emit('activeGames', activeGames);
 }
