@@ -170,8 +170,12 @@ io.on('connection', (socket) => {
   });
   console.log(`[USERS] Total active users: ${activeUsers.size}`);
   
-  // Broadcast updated stats immediately
-  broadcastActiveStats();
+  // Broadcast updated stats immediately (with safety check)
+  try {
+    broadcastActiveStats();
+  } catch (err) {
+    console.error(`[BROADCAST] Error broadcasting stats on connect:`, err);
+  }
 
   // Generate unique player token (could use existing token from client)
   const playerToken = socket.handshake.query.token || socket.id;
@@ -1909,8 +1913,12 @@ io.on('connection', (socket) => {
     activeUsers.delete(socket.id);
     console.log(`[USERS] Total active users: ${activeUsers.size}`);
     
-    // Broadcast updated user count
-    broadcastActiveStats();
+    // Broadcast updated user count (with safety check)
+    try {
+      broadcastActiveStats();
+    } catch (err) {
+      console.error(`[BROADCAST] Error broadcasting stats on disconnect:`, err);
+    }
     
     // Don't remove player from game - they might rejoin!
     // Just notify other players they disconnected
@@ -2380,23 +2388,27 @@ function broadcastActiveGames() {
 
 // Broadcast active user and game stats to admin dashboard
 function broadcastActiveStats() {
-  const stats = {
-    activeUsers: activeUsers.size,
-    activeGames: 0,
-    timestamp: new Date()
-  };
-  
-  // Count active games
-  if (gameServer.games && gameServer.games.size > 0) {
-    for (const [gameCode, game] of gameServer.games) {
-      if (game && game.state !== 'ended') {
-        stats.activeGames++;
+  try {
+    const stats = {
+      activeUsers: activeUsers.size,
+      activeGames: 0,
+      timestamp: new Date()
+    };
+    
+    // Count active games (with safety check)
+    if (gameServer && gameServer.games && gameServer.games.size > 0) {
+      for (const [gameCode, game] of gameServer.games) {
+        if (game && game.state !== 'ended') {
+          stats.activeGames++;
+        }
       }
     }
+    
+    console.log(`[STATS] Broadcasting: ${stats.activeUsers} users, ${stats.activeGames} games`);
+    io.emit('activeStats', stats);
+  } catch (err) {
+    console.error(`[STATS] Error in broadcastActiveStats:`, err);
   }
-  
-  console.log(`[STATS] Broadcasting: ${stats.activeUsers} users, ${stats.activeGames} games`);
-  io.emit('activeStats', stats);
 }
 
 // Broadcast active games every 5 seconds
