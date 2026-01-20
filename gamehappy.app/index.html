@@ -198,9 +198,22 @@
     <!-- Socket.IO for user tracking -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
+        // Generate or retrieve a unique session ID for this user
+        function getSessionId() {
+            let sessionId = localStorage.getItem('gamehappy-session-id');
+            if (!sessionId) {
+                sessionId = 'session-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+                localStorage.setItem('gamehappy-session-id', sessionId);
+            }
+            return sessionId;
+        }
+
         // Connect to websocket server to track active users
         const socket = io('https://gamehappy.app:8443', {
             path: '/websocket',
+            query: {
+                sessionId: getSessionId()
+            },
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
@@ -212,7 +225,8 @@
             // Notify server that a user is on the homepage
             socket.emit('user:connect', {
                 timestamp: new Date(),
-                page: 'gamehappy-homepage'
+                page: 'gamehappy-homepage',
+                sessionId: getSessionId()
             });
         });
 

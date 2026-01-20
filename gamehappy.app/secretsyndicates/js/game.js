@@ -556,11 +556,19 @@ class Game {
             console.log('[CONNECT] Player token:', this.playerToken);
             console.log('[CONNECT] Game code:', this.gameCode);
 
+            // Get or create session ID for user tracking
+            let sessionId = localStorage.getItem('gamehappy-session-id');
+            if (!sessionId) {
+                sessionId = 'session-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+                localStorage.setItem('gamehappy-session-id', sessionId);
+            }
+
             // Connect to Socket.IO server with correct path
             this.socket = io('wss://gamehappy.app', {
                 path: '/websocket',
                 query: {
-                    token: this.playerToken || ''
+                    token: this.playerToken || '',
+                    sessionId: sessionId
                 },
                 reconnection: true,
                 reconnectionDelay: 1000,
@@ -579,9 +587,11 @@ class Game {
                 this.updateConnectionStatus('connected');
                 
                 // Notify server that a regular user (not admin) is connected
+                const sessionId = localStorage.getItem('gamehappy-session-id');
                 this.socket.emit('user:connect', {
                     timestamp: new Date(),
-                    page: 'secretsyndicates-home'
+                    page: 'secretsyndicates-home',
+                    sessionId: sessionId
                 });
                 
                 // Skip auto-rejoin in test mode
