@@ -217,8 +217,6 @@ function recordGameMetrics() {
     // Record users per game
     const totalUsers = activeSessions.size;
     const usersInGames = metrics.secretSyndicates + metrics.flagGuardians + metrics.areWeThereYet;
-    // Calculate home users
-    const usersInGames = metrics.secretSyndicates + metrics.flagGuardians + metrics.areWeThereYet;
     const usersMetrics = {
       timestamp: Date.now(),
       home: Math.max(0, totalUsers - usersInGames),
@@ -236,8 +234,11 @@ function recordGameMetrics() {
   }
 }
 
-// Record game metrics every minute
-setInterval(recordGameMetrics, 60000); // 60 seconds
+// Record game metrics every 10 seconds to capture more granular history
+setInterval(() => {
+  recordUserHistory();
+  recordGameMetrics();
+}, 10000); // 10 seconds
 
 // Clean up old ended games every 5 minutes
 function cleanupEndedGames() {
@@ -2136,6 +2137,10 @@ io.on('connection', (socket) => {
     sessionPages.set(sessionId, page);
     console.log(`[USER] Updated sessionPages: sessionId ${sessionId} -> page ${page}`);
     console.log(`[USER] Current sessionPages:`, Array.from(sessionPages.entries()));
+    
+    // Record metrics immediately when user connects
+    recordUserHistory();
+    recordGameMetrics();
     
     // Broadcast updated stats
     try {
