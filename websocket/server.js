@@ -157,8 +157,9 @@ const gameServer = new GameServer();
 ensureGameHistoryFile();
 
 // Track active users
-let activeUsers = new Map(); // socket.id -> { connected: true, page: string, timestamp: Date, sessionId }
+let activeUsers = new Map(); // socket.id -> { connected: true, timestamp: Date, sessionId }
 let activeSessions = new Set(); // Track unique user sessions (not socket connections)
+let sessionPages = new Map(); // Track which page each sessionId is on
 let adminUsers = new Set(); // Track admin socket IDs separately
 
 // Track historical user data - array of { timestamp, userCount }
@@ -195,10 +196,9 @@ function recordGameMetrics() {
       areWeThereYet: 0
     };
     
-    // Count users by page they're on (from activeUsers tracking)
-    for (const [socketId, user] of activeUsers) {
-      if (user && user.sessionId && activeSessions.has(user.sessionId)) {
-        const page = user.page || 'home';
+    // Count users by page they're on (from sessionPages tracking)
+    for (const [sessionId, page] of sessionPages) {
+      if (activeSessions.has(sessionId)) {
         if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
           metrics.secretSyndicates++;
         } else if (page === 'flagguardians-home' || page === 'flagguardians') {
@@ -2068,6 +2068,7 @@ io.on('connection', (socket) => {
       );
       if (!hasOtherSockets) {
         activeSessions.delete(sessionId);
+        sessionPages.delete(sessionId);
         console.log(`[USERS] Session ${sessionId} removed (no more active sockets)`);
       }
     }
@@ -2124,12 +2125,12 @@ io.on('connection', (socket) => {
   socket.on('user:connect', (data) => {
     console.log(`[USER] Regular user connected from ${socket.id} at ${data?.page || 'unknown'}`);
     
-    // Update user tracking with page information
-    if (activeUsers.has(socket.id)) {
-      const user = activeUsers.get(socket.id);
-      user.page = data?.page || 'home';
-      console.log(`[USER] Updated user page to: ${user.page}`);
-    }
+    // Get the session ID for this user
+    const sessionId = socket.handshake.query.sessionId || socket.id;
+    
+    // Track which page this sessionId is on
+    sessionPages.set(sessionId, data?.page || 'home');
+    console.log(`[USER] Updated sessionId ${sessionId} page to: ${data?.page || 'home'}`);
     
     // Broadcast updated stats
     try {
@@ -2616,10 +2617,9 @@ function broadcastActiveStats() {
       }
     };
     
-    // First, count users by page they're on (from activeUsers tracking)
-    for (const [socketId, user] of activeUsers) {
-      if (user && user.sessionId && activeSessions.has(user.sessionId)) {
-        const page = user.page || 'home';
+    // Count users by page they're on (from sessionPages tracking)
+    for (const [sessionId, page] of sessionPages) {
+      if (activeSessions.has(sessionId)) {
         if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
           stats.usersPerGame.secretSyndicates++;
         } else if (page === 'flagguardians-home' || page === 'flagguardians') {
@@ -2631,9 +2631,6 @@ function broadcastActiveStats() {
         }
       }
     }
-    
-    // Track which sessionIds are in games to avoid double-counting
-    const usersInGames = new Set();
     
     // Count active games
     if (gameServer && gameServer.games && gameServer.games.size > 0) {
