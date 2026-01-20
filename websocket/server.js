@@ -163,12 +163,15 @@ let activeUsers = new Map(); // socket.id -> { connected: true, page: string, ti
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
   
-  // Track this user as active
+  // Track this user as active on connection
   activeUsers.set(socket.id, {
     connected: true,
     timestamp: new Date()
   });
   console.log(`[USERS] Total active users: ${activeUsers.size}`);
+  
+  // Broadcast updated stats immediately
+  broadcastActiveStats();
 
   // Generate unique player token (could use existing token from client)
   const playerToken = socket.handshake.query.token || socket.id;
@@ -1922,22 +1925,6 @@ io.on('connection', (socket) => {
         game: gameServer.getGameLobbyInfo(gameCode)
       });
     }
-  });
-
-  /**
-   * User join event - track when user loads the site
-   */
-  socket.on('user:join', (data) => {
-    console.log(`[USER:JOIN] User joined from ${data?.page || 'unknown'}`);
-    activeUsers.set(socket.id, {
-      connected: true,
-      page: data?.page || 'unknown',
-      timestamp: data?.timestamp || new Date()
-    });
-    console.log(`[USERS] Total active users: ${activeUsers.size}`);
-    
-    // Broadcast updated user count
-    broadcastActiveStats();
   });
 
   /**

@@ -590,11 +590,6 @@ class Game {
                     this.attemptReconnect();
                 } else {
                     console.log('[CONNECT] No session to rejoin (token:', this.playerToken, 'code:', this.gameCode, ')');
-                    // Only notify server of new user if not rejoining a game
-                    this.socket.emit('user:join', {
-                        timestamp: new Date(),
-                        page: 'secretsyndicates'
-                    });
                 }
             });
 
