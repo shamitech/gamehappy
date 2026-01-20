@@ -1227,9 +1227,16 @@
                     labels.push((i * 6) + 's');
                 }
             } else if (view === 'hour') {
-                // Show last 60 minutes in 6-minute intervals
+                // Show last 60 minutes in 6-minute intervals with time
                 for (let i = 9; i >= 0; i--) {
-                    labels.push((i * 6) + 'm');
+                    const time = new Date(now);
+                    time.setMinutes(time.getMinutes() - (i * 6));
+                    const hour = time.getHours();
+                    const minute = time.getMinutes();
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const displayHour = hour % 12 || 12;
+                    const displayMinute = minute.toString().padStart(2, '0');
+                    labels.push(displayHour + ':' + displayMinute + ampm);
                 }
             } else if (view === 'day') {
                 // Show last 24 hours in 2.4-hour intervals
