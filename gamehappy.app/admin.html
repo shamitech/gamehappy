@@ -1227,16 +1227,21 @@
                     labels.push((i * 6) + 's');
                 }
             } else if (view === 'hour') {
-                // Show last 60 minutes in 6-minute intervals with time
-                for (let i = 9; i >= 0; i--) {
+                // Show last 60 minutes in 1-minute intervals
+                // Only show labels for every 5th minute to avoid crowding
+                for (let i = 59; i >= 0; i--) {
                     const time = new Date(now);
-                    time.setMinutes(time.getMinutes() - (i * 6));
-                    const hour = time.getHours();
-                    const minute = time.getMinutes();
-                    const ampm = hour >= 12 ? 'PM' : 'AM';
-                    const displayHour = hour % 12 || 12;
-                    const displayMinute = minute.toString().padStart(2, '0');
-                    labels.push(displayHour + ':' + displayMinute + ampm);
+                    time.setMinutes(time.getMinutes() - i);
+                    if (i % 5 === 0) {
+                        const hour = time.getHours();
+                        const minute = time.getMinutes();
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        const displayHour = hour % 12 || 12;
+                        const displayMinute = minute.toString().padStart(2, '0');
+                        labels.push(displayHour + ':' + displayMinute + ampm);
+                    } else {
+                        labels.push('');
+                    }
                 }
             } else if (view === 'day') {
                 // Show last 24 hours in 2.4-hour intervals
@@ -1316,10 +1321,10 @@
                     timeRanges.push({ start: startTime, end: endTime });
                 }
             } else if (view === 'hour') {
-                // 6 minutes per bar (last 60 minutes in 10 bars)
-                for (let i = 9; i >= 0; i--) {
-                    const endTime = now - (i * 360000);
-                    const startTime = endTime - 360000;
+                // 1 minute per bar (last 60 minutes in 60 bars)
+                for (let i = 59; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
                     timeRanges.push({ start: startTime, end: endTime });
                 }
             } else if (view === 'day') {
