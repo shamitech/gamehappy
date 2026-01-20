@@ -2123,14 +2123,19 @@ io.on('connection', (socket) => {
    * Regular user connection - ensure they're tracked as active users (not admin)
    */
   socket.on('user:connect', (data) => {
-    console.log(`[USER] Regular user connected from ${socket.id} at ${data?.page || 'unknown'}`);
-    
-    // Get the session ID for this user
+    // Get the session ID from query params (set when socket connects)
     const sessionId = socket.handshake.query.sessionId || socket.id;
+    const page = data?.page || 'home';
+    
+    console.log(`[USER] Regular user connected from ${socket.id}`);
+    console.log(`[USER]   sessionId: ${sessionId}`);
+    console.log(`[USER]   page: ${page}`);
+    console.log(`[USER]   sessionId exists in activeSessions: ${activeSessions.has(sessionId)}`);
     
     // Track which page this sessionId is on
-    sessionPages.set(sessionId, data?.page || 'home');
-    console.log(`[USER] Updated sessionId ${sessionId} page to: ${data?.page || 'home'}`);
+    sessionPages.set(sessionId, page);
+    console.log(`[USER] Updated sessionPages: sessionId ${sessionId} -> page ${page}`);
+    console.log(`[USER] Current sessionPages:`, Array.from(sessionPages.entries()));
     
     // Broadcast updated stats
     try {
@@ -2617,9 +2622,13 @@ function broadcastActiveStats() {
       }
     };
     
+    console.log(`[STATS] Current sessionPages map:`, Array.from(sessionPages.entries()));
+    console.log(`[STATS] Current activeSessions:`, Array.from(activeSessions));
+    
     // Count users by page they're on (from sessionPages tracking)
     for (const [sessionId, page] of sessionPages) {
       if (activeSessions.has(sessionId)) {
+        console.log(`[STATS]   Counting ${sessionId} on page "${page}"`);
         if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
           stats.usersPerGame.secretSyndicates++;
         } else if (page === 'flagguardians-home' || page === 'flagguardians') {
