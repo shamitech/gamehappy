@@ -896,6 +896,7 @@
 
             socket.on('activeStats', (stats) => {
                 console.log('Active stats received:', stats);
+                console.log('Stats includes userHistory:', !!stats.userHistory, 'length:', stats.userHistory?.length || 0);
                 data.stats = Object.assign(data.stats || {}, {
                     activeUsers: stats.activeUsers,
                     activeGames: stats.activeGames
@@ -903,6 +904,7 @@
                 
                 // Store user history from server
                 if (stats.userHistory && stats.userHistory.length > 0) {
+                    console.log('[WebSocket] Received user history with', stats.userHistory.length, 'points');
                     data.userHistory = stats.userHistory;
                 }
                 
@@ -1317,6 +1319,11 @@
             const chartContainer = document.getElementById('userActivityChart');
             const timeLabels = getTimeLabels(currentTimelineView);
             const chartData = aggregateUserHistory(currentTimelineView);
+            
+            console.log('[Chart] Updating chart for view:', currentTimelineView);
+            console.log('[Chart] User history size:', data.userHistory?.length || 0);
+            console.log('[Chart] Chart data:', chartData);
+            console.log('[Chart] Time labels:', timeLabels);
             
             // Find max value for scaling
             const maxValue = Math.max(...chartData, 1);
