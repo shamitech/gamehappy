@@ -697,7 +697,7 @@
                 </div>
 
                 <!-- Game Distribution -->
-                <div class="card">
+                <div class="card" onclick="openDetailedChart('usersPerGame')" style="cursor: pointer; transition: all 0.3s;">
                     <h3>Players Per Game</h3>
                     <div id="gameDistributionChart" style="display: flex; flex-direction: column; gap: 15px;">
                         <div>
@@ -731,7 +731,7 @@
                 </div>
 
                 <!-- Users Per Game Breakdown -->
-                <div class="card">
+                <div class="card" onclick="openDetailedChart('usersPerGameBreakdown')" style="cursor: pointer; transition: all 0.3s;">
                     <h3>Users Per Game</h3>
                     <div id="usersPerGameChart" style="display: flex; flex-direction: column; gap: 15px;">
                         <div>
@@ -813,6 +813,27 @@
             </div>
         </div>
 
+        <!-- Detailed Chart Modal -->
+        <div id="detailedChartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto;">
+            <div style="background: white; margin: 20px auto; border-radius: 8px; max-width: 1000px; padding: 30px; position: relative;">
+                <button onclick="closeDetailedChart()" style="position: absolute; top: 15px; right: 15px; background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Close</button>
+                <h2 id="detailedChartTitle">Chart Details</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="view-toggle" onclick="switchDetailedView('minute')" id="detail-btn-minute">Minute</button>
+                    <button class="view-toggle" onclick="switchDetailedView('hour')" id="detail-btn-hour">Hour</button>
+                    <button class="view-toggle" onclick="switchDetailedView('day')" id="detail-btn-day">Day</button>
+                    <button class="view-toggle" onclick="switchDetailedView('week')" id="detail-btn-week">Week</button>
+                    <button class="view-toggle" onclick="switchDetailedView('month')" id="detail-btn-month">Month</button>
+                    <button class="view-toggle" onclick="switchDetailedView('year')" id="detail-btn-year">Year</button>
+                    <button class="view-toggle" onclick="switchDetailedView('all')" id="detail-btn-all">Historical</button>
+                </div>
+                <div id="detailedChart" style="height: 400px; display: flex; align-items: flex-end; gap: 5px; padding: 20px; background: #f9f9f9; border-radius: 8px; overflow-x: auto;"></div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    <span id="detailedChartLabel">Chart Details</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Tools Tab -->
         <div id="tools" class="tab-content">
             <div class="grid">
@@ -861,7 +882,9 @@
             games: {},
             stats: {},
             liveGames: [],
-            userHistory: []
+            userHistory: [],
+            playersPerGameHistory: [],
+            usersPerGameHistory: []
         };
 
         // Connect to websocket server for real-time updates
@@ -942,6 +965,14 @@
                 if (stats.userHistory && stats.userHistory.length > 0) {
                     console.log('[WebSocket] Received user history with', stats.userHistory.length, 'points');
                     data.userHistory = stats.userHistory;
+                }
+                
+                // Store game metrics history from server
+                if (stats.playersPerGameHistory && stats.playersPerGameHistory.length > 0) {
+                    data.playersPerGameHistory = stats.playersPerGameHistory;
+                }
+                if (stats.usersPerGameHistory && stats.usersPerGameHistory.length > 0) {
+                    data.usersPerGameHistory = stats.usersPerGameHistory;
                 }
                 
                 updateUI();  // Update UI with new active user count and users per game
@@ -1159,17 +1190,17 @@
             const maxPlayers = Math.max(totalPlayers, 1);
             
             // Secret Syndicates distribution
-            const ssPlayers = stats.ss_players || 0;
+            const ssPlayers = stats.usersPerGame?.secretSyndicates || 0;
             document.getElementById('analyticsSSCount').textContent = ssPlayers;
             document.getElementById('analyticsSSBar').style.width = (ssPlayers / maxPlayers * 100) + '%';
             
             // Flag Guardians distribution
-            const fgPlayers = stats.fg_players || 0;
+            const fgPlayers = stats.usersPerGame?.flagGuardians || 0;
             document.getElementById('analyticsFGCount').textContent = fgPlayers;
             document.getElementById('analyticsFGBar').style.width = (fgPlayers / maxPlayers * 100) + '%';
             
             // Are We There Yet distribution
-            const awtPlayers = stats.awt_players || 0;
+            const awtPlayers = stats.usersPerGame?.areWeThereYet || 0;
             document.getElementById('analyticsAWTCount').textContent = awtPlayers;
             document.getElementById('analyticsAWTBar').style.width = (awtPlayers / maxPlayers * 100) + '%';
 
@@ -1457,6 +1488,152 @@
             }
             
             chartContainer.innerHTML = html;
+        }
+
+        let currentDetailedView = 'day';
+        let currentDetailedChart = 'usersPerGame';
+
+        function openDetailedChart(chartType) {
+            currentDetailedChart = chartType;
+            currentDetailedView = 'day';
+            
+            const titles = {
+                'usersPerGame': 'Players Per Game - Historical',
+                'usersPerGameBreakdown': 'Users Per Game - Historical'
+            };
+            
+            document.getElementById('detailedChartTitle').textContent = titles[chartType] || 'Chart Details';
+            document.getElementById('detailedChartModal').style.display = 'block';
+            
+            // Set day as active button
+            document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('detail-btn-day').classList.add('active');
+            
+            updateDetailedChart();
+        }
+
+        function closeDetailedChart() {
+            document.getElementById('detailedChartModal').style.display = 'none';
+        }
+
+        function switchDetailedView(view) {
+            currentDetailedView = view;
+            document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`#detailedChartModal [onclick*="'${view}'"]`).classList.add('active');
+            updateDetailedChart();
+        }
+
+        function updateDetailedChart() {
+            const chartContainer = document.getElementById('detailedChart');
+            const timeLabels = getTimeLabels(currentDetailedView);
+            let chartData = [];
+
+            if (currentDetailedChart === 'usersPerGame') {
+                chartData = aggregateGameMetrics(currentDetailedView, data.playersPerGameHistory || [], 'players');
+            } else if (currentDetailedChart === 'usersPerGameBreakdown') {
+                chartData = aggregateGameMetrics(currentDetailedView, data.usersPerGameHistory || [], 'users');
+            }
+
+            const maxValue = Math.max(...chartData, 1);
+            const containerHeight = chartContainer.clientHeight || 400;
+
+            let html = '';
+            for (let i = 0; i < chartData.length; i++) {
+                const value = chartData[i];
+                const percentage = (value / maxValue) * 100;
+                const height = (percentage / 100) * (containerHeight - 40);
+                const label = timeLabels[i] || '';
+                
+                html += `
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                        <div style="background: linear-gradient(to top, #667eea, #764ba2); width: 100%; height: ${height}px; border-radius: 4px; margin-bottom: 5px; position: relative;" title="${value}">
+                            <span style="position: absolute; top: -20px; font-size: 10px; width: 100%; text-align: center;">${value}</span>
+                        </div>
+                        <div style="font-size: 10px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+                    </div>
+                `;
+            }
+
+            chartContainer.innerHTML = html;
+            document.getElementById('detailedChartLabel').textContent = currentDetailedView.charAt(0).toUpperCase() + currentDetailedView.slice(1) + ' view';
+        }
+
+        function aggregateGameMetrics(view, historyData, type) {
+            if (!historyData || historyData.length === 0) {
+                return Array(10).fill(0);
+            }
+
+            const now = Date.now();
+            const aggregated = [];
+            let timeRanges = [];
+
+            if (view === 'minute') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 6000);
+                    const startTime = endTime - 6000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'hour') {
+                for (let i = 59; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'day') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 8640000);
+                    const startTime = endTime - 8640000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'week') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 3600000);
+                    const startTime = endTime - 3600000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'month') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 86400000);
+                    const startTime = endTime - 86400000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'year') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 604800000);
+                    const startTime = endTime - 604800000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'all') {
+                for (let i = 9; i >= 0; i--) {
+                    const endDate = new Date(now);
+                    endDate.setMonth(endDate.getMonth() - i);
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    timeRanges.push({ start: startDate.getTime(), end: endDate.getTime() });
+                }
+            }
+
+            timeRanges.forEach(range => {
+                const pointsInRange = historyData.filter(point => 
+                    point.timestamp >= range.start && point.timestamp < range.end
+                );
+
+                if (pointsInRange.length > 0 && type === 'players') {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + (p.secretSyndicates + p.flagGuardians + p.areWeThereYet), 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else if (pointsInRange.length > 0 && type === 'users') {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + (p.home + p.secretSyndicates + p.flagGuardians + p.areWeThereYet), 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else {
+                    aggregated.push(0);
+                }
+            });
+
+            return aggregated;
         }
 
         async function clearOldGames() {

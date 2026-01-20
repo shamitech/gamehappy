@@ -165,6 +165,12 @@ let adminUsers = new Set(); // Track admin socket IDs separately
 let userHistory = [];
 const MAX_HISTORY_SIZE = 10080; // Keep ~7 days of minute-level data (7 * 24 * 60)
 
+// Track historical players per game - array of { timestamp, secretSyndicates, flagGuardians, areWeThereYet }
+let playersPerGameHistory = [];
+
+// Track historical users per game - array of { timestamp, home, secretSyndicates, flagGuardians, areWeThereYet }
+let usersPerGameHistory = [];
+
 // Function to record user count in history
 function recordUserHistory() {
   const userCount = activeSessions.size;
@@ -179,8 +185,59 @@ function recordUserHistory() {
   }
 }
 
-// Record user history every minute
-setInterval(recordUserHistory, 60000); // 60 seconds
+// Function to record players and users per game
+function recordGameMetrics() {
+  try {
+    const metrics = {
+      timestamp: Date.now(),
+      secretSyndicates: 0,
+      flagGuardians: 0,
+      areWeThereYet: 0
+    };
+    
+    // Count players in each game type
+    if (gameServer && gameServer.games && gameServer.games.size > 0) {
+      for (const [gameCode, game] of gameServer.games) {
+        if (game && game.state !== 'ended' && game.players && Array.isArray(game.players)) {
+          const playerCount = game.players.length;
+          if (game.gameType === 'Secret Syndicates' || game.gameType === 'secretsyndicates') {
+            metrics.secretSyndicates += playerCount;
+          } else if (game.gameType === 'Flag Guardians' || game.gameType === 'flagguardians') {
+            metrics.flagGuardians += playerCount;
+          } else if (game.gameType === 'Are We There Yet' || game.gameType === 'arewethereyet') {
+            metrics.areWeThereYet += playerCount;
+          }
+        }
+      }
+    }
+    
+    playersPerGameHistory.push(metrics);
+    if (playersPerGameHistory.length > MAX_HISTORY_SIZE) {
+      playersPerGameHistory = playersPerGameHistory.slice(-MAX_HISTORY_SIZE);
+    }
+    
+    // Record users per game
+    const totalUsers = activeSessions.size;
+    const usersInGames = metrics.secretSyndicates + metrics.flagGuardians + metrics.areWeThereYet;
+    const usersMetrics = {
+      timestamp: Date.now(),
+      home: Math.max(0, totalUsers - usersInGames),
+      secretSyndicates: metrics.secretSyndicates,
+      flagGuardians: metrics.flagGuardians,
+      areWeThereYet: metrics.areWeThereYet
+    };
+    
+    usersPerGameHistory.push(usersMetrics);
+    if (usersPerGameHistory.length > MAX_HISTORY_SIZE) {
+      usersPerGameHistory = usersPerGameHistory.slice(-MAX_HISTORY_SIZE);
+    }
+  } catch (err) {
+    console.error('[METRICS] Error recording game metrics:', err);
+  }
+}
+
+// Record game metrics every minute
+setInterval(recordGameMetrics, 60000); // 60 seconds
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
@@ -2552,8 +2609,10 @@ function broadcastActiveStats() {
     
     console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
     
-    // Include user history for chart updates
+    // Include user history and game metrics for chart updates
     stats.userHistory = userHistory;
+    stats.playersPerGameHistory = playersPerGameHistory;
+    stats.usersPerGameHistory = usersPerGameHistory;
     
     io.emit('activeStats', stats);
   } catch (err) {
