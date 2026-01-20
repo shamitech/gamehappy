@@ -786,6 +786,17 @@
 
             socket.on('activeGames', (games) => {
                 console.log('Active games received:', games);
+                console.log('Number of games:', games?.length || 0);
+                if (games && games.length > 0) {
+                    games.forEach((g, i) => {
+                        console.log(`Game ${i}:`, {
+                            gameId: g.gameId,
+                            playerCount: g.playerCount,
+                            playersArray: g.players,
+                            playerArrayLength: g.players?.length || 0
+                        });
+                    });
+                }
                 data.liveGames = games;
                 updateLiveGamesDisplay();
                 updateUI();  // Update stats with new player counts
