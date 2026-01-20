@@ -801,6 +801,15 @@
                 updateLiveGamesDisplay();
                 updateUI();  // Update stats with new player counts
             });
+
+            socket.on('activeStats', (stats) => {
+                console.log('Active stats received:', stats);
+                data.stats = Object.assign(data.stats || {}, {
+                    activeUsers: stats.activeUsers,
+                    activeGames: stats.activeGames
+                });
+                updateUI();  // Update UI with new active user count
+            });
         }
 
         // Check authentication on page load

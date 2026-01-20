@@ -156,9 +156,19 @@ const gameServer = new GameServer();
 // Initialize game history file
 ensureGameHistoryFile();
 
+// Track active users
+let activeUsers = new Map(); // socket.id -> { connected: true, page: string, timestamp: Date }
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
+  
+  // Track this user as active
+  activeUsers.set(socket.id, {
+    connected: true,
+    timestamp: new Date()
+  });
+  console.log(`[USERS] Total active users: ${activeUsers.size}`);
 
   // Generate unique player token (could use existing token from client)
   const playerToken = socket.handshake.query.token || socket.id;
@@ -1892,6 +1902,13 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}, token: ${playerToken}`);
     
+    // Remove from active users tracking
+    activeUsers.delete(socket.id);
+    console.log(`[USERS] Total active users: ${activeUsers.size}`);
+    
+    // Broadcast updated user count
+    broadcastActiveStats();
+    
     // Don't remove player from game - they might rejoin!
     // Just notify other players they disconnected
     const game = gameServer.getPlayerGame(playerToken);
@@ -1905,6 +1922,22 @@ io.on('connection', (socket) => {
         game: gameServer.getGameLobbyInfo(gameCode)
       });
     }
+  });
+
+  /**
+   * User join event - track when user loads the site
+   */
+  socket.on('user:join', (data) => {
+    console.log(`[USER:JOIN] User joined from ${data?.page || 'unknown'}`);
+    activeUsers.set(socket.id, {
+      connected: true,
+      page: data?.page || 'unknown',
+      timestamp: data?.timestamp || new Date()
+    });
+    console.log(`[USERS] Total active users: ${activeUsers.size}`);
+    
+    // Broadcast updated user count
+    broadcastActiveStats();
   });
 
   /**
@@ -2358,8 +2391,32 @@ function broadcastActiveGames() {
   io.emit('activeGames', activeGames);
 }
 
+// Broadcast active user and game stats to admin dashboard
+function broadcastActiveStats() {
+  const stats = {
+    activeUsers: activeUsers.size,
+    activeGames: 0,
+    timestamp: new Date()
+  };
+  
+  // Count active games
+  if (gameServer.games && gameServer.games.size > 0) {
+    for (const [gameCode, game] of gameServer.games) {
+      if (game && game.state !== 'ended') {
+        stats.activeGames++;
+      }
+    }
+  }
+  
+  console.log(`[STATS] Broadcasting: ${stats.activeUsers} users, ${stats.activeGames} games`);
+  io.emit('activeStats', stats);
+}
+
 // Broadcast active games every 5 seconds
 setInterval(broadcastActiveGames, 5000);
+
+// Broadcast active stats every 3 seconds
+setInterval(broadcastActiveStats, 3000);
 
 const PORT = process.env.PORT || 8443;
 

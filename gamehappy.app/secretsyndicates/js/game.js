@@ -578,6 +578,12 @@ class Game {
                 this.isConnected = true;
                 this.updateConnectionStatus('connected');
                 
+                // Notify server that a user is active on the site
+                this.socket.emit('user:join', {
+                    timestamp: new Date(),
+                    page: 'secretsyndicates'
+                });
+                
                 // Skip auto-rejoin in test mode
                 if (this.isTestMode) {
                     console.log('[CONNECT] Test mode - skipping auto-rejoin');
