@@ -1740,7 +1740,11 @@ io.on('connection', (socket) => {
         });
 
         // Broadcast to admin dashboard
-        broadcastActiveGames();
+        try {
+          broadcastActiveGames();
+        } catch (err) {
+          console.error('[CREATE-GAME] Error broadcasting games:', err);
+        }
 
         console.log(`[GAME:CREATE] Sending callback with success`);
         callback({ 
@@ -2363,27 +2367,35 @@ app.get('/test-auto-game', (req, res) => {
 
 // Broadcast active games to admin dashboard
 function broadcastActiveGames() {
-  const activeGames = [];
-  
-  // Collect all active games from the Map
-  if (gameServer.games && gameServer.games.size > 0) {
-    for (const [gameCode, game] of gameServer.games) {
-      if (game && game.state !== 'ended') {
-        activeGames.push({
-          gameType: game.gameType || 'Secret Syndicates',
-          gameId: game.gameCode,
-          players: game.players?.map(p => p.name) || [],
-          currentRound: game.round || 1,
-          createdAt: game.createdAt || new Date(),
-          playerCount: game.players?.length || 0
-        });
+  try {
+    const activeGames = [];
+    
+    // Collect all active games from the Map
+    if (gameServer && gameServer.games && gameServer.games.size > 0) {
+      for (const [gameCode, game] of gameServer.games) {
+        if (game && game.state !== 'ended') {
+          try {
+            activeGames.push({
+              gameType: game.gameType || 'Secret Syndicates',
+              gameId: game.gameCode,
+              players: (game.players && Array.isArray(game.players)) ? game.players.map(p => p?.name || 'Unknown').filter(Boolean) : [],
+              currentRound: game.round || 1,
+              createdAt: game.createdAt || new Date(),
+              playerCount: (game.players && Array.isArray(game.players)) ? game.players.length : 0
+            });
+          } catch (err) {
+            console.error(`[BROADCAST] Error processing game ${gameCode}:`, err);
+          }
+        }
       }
     }
-  }
 
-  console.log(`[BROADCAST] Sending ${activeGames.length} active games to admin dashboard`);
-  // Broadcast to all connected clients
-  io.emit('activeGames', activeGames);
+    console.log(`[BROADCAST] Sending ${activeGames.length} active games to admin dashboard`);
+    // Broadcast to all connected clients
+    io.emit('activeGames', activeGames);
+  } catch (err) {
+    console.error('[BROADCAST] Error in broadcastActiveGames:', err);
+  }
 }
 
 // Broadcast active user and game stats to admin dashboard
