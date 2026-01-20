@@ -959,29 +959,53 @@
 
         function updateUI() {
             const stats = data.stats;
+            console.log('[updateUI] Current stats:', stats);
             
             // Use the real active users count from websocket server
             const activeUserCount = stats.activeUsers !== undefined ? stats.activeUsers : 0;
             const activeGameCount = stats.activeGames !== undefined ? stats.activeGames : (data.liveGames?.length || 0);
             
-            document.getElementById('overviewActiveUsers').textContent = activeUserCount;
-            document.getElementById('overviewActiveGames').textContent = activeGameCount;
-            document.getElementById('activeUsers').textContent = activeUserCount;
-            document.getElementById('activeGames').textContent = activeGameCount;
+            console.log('[updateUI] Setting active users:', activeUserCount, 'active games:', activeGameCount);
+            
+            // Update DOM elements
+            const userElements = [
+                document.getElementById('overviewActiveUsers'),
+                document.getElementById('activeUsers')
+            ];
+            
+            userElements.forEach(el => {
+                if (el) el.textContent = activeUserCount;
+            });
+            
+            const gameElements = [
+                document.getElementById('overviewActiveGames'),
+                document.getElementById('activeGames')
+            ];
+            
+            gameElements.forEach(el => {
+                if (el) el.textContent = activeGameCount;
+            });
 
             // Update Secret Syndicates stats
-            document.getElementById('ssTotal').textContent = stats.ss_total || 0;
-            document.getElementById('ssActive').textContent = activeGameCount;
-            document.getElementById('ssTotalRounds').textContent = stats.ss_rounds || 0;
+            const ssTotal = document.getElementById('ssTotal');
+            if (ssTotal) ssTotal.textContent = stats.ss_total || 0;
+            
+            const ssActive = document.getElementById('ssActive');
+            if (ssActive) ssActive.textContent = activeGameCount;
+            
+            const ssTotalRounds = document.getElementById('ssTotalRounds');
+            if (ssTotalRounds) ssTotalRounds.textContent = stats.ss_rounds || 0;
             
             // Calculate total players in active games
             let totalActivePlayers = 0;
             if (data.liveGames && data.liveGames.length > 0) {
                 totalActivePlayers = data.liveGames.reduce((sum, game) => sum + (game.playerCount || 0), 0);
             }
-            document.getElementById('ssActivePlayers').textContent = totalActivePlayers || 0;
+            const ssActivePlayers = document.getElementById('ssActivePlayers');
+            if (ssActivePlayers) ssActivePlayers.textContent = totalActivePlayers || 0;
 
-            document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
+            const lastRefresh = document.getElementById('lastRefresh');
+            if (lastRefresh) lastRefresh.textContent = new Date().toLocaleTimeString();
         }
 
         async function clearOldGames() {
