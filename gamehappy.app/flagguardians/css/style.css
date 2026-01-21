@@ -71,7 +71,7 @@ body {
 }
 
 /* ===== HOME SCREEN ===== */
-#home-screen {
+#screen-home {
     text-align: center;
     display: flex;
     flex-direction: column;
