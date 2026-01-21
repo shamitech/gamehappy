@@ -413,8 +413,8 @@ class Game {
         const gameCode = document.getElementById('input-game-code').value.trim().toUpperCase();
         const playerName = document.getElementById('input-join-player-name').value.trim();
 
-        if (!gameCode || gameCode.length !== 6) {
-            this.showMessage('Please enter a valid 6-character game code', 'error', 'join-game-screen');
+        if (!gameCode || gameCode.length !== 4) {
+            this.showMessage('Please enter a valid 4-character game code', 'error', 'join-game-screen');
             return;
         }
 
