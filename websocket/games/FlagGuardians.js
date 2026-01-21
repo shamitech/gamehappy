@@ -50,23 +50,37 @@ class FlagGuardians extends GameManager {
      * Initialize house data with locations
      */
     initializeHouses() {
-        return {
-            // North side (Red team defense)
-            N0: { id: 'N0', name: 'Smith House', side: 'north', floors: 2 },
-            N1: { id: 'N1', name: 'Jones House', side: 'north', floors: 1 },
-            N2: { id: 'N2', name: 'Williams House', side: 'north', floors: 2 },
-            N3: { id: 'N3', name: 'Brown House', side: 'north', floors: 1 },
-            N4: { id: 'N4', name: 'Davis House', side: 'north', floors: 2 },
-            N5: { id: 'N5', name: 'Miller House', side: 'north', floors: 1 },
+        const houses = {};
+        const northNames = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliet',
+                           'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango',
+                           'Uniform', 'Victor', 'Whiskey', 'X-Ray', 'Yankee', 'Zulu', 'Able', 'Baker', 'Cast', 'Dog',
+                           'Easy', 'Fox', 'George', 'Henry', 'Isaac', 'Jack', 'Kestrel', 'Lancer', 'Mace', 'Noble',
+                           'Oak', 'Pine', 'Quartz', 'Raven', 'Stone', 'Tower', 'Umber', 'Vale', 'Water', 'Xenon'];
+        const southNames = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliet',
+                           'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango',
+                           'Uniform', 'Victor', 'Whiskey', 'X-Ray', 'Yankee', 'Zulu', 'Apple', 'Beat', 'Camp', 'Dance',
+                           'East', 'Fest', 'Glow', 'Hunt', 'Ice', 'Jump', 'Kite', 'Light', 'Moon', 'Night',
+                           'Open', 'Peace', 'Quest', 'Rest', 'Star', 'Trust', 'Unity', 'Valor', 'Wind', 'Zest'];
+        
+        // Create 100 houses (10x10 grid)
+        for (let i = 0; i < 100; i++) {
+            const row = Math.floor(i / 10);
+            const col = i % 10;
+            const side = row < 5 ? 'north' : 'south';
+            const nameArray = side === 'north' ? northNames : southNames;
+            const name = nameArray[i % nameArray.length];
             
-            // South side (Blue team defense)
-            S0: { id: 'S0', name: 'Wilson House', side: 'south', floors: 2 },
-            S1: { id: 'S1', name: 'Moore House', side: 'south', floors: 1 },
-            S2: { id: 'S2', name: 'Taylor House', side: 'south', floors: 2 },
-            S3: { id: 'S3', name: 'Anderson House', side: 'south', floors: 1 },
-            S4: { id: 'S4', name: 'Thomas House', side: 'south', floors: 2 },
-            S5: { id: 'S5', name: 'Jackson House', side: 'south', floors: 1 }
-        };
+            houses[`H${i}`] = {
+                id: `H${i}`,
+                name: `${name} (${row},${col})`,
+                side: side,
+                floors: (i % 3) + 1,
+                row: row,
+                col: col
+            };
+        }
+        
+        return houses;
     }
 
     /**

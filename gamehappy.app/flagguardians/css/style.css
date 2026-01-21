@@ -917,28 +917,39 @@ input::placeholder {
 
 .houses-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
     margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    max-height: 600px;
+    overflow-y: auto;
 }
 
 .house-button {
-    padding: 15px;
+    padding: 10px;
     background: linear-gradient(135deg, var(--card-bg), rgba(59, 126, 255, 0.1));
     border: 2px solid var(--blue-light);
-    border-radius: 8px;
+    border-radius: 4px;
     color: var(--text-light);
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.65rem;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 60px;
 }
 
 .house-button:hover {
     background: linear-gradient(135deg, rgba(59, 126, 255, 0.2), rgba(59, 126, 255, 0.1));
     border-color: var(--accent-gold);
     box-shadow: 0 0 15px rgba(59, 126, 255, 0.3);
-    transform: translateY(-2px);
+    transform: scale(1.05);
 }
 
 .house-interior {

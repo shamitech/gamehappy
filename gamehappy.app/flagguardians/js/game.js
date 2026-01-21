@@ -595,7 +595,8 @@ class Game {
         for (const [houseId, house] of Object.entries(this.houses)) {
             const btn = document.createElement('button');
             btn.className = 'house-button';
-            btn.innerHTML = `${house.name}<br><small>${house.floors} floor${house.floors > 1 ? 's' : ''}</small>`;
+            btn.title = house.name; // Full name in tooltip
+            btn.innerHTML = `${house.name.split(' ')[0]}<br><small>(${house.row},${house.col})</small>`;
             btn.onclick = () => this.selectHouseForFlagPlacement(houseId);
             container.appendChild(btn);
         }
