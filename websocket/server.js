@@ -1976,6 +1976,82 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Flag Guardians: Place flag
+   */
+  socket.on('flagguardians:place-flag', (data, callback) => {
+    try {
+      const { gameCode, house, floor, coord } = data;
+      const game = gameServer.getGame(gameCode);
+
+      if (!game || game.gameType !== 'flagguardians') {
+        callback({ success: false, message: 'Invalid game' });
+        return;
+      }
+
+      const result = game.placeFlag(playerToken, house, floor, coord);
+      
+      if (result.success) {
+        // Broadcast flag placement to team
+        const playerTeam = game.teams.get(playerToken);
+        const teamPlayers = playerTeam === 'red' ? game.redTeam : game.blueTeam;
+        
+        for (const [socketId, playerSocket] of io.sockets.sockets) {
+          const socketPlayerToken = playerSocket.handshake.query.token || socketId;
+          if (teamPlayers.some(p => p.token === socketPlayerToken)) {
+            playerSocket.emit('flagguardians:flag-placed', {
+              team: playerTeam,
+              house: house,
+              floor: floor
+            });
+          }
+        }
+
+        // If both flags placed, start active game
+        if (result.bothFlagsPlaced) {
+          const gameState = game.getGameState();
+          io.to(`game-${gameCode}`).emit('flagguardians:game-started', {
+            phase: game.phase,
+            gameState: gameState
+          });
+        }
+
+        callback({ success: true });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error placing flag:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
+   * Flag Guardians: Player move
+   */
+  socket.on('flagguardians:move', (data, callback) => {
+    try {
+      const { gameCode, x, y } = data;
+      const game = gameServer.getGame(gameCode);
+
+      if (!game || game.gameType !== 'flagguardians') {
+        callback({ success: false, message: 'Invalid game' });
+        return;
+      }
+
+      const result = game.movePlayer(playerToken, x, y);
+      
+      if (result.success) {
+        callback({ success: true });
+      } else {
+        callback({ success: false, message: result.message });
+      }
+    } catch (err) {
+      console.error('Error moving player:', err);
+      callback({ success: false, message: 'Server error' });
+    }
+  });
+
+  /**
    * Start Flag Guardians game
    */
   socket.on('game:start', (data, callback) => {

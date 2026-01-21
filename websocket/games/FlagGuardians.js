@@ -7,36 +7,75 @@ class FlagGuardians extends GameManager {
         // Team assignments
         this.teams = new Map(); // playerToken -> 'red' or 'blue'
         
-        // Game phase tracking
-        this.currentPhase = 'waiting'; // waiting, ready, active, finished
-        this.currentRound = 0;
-        this.maxRounds = 3;
+        // Game phase: 'waiting', 'flag-placement', 'active', 'finished'
+        this.phase = 'waiting';
+        this.phaseStartTime = null;
         
-        // Team scores
+        // Scores
         this.redScore = 0;
         this.blueScore = 0;
         
+        // Team rosters
+        this.redTeam = [];
+        this.blueTeam = [];
+        
+        // Flag placement
+        this.flagPlacementPlayers = {
+            red: null,   // playerToken selected to place red flag
+            blue: null   // playerToken selected to place blue flag
+        };
+        this.flagsPlaced = {
+            red: null,   // { house, floor, coord: {x,y} }
+            blue: null
+        };
+        
+        // Player positions during active game
+        this.playerPositions = new Map(); // playerToken -> { location, x, y, nextMoveTarget, lastMove }
+        
+        // Movement tracking
+        this.lastMoveTime = null;
+        this.moveInterval = 2000; // 2 seconds
+        
         // Flag status
-        this.redFlagHeld = null; // playerToken if held, null if secure
-        this.blueFlagHeld = null; // playerToken if held, null if secure
+        this.capturedFlags = {
+            red: null,   // playerToken holding red flag, null if secure
+            blue: null
+        };
         
-        // Gameplay tracking
-        this.captureEvents = []; // Track flag captures
-        this.roundHistory = []; // Track rounds
-        
-        // Team data for lobby
-        this.redTeam = []; // Array of player objects
-        this.blueTeam = []; // Array of player objects
+        // House data
+        this.houses = this.initializeHouses();
     }
 
     /**
-     * Add a player to the game (override to include team assignment)
+     * Initialize house data with locations
+     */
+    initializeHouses() {
+        return {
+            // North side (Red team defense)
+            N0: { id: 'N0', name: 'Smith House', side: 'north', floors: 2 },
+            N1: { id: 'N1', name: 'Jones House', side: 'north', floors: 1 },
+            N2: { id: 'N2', name: 'Williams House', side: 'north', floors: 2 },
+            N3: { id: 'N3', name: 'Brown House', side: 'north', floors: 1 },
+            N4: { id: 'N4', name: 'Davis House', side: 'north', floors: 2 },
+            N5: { id: 'N5', name: 'Miller House', side: 'north', floors: 1 },
+            
+            // South side (Blue team defense)
+            S0: { id: 'S0', name: 'Wilson House', side: 'south', floors: 2 },
+            S1: { id: 'S1', name: 'Moore House', side: 'south', floors: 1 },
+            S2: { id: 'S2', name: 'Taylor House', side: 'south', floors: 2 },
+            S3: { id: 'S3', name: 'Anderson House', side: 'south', floors: 1 },
+            S4: { id: 'S4', name: 'Thomas House', side: 'south', floors: 2 },
+            S5: { id: 'S5', name: 'Jackson House', side: 'south', floors: 1 }
+        };
+    }
+
+    /**
+     * Add a player to the game
      */
     addPlayer(playerToken, playerName) {
         const result = super.addPlayer(playerToken, playerName);
         if (result.success) {
-            // Initialize team as null - player must select team in lobby
-            this.teams.set(playerToken, null);
+            this.teams.set(playerToken, null); // Team TBD
         }
         return result;
     }
@@ -45,16 +84,15 @@ class FlagGuardians extends GameManager {
      * Remove a player from the game
      */
     removePlayer(playerToken) {
-        const team = this.teams.get(playerToken);
         this.teams.delete(playerToken);
         
-        // Remove from team roster
+        const team = this.teams.get(playerToken);
         if (team === 'red') {
             this.redTeam = this.redTeam.filter(p => p.token !== playerToken);
         } else if (team === 'blue') {
             this.blueTeam = this.blueTeam.filter(p => p.token !== playerToken);
         }
-
+        
         return super.removePlayer(playerToken);
     }
 
@@ -63,292 +101,328 @@ class FlagGuardians extends GameManager {
      */
     selectTeam(playerToken, team) {
         if (!this.players.has(playerToken)) {
-            return { success: false, message: 'Player not in game' };
+            return { success: false, message: 'Player not found' };
         }
-
+        
         if (team !== 'red' && team !== 'blue') {
             return { success: false, message: 'Invalid team' };
         }
-
-        const player = this.players.get(playerToken);
-        const oldTeam = this.teams.get(playerToken);
-
-        // Remove from old team if switching
-        if (oldTeam === 'red') {
-            this.redTeam = this.redTeam.filter(p => p.token !== playerToken);
-        } else if (oldTeam === 'blue') {
-            this.blueTeam = this.blueTeam.filter(p => p.token !== playerToken);
-        }
-
-        // Add to new team
-        this.teams.set(playerToken, team);
-        const playerData = { token: playerToken, name: player.name };
         
-        if (team === 'red') {
-            this.redTeam.push(playerData);
-        } else {
-            this.blueTeam.push(playerData);
-        }
-
-        return { success: true, message: `Joined ${team} team` };
-    }
-
-    /**
-     * Get team roster
-     */
-    getTeamRoster() {
+        const player = this.players.get(playerToken);
+        this.teams.set(playerToken, team);
+        
+        const teamArray = team === 'red' ? this.redTeam : this.blueTeam;
+        teamArray.push({ token: playerToken, name: player.name });
+        
         return {
+            success: true,
             redTeam: this.redTeam,
             blueTeam: this.blueTeam
         };
     }
 
     /**
-     * Check if game can start
-     */
-    canStart() {
-        // Minimum 2 players total (1v1)
-        // All players must have selected a team
-        if (this.players.size < 2) {
-            return false;
-        }
-
-        for (let playerToken of this.players.keys()) {
-            if (this.teams.get(playerToken) === null) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Get game starting validation message
-     */
-    getStartValidation() {
-        if (this.players.size < 2) {
-            return { valid: false, message: 'Need at least 2 players' };
-        }
-
-        const unassignedPlayers = Array.from(this.players.keys())
-            .filter(token => this.teams.get(token) === null);
-
-        if (unassignedPlayers.length > 0) {
-            return { valid: false, message: 'All players must select a team' };
-        }
-
-        return { valid: true };
-    }
-
-    /**
-     * Start the game
+     * Start the game - transition from waiting to flag-placement
      */
     startGame() {
-        const validation = this.getStartValidation();
-        if (!validation.valid) {
-            return { success: false, message: validation.message };
+        if (this.redTeam.length === 0 || this.blueTeam.length === 0) {
+            return { success: false, message: 'Both teams must have players' };
         }
-
-        this.gameState = 'started';
-        this.currentPhase = 'active';
-        this.currentRound = 1;
-        this.redScore = 0;
-        this.blueScore = 0;
         
-        // Initialize flags (not held by anyone)
-        this.redFlagHeld = null;
-        this.blueFlagHeld = null;
-
-        return { 
-            success: true, 
-            message: 'Game started',
-            gameState: this.getGameState()
+        this.phase = 'flag-placement';
+        this.phaseStartTime = Date.now();
+        
+        // Randomly select a player from each team to place flags
+        this.flagPlacementPlayers.red = this.redTeam[Math.floor(Math.random() * this.redTeam.length)].token;
+        this.flagPlacementPlayers.blue = this.blueTeam[Math.floor(Math.random() * this.blueTeam.length)].token;
+        
+        return {
+            success: true,
+            phase: this.phase,
+            redPlacingPlayer: this.flagPlacementPlayers.red,
+            bluePlacingPlayer: this.flagPlacementPlayers.blue,
+            houses: this.houses
         };
     }
 
     /**
-     * Handle player action (flag capture, etc.)
+     * Player places their team's flag
      */
-    handlePlayerAction(playerToken, action, targetData = {}) {
-        if (!this.players.has(playerToken)) {
-            return { success: false, message: 'Player not found' };
-        }
-
-        const player = this.players.get(playerToken);
-        const playerTeam = this.teams.get(playerToken);
-
-        switch (action) {
-            case 'capture-flag':
-                return this.captureFlag(playerToken, playerTeam);
-            case 'defend-flag':
-                return this.defendFlag(playerToken, playerTeam, targetData);
-            default:
-                return { success: false, message: 'Unknown action' };
-        }
-    }
-
-    /**
-     * Capture enemy flag
-     */
-    captureFlag(playerToken, playerTeam) {
-        if (playerTeam === 'red') {
-            if (this.blueFlagHeld === null) {
-                this.blueFlagHeld = playerToken;
-                this.captureEvents.push({
-                    round: this.currentRound,
-                    playerToken,
-                    playerTeam,
-                    action: 'flag-capture',
-                    target: 'blue',
-                    timestamp: Date.now()
-                });
-                return { success: true, message: 'Blue flag captured!' };
-            }
-        } else if (playerTeam === 'blue') {
-            if (this.redFlagHeld === null) {
-                this.redFlagHeld = playerToken;
-                this.captureEvents.push({
-                    round: this.currentRound,
-                    playerToken,
-                    playerTeam,
-                    action: 'flag-capture',
-                    target: 'red',
-                    timestamp: Date.now()
-                });
-                return { success: true, message: 'Red flag captured!' };
-            }
-        }
-
-        return { success: false, message: 'Flag already held' };
-    }
-
-    /**
-     * Score a flag capture (return flag to base)
-     */
-    scoreCapture(playerToken, playerTeam) {
-        if (playerTeam === 'red' && this.blueFlagHeld === playerToken) {
-            this.redScore += 1;
-            this.blueFlagHeld = null;
-            return { success: true, message: 'Red team scores!', points: 1 };
-        } else if (playerTeam === 'blue' && this.redFlagHeld === playerToken) {
-            this.blueScore += 1;
-            this.redFlagHeld = null;
-            return { success: true, message: 'Blue team scores!', points: 1 };
-        }
-
-        return { success: false, message: 'Cannot score' };
-    }
-
-    /**
-     * Defend flag (block opponent)
-     */
-    defendFlag(playerToken, playerTeam, targetData) {
-        const defender = this.players.get(playerToken);
+    placeFlag(playerToken, houseId, floor, coord) {
+        let team = null;
         
-        this.captureEvents.push({
-            round: this.currentRound,
-            playerToken,
-            playerTeam,
-            action: 'flag-defense',
-            target: playerTeam === 'red' ? 'red' : 'blue',
-            timestamp: Date.now()
-        });
-
-        return { success: true, message: `${defender.name} defended the flag!` };
+        if (playerToken === this.flagPlacementPlayers.red) {
+            team = 'red';
+        } else if (playerToken === this.flagPlacementPlayers.blue) {
+            team = 'blue';
+        } else {
+            return { success: false, message: 'You are not authorized to place flag' };
+        }
+        
+        if (!this.houses[houseId]) {
+            return { success: false, message: 'Invalid house' };
+        }
+        
+        const house = this.houses[houseId];
+        
+        // Validate floor
+        if (floor === 'floor2' && house.floors < 2) {
+            return { success: false, message: 'This house does not have a second floor' };
+        }
+        
+        // Store flag position
+        this.flagsPlaced[team] = {
+            house: houseId,
+            houseName: house.name,
+            floor: floor,
+            coord: coord
+        };
+        
+        // Check if both flags are placed
+        const bothPlaced = this.flagsPlaced.red && this.flagsPlaced.blue;
+        
+        if (bothPlaced) {
+            this.startActiveGame();
+        }
+        
+        return {
+            success: true,
+            team: team,
+            flagPosition: this.flagsPlaced[team],
+            bothFlagsPlaced: bothPlaced
+        };
     }
 
     /**
-     * Complete a round
+     * Both flags placed - start active game
      */
-    completeRound() {
-        // Return any held flags to base
-        this.redFlagHeld = null;
-        this.blueFlagHeld = null;
+    startActiveGame() {
+        this.phase = 'active';
+        this.phaseStartTime = Date.now();
+        this.lastMoveTime = Date.now();
+        
+        // Initialize player positions in alleyway
+        const alleyPositions = [
+            { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 },
+            { x: 3, y: 0 }, { x: 4, y: 0 }, { x: 5, y: 0 }
+        ];
+        
+        let posIndex = 0;
+        for (const playerToken of this.players.keys()) {
+            const pos = alleyPositions[posIndex % alleyPositions.length];
+            this.playerPositions.set(playerToken, {
+                location: 'alley',
+                x: pos.x,
+                y: pos.y,
+                nextMoveTarget: null,
+                lastMove: pos
+            });
+            posIndex++;
+        }
+    }
 
-        this.roundHistory.push({
-            round: this.currentRound,
+    /**
+     * Player submits movement target
+     */
+    movePlayer(playerToken, targetX, targetY) {
+        if (!this.playerPositions.has(playerToken)) {
+            return { success: false, message: 'Player position not found' };
+        }
+        
+        const playerPos = this.playerPositions.get(playerToken);
+        
+        // Validate target is adjacent (including diagonals)
+        const dx = Math.abs(targetX - playerPos.x);
+        const dy = Math.abs(targetY - playerPos.y);
+        
+        if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) {
+            return { success: false, message: 'Target must be adjacent' };
+        }
+        
+        // Store the target for next movement cycle
+        playerPos.nextMoveTarget = { x: targetX, y: targetY };
+        
+        return { success: true, message: 'Move registered' };
+    }
+
+    /**
+     * Process movement for all players (called every 2 seconds)
+     */
+    processMoveInterval() {
+        if (this.phase !== 'active') return null;
+        
+        const now = Date.now();
+        if (now - this.lastMoveTime < this.moveInterval) {
+            return null; // Not time yet
+        }
+        
+        this.lastMoveTime = now;
+        
+        // Move all players with pending moves
+        for (const [playerToken, playerPos] of this.playerPositions.entries()) {
+            if (playerPos.nextMoveTarget) {
+                playerPos.x = playerPos.nextMoveTarget.x;
+                playerPos.y = playerPos.nextMoveTarget.y;
+                playerPos.lastMove = { ...playerPos.nextMoveTarget };
+                playerPos.nextMoveTarget = null;
+            }
+        }
+        
+        // Return updated positions for broadcast
+        return this.getGameState();
+    }
+
+    /**
+     * Get current game state for clients
+     */
+    getGameState() {
+        const state = {
+            phase: this.phase,
             redScore: this.redScore,
             blueScore: this.blueScore,
-            events: [...this.captureEvents]
-        });
-
-        // Check if game should end (best of 3)
-        if (this.currentRound >= this.maxRounds) {
-            this.currentPhase = 'finished';
-            return { gameEnded: true, winner: this.getWinner() };
+            redTeam: this.redTeam,
+            blueTeam: this.blueTeam
+        };
+        
+        if (this.phase === 'flag-placement') {
+            state.redPlacingPlayer = this.flagPlacementPlayers.red;
+            state.bluePlacingPlayer = this.flagPlacementPlayers.blue;
+            state.houses = this.houses;
+        } else if (this.phase === 'active') {
+            state.playerPositions = Array.from(this.playerPositions.entries()).map(([token, pos]) => ({
+                playerToken: token,
+                playerName: this.players.get(token).name,
+                team: this.teams.get(token),
+                location: pos.location,
+                x: pos.x,
+                y: pos.y
+            }));
+            state.redFlag = this.flagsPlaced.red;
+            state.blueFlag = this.flagsPlaced.blue;
+            state.capturedFlags = this.capturedFlags;
         }
+        
+        return state;
+    }
 
-        this.currentRound++;
-        return { gameEnded: false, nextRound: this.currentRound };
+    /**
+     * Handle game-specific events
+     */
+    handleEvent(eventName, playerToken, data) {
+        console.log(`[${this.gameCode}] FlagGuardians event: ${eventName}`, data);
+        
+        switch (eventName) {
+            case 'flag:place':
+                return this.placeFlag(playerToken, data.house, data.floor, data.coord);
+            
+            case 'player:move':
+                return this.movePlayer(playerToken, data.x, data.y);
+            
+            case 'flag:capture':
+                return this.captureFlag(playerToken);
+            
+            case 'flag:return':
+                return this.returnFlag(playerToken);
+            
+            default:
+                return { success: false, message: 'Unknown event' };
+        }
+    }
+
+    /**
+     * Player attempts to capture flag
+     */
+    captureFlag(playerToken) {
+        if (!this.playerPositions.has(playerToken)) {
+            return { success: false, message: 'Player not found' };
+        }
+        
+        const playerTeam = this.teams.get(playerToken);
+        const playerPos = this.playerPositions.get(playerToken);
+        
+        // Determine which flag this player can capture (opposite team's)
+        const enemyFlagTeam = playerTeam === 'red' ? 'blue' : 'red';
+        const enemyFlag = this.flagsPlaced[enemyFlagTeam];
+        
+        if (!enemyFlag || this.capturedFlags[enemyFlagTeam]) {
+            return { success: false, message: 'Enemy flag not available' };
+        }
+        
+        // Check if player is at flag location
+        if (playerPos.x === enemyFlag.coord.x && playerPos.y === enemyFlag.coord.y) {
+            this.capturedFlags[enemyFlagTeam] = playerToken;
+            return { success: true, message: 'Flag captured!' };
+        }
+        
+        return { success: false, message: 'Not at flag location' };
+    }
+
+    /**
+     * Player returns flag to start zone
+     */
+    returnFlag(playerToken) {
+        const playerTeam = this.teams.get(playerToken);
+        const playerPos = this.playerPositions.get(playerToken);
+        
+        // Check if player has an enemy flag
+        const enemyFlagTeam = playerTeam === 'red' ? 'blue' : 'red';
+        if (this.capturedFlags[enemyFlagTeam] !== playerToken) {
+            return { success: false, message: 'You do not have the enemy flag' };
+        }
+        
+        // Check if player is in alleyway
+        if (playerPos.location !== 'alley') {
+            return { success: false, message: 'Must be in alleyway to return flag' };
+        }
+        
+        // Score!
+        if (playerTeam === 'red') {
+            this.redScore++;
+        } else {
+            this.blueScore++;
+        }
+        
+        // Reset flag capture
+        this.capturedFlags[enemyFlagTeam] = null;
+        
+        // Check for win
+        let gameEnded = false;
+        let winner = null;
+        if (this.redScore >= 3) {
+            gameEnded = true;
+            winner = 'red';
+            this.phase = 'finished';
+        } else if (this.blueScore >= 3) {
+            gameEnded = true;
+            winner = 'blue';
+            this.phase = 'finished';
+        }
+        
+        return {
+            success: true,
+            message: 'Flag returned!',
+            scoredTeam: playerTeam,
+            redScore: this.redScore,
+            blueScore: this.blueScore,
+            gameEnded,
+            winner
+        };
+    }
+
+    /**
+     * Get game state for player
+     */
+    getGameStateForPlayer(playerToken) {
+        return this.getGameState();
     }
 
     /**
      * Get winner
      */
     getWinner() {
-        if (this.redScore > this.blueScore) {
-            return 'red';
-        } else if (this.blueScore > this.redScore) {
-            return 'blue';
-        } else {
-            return 'tie';
-        }
-    }
-
-    /**
-     * Get current game state
-     */
-    getGameState() {
-        return {
-            gameCode: this.gameCode,
-            gameType: this.gameType,
-            gameState: this.gameState,
-            currentPhase: this.currentPhase,
-            currentRound: this.currentRound,
-            players: this.getPlayers(),
-            playerCount: this.getPlayerCount(),
-            redTeam: this.redTeam,
-            blueTeam: this.blueTeam,
-            scores: {
-                red: this.redScore,
-                blue: this.blueScore
-            },
-            flagStatus: {
-                redFlag: this.redFlagHeld,
-                blueFlag: this.blueFlagHeld
-            }
-        };
-    }
-
-    /**
-     * Get lobby info with team data
-     */
-    getLobbyInfo() {
-        const base = super.getLobbyInfo();
-        return {
-            ...base,
-            redTeam: this.redTeam,
-            blueTeam: this.blueTeam,
-            currentPhase: this.currentPhase
-        };
-    }
-
-    /**
-     * Get game results
-     */
-    getGameResults() {
-        return {
-            gameCode: this.gameCode,
-            winner: this.getWinner(),
-            finalScores: {
-                red: this.redScore,
-                blue: this.blueScore
-            },
-            redTeam: this.redTeam,
-            blueTeam: this.blueTeam,
-            roundHistory: this.roundHistory,
-            captureEvents: this.captureEvents
-        };
+        if (this.redScore > this.blueScore) return 'red';
+        if (this.blueScore > this.redScore) return 'blue';
+        return 'tie';
     }
 }
 
