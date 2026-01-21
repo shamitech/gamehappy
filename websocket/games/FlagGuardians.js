@@ -51,36 +51,88 @@ class FlagGuardians extends GameManager {
      */
     initializeHouses() {
         const houses = {};
-        const northNames = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliet',
-                           'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango',
-                           'Uniform', 'Victor', 'Whiskey', 'X-Ray', 'Yankee', 'Zulu', 'Able', 'Baker', 'Cast', 'Dog',
-                           'Easy', 'Fox', 'George', 'Henry', 'Isaac', 'Jack', 'Kestrel', 'Lancer', 'Mace', 'Noble',
-                           'Oak', 'Pine', 'Quartz', 'Raven', 'Stone', 'Tower', 'Umber', 'Vale', 'Water', 'Xenon'];
-        const southNames = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliet',
-                           'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango',
-                           'Uniform', 'Victor', 'Whiskey', 'X-Ray', 'Yankee', 'Zulu', 'Apple', 'Beat', 'Camp', 'Dance',
-                           'East', 'Fest', 'Glow', 'Hunt', 'Ice', 'Jump', 'Kite', 'Light', 'Moon', 'Night',
-                           'Open', 'Peace', 'Quest', 'Rest', 'Star', 'Trust', 'Unity', 'Valor', 'Wind', 'Zest'];
         
-        // Create 100 houses (10x10 grid)
-        for (let i = 0; i < 100; i++) {
-            const row = Math.floor(i / 10);
-            const col = i % 10;
-            const side = row < 5 ? 'north' : 'south';
-            const nameArray = side === 'north' ? northNames : southNames;
-            const name = nameArray[i % nameArray.length];
-            
-            houses[`H${i}`] = {
-                id: `H${i}`,
-                name: `${name} (${row},${col})`,
-                side: side,
-                floors: (i % 3) + 1,
-                row: row,
-                col: col
-            };
+        // Blue team (North side) house names
+        const blueHouseNames = ['Sentinel', 'Guardian', 'Fortress', 'Bastion', 'Tower',
+                               'Castle', 'Keep', 'Citadel', 'Haven', 'Sanctuary'];
+        
+        // Red team (South side) house names  
+        const redHouseNames = ['Outpost', 'Stronghold', 'Bunker', 'Garrison', 'Redoubt',
+                              'Blockade', 'Rampart', 'Bulwark', 'Lair', 'Compound'];
+        
+        // 10x10 grid of houses (each house occupies a grid square)
+        // North side (Blue): rows 0-4, South side (Red): rows 5-9
+        for (let row = 0; row < 10; row++) {
+            for (let col = 0; col < 10; col++) {
+                const houseIndex = row * 10 + col;
+                const side = row < 5 ? 'north' : 'south';
+                const nameArray = side === 'north' ? blueHouseNames : redHouseNames;
+                const nameIndex = (row * 10 + col) % nameArray.length;
+                const name = nameArray[nameIndex];
+                
+                houses[`H${houseIndex}`] = {
+                    id: `H${houseIndex}`,
+                    name: `${name} (${row},${col})`,
+                    side: side,
+                    team: side === 'north' ? 'blue' : 'red',
+                    floors: (houseIndex % 3) + 1,
+                    row: row,
+                    col: col,
+                    // Tile grid: each house occupies a 10x10 tile area
+                    tileX: col * 10,
+                    tileY: row * 10,
+                    tileWidth: 10,
+                    tileHeight: 10,
+                    // Floor layout: each floor is a 10x10 grid of tiles
+                    floorTiles: this.generateFloorLayout((houseIndex % 3) + 1)
+                };
+            }
         }
         
         return houses;
+    }
+    
+    /**
+     * Generate floor layout (grid of tiles for each floor)
+     */
+    generateFloorLayout(floorCount) {
+        const floors = {};
+        for (let f = 1; f <= floorCount; f++) {
+            floors[`floor${f}`] = {
+                width: 10,
+                height: 10,
+                tiles: this.generateFloorTiles()
+            };
+        }
+        return floors;
+    }
+    
+    /**
+     * Generate individual floor tiles (10x10 grid)
+     */
+    generateFloorTiles() {
+        const tiles = {};
+        for (let y = 0; y < 10; y++) {
+            for (let x = 0; x < 10; x++) {
+                const tileId = `tile_${x}_${y}`;
+                tiles[tileId] = {
+                    x: x,
+                    y: y,
+                    type: this.getRandomTileType(),
+                    accessible: true
+                };
+            }
+        }
+        return tiles;
+    }
+    
+    /**
+     * Get random tile type for variety
+     */
+    getRandomTileType() {
+        const types = ['floor', 'wall', 'door', 'window'];
+        const walls = Math.random() < 0.2 ? 'wall' : 'floor';
+        return walls;
     }
 
     /**

@@ -952,6 +952,30 @@ input::placeholder {
     transform: scale(1.05);
 }
 
+.house-button.north-side {
+    border-color: #4169E1;
+    background: linear-gradient(135deg, rgba(65, 105, 225, 0.15), rgba(59, 126, 255, 0.08));
+}
+
+.house-button.north-side:hover {
+    background: linear-gradient(135deg, rgba(65, 105, 225, 0.25), rgba(59, 126, 255, 0.15));
+    box-shadow: 0 0 20px rgba(65, 105, 225, 0.4);
+}
+
+.house-button.south-side {
+    border-color: #DC143C;
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.15), rgba(255, 69, 0, 0.08));
+}
+
+.house-button.south-side:hover {
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.25), rgba(255, 69, 0, 0.15));
+    box-shadow: 0 0 20px rgba(220, 20, 60, 0.4);
+}
+
+.house-button:disabled {
+    cursor: not-allowed;
+}
+
 .house-interior {
     background: var(--card-bg);
     border: 2px solid var(--accent-gold);
@@ -991,14 +1015,27 @@ input::placeholder {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
+    min-height: 35px;
 }
 
-.interior-cell:hover {
-    background: linear-gradient(135deg, rgba(59, 126, 255, 0.2), rgba(255, 59, 59, 0.1));
+.interior-cell.floor {
+    background: linear-gradient(135deg, rgba(100, 150, 255, 0.15), rgba(100, 150, 200, 0.08));
+    border-color: rgba(100, 150, 255, 0.5);
+}
+
+.interior-cell.wall {
+    background: linear-gradient(135deg, rgba(80, 80, 80, 0.4), rgba(60, 60, 60, 0.3));
+    border-color: rgba(100, 100, 100, 0.6);
+    cursor: not-allowed;
+}
+
+.interior-cell:hover:not(.wall) {
+    background: linear-gradient(135deg, rgba(59, 126, 255, 0.25), rgba(100, 200, 255, 0.15));
     border-color: var(--accent-gold);
-    transform: scale(1.05);
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(59, 126, 255, 0.4);
 }
 
 .placement-confirm {

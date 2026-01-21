@@ -353,8 +353,19 @@ class Game {
     selectHouseForFlagPlacement(houseId) {
         if (!this.isFlagPlacer) return;
         
-        this.selectedHouse = houseId;
         const house = this.houses[houseId];
+        
+        // Check if team can place flag in this house (must be on their side)
+        if (this.playerTeam === 'red' && house.side !== 'south') {
+            alert('Red team can only place flags on the south side!');
+            return;
+        }
+        if (this.playerTeam === 'blue' && house.side !== 'north') {
+            alert('Blue team can only place flags on the north side!');
+            return;
+        }
+        
+        this.selectedHouse = houseId;
         
         // Show house interior (floor 1 by default)
         this.showHouseInterior(houseId, 'floor1');
@@ -370,7 +381,10 @@ class Game {
         const container = document.getElementById('house-interior');
         if (!container) return;
         
-        // Show 4x4 grid for selecting flag location
+        // Show 10x10 grid for selecting flag location (matching floor tile grid)
+        const floorData = house.floorTiles[floor];
+        const gridSize = floorData.width;
+        
         container.innerHTML = `
             <div class="interior-header">
                 <h3>${house.name} - ${floor === 'floor1' ? 'Ground Floor' : '2nd Floor'}</h3>
@@ -380,19 +394,25 @@ class Game {
                     </button>
                 ` : ''}
             </div>
-            <div class="interior-grid">
+            <div class="interior-grid" style="display: grid; grid-template-columns: repeat(${gridSize}, 1fr); gap: 4px;">
         `;
         
-        for (let y = 0; y < 4; y++) {
-            container.innerHTML += '<div class="interior-row">';
-            for (let x = 0; x < 4; x++) {
+        // Render each tile in the floor
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                const tileId = `tile_${x}_${y}`;
+                const tile = floorData.tiles[tileId];
+                const isWall = tile.type === 'wall';
+                
                 container.innerHTML += `
-                    <div class="interior-cell" onclick="game.selectFlagCoord(${x}, ${y})">
-                        (${x}, ${y})
+                    <div class="interior-cell ${isWall ? 'wall' : 'floor'}" 
+                         onclick="${isWall ? '' : `game.selectFlagCoord(${x}, ${y})`}"
+                         title="${tile.type} (${x},${y})"
+                         style="aspect-ratio: 1; cursor: ${isWall ? 'not-allowed' : 'pointer'};">
+                        ${x === 0 ? y : ''}<span style="font-size: 0.6rem;">${x},${y}</span>
                     </div>
                 `;
             }
-            container.innerHTML += '</div>';
         }
         
         container.innerHTML += '</div>';
@@ -592,12 +612,38 @@ class Game {
         if (!container) return;
         
         container.innerHTML = '';
+        
+        // Separate houses by side
+        const northHouses = [];
+        const southHouses = [];
+        
         for (const [houseId, house] of Object.entries(this.houses)) {
+            if (house.side === 'north') {
+                northHouses.push([houseId, house]);
+            } else {
+                southHouses.push([houseId, house]);
+            }
+        }
+        
+        // Display all houses with side indicators
+        const allHouses = northHouses.concat(southHouses);
+        
+        for (const [houseId, house] of allHouses) {
             const btn = document.createElement('button');
-            btn.className = 'house-button';
-            btn.title = house.name; // Full name in tooltip
+            btn.className = `house-button ${house.side}-side`;
+            btn.title = `${house.name} - Team: ${house.team.toUpperCase()}`;
             btn.innerHTML = `${house.name.split(' ')[0]}<br><small>(${house.row},${house.col})</small>`;
             btn.onclick = () => this.selectHouseForFlagPlacement(houseId);
+            
+            // Disable if not on player's team
+            if (this.playerTeam === 'red' && house.side !== 'south') {
+                btn.disabled = true;
+                btn.style.opacity = '0.3';
+            } else if (this.playerTeam === 'blue' && house.side !== 'north') {
+                btn.disabled = true;
+                btn.style.opacity = '0.3';
+            }
+            
             container.appendChild(btn);
         }
     }
