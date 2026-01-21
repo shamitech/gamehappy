@@ -109,7 +109,10 @@ class Game {
             this.isHost = data.isHost;
             this.playerToken = data.playerToken;
             this.playerName = data.playerName;
+            this.redTeam = data.game?.redTeam || [];
+            this.blueTeam = data.game?.blueTeam || [];
             this.showScreen('lobby');
+            this.updateLobbyUI();
         });
 
         this.socket.on('game:joined', (data) => {
@@ -118,7 +121,10 @@ class Game {
             this.isHost = data.isHost;
             this.playerToken = data.playerToken;
             this.playerName = data.playerName;
+            this.redTeam = data.game?.redTeam || [];
+            this.blueTeam = data.game?.blueTeam || [];
             this.showScreen('lobby');
+            this.updateLobbyUI();
         });
 
         this.socket.on('lobby:updated', (data) => {
@@ -255,6 +261,7 @@ class Game {
                 this.redTeam = response.game.redTeam || [];
                 this.blueTeam = response.game.blueTeam || [];
                 this.showScreen('lobby');
+                this.updateLobbyUI();
             } else {
                 alert(response.message);
             }
@@ -285,6 +292,7 @@ class Game {
                 this.redTeam = response.game.redTeam || [];
                 this.blueTeam = response.game.blueTeam || [];
                 this.showScreen('lobby');
+                this.updateLobbyUI();
             } else {
                 alert(response.message);
             }
