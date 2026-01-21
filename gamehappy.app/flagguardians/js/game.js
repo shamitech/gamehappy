@@ -69,6 +69,7 @@ class Game {
         console.log('[GAME.JS] Setting up Socket.IO...');
         
         this.socket = io({
+            path: '/websocket',
             auth: {
                 token: this.playerToken || 'guest'
             },
@@ -83,11 +84,18 @@ class Game {
         this.socket.on('connect', () => {
             console.log('[SOCKET] Connected:', this.socket.id);
             this.isConnected = true;
+            this.addGameLog('Connected to server');
         });
 
         this.socket.on('disconnect', () => {
             console.log('[SOCKET] Disconnected');
             this.isConnected = false;
+            this.addGameLog('Disconnected from server');
+        });
+
+        this.socket.on('connect_error', (err) => {
+            console.error('[SOCKET] Connection error:', err);
+            this.addGameLog('Connection error: ' + err.message);
         });
 
         this.socket.on('error', (err) => {
