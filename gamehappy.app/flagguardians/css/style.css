@@ -44,12 +44,17 @@ body {
 
 /* ===== SCREENS ===== */
 .screen {
-    display: none !important;
+    display: none;
     animation: fadeIn 0.3s ease;
-    visibility: hidden !important;
+    visibility: hidden;
 }
 
 .screen.active {
+    display: block;
+    visibility: visible;
+}
+
+.screen[style*="display: block"] {
     display: block !important;
     visibility: visible !important;
 }
