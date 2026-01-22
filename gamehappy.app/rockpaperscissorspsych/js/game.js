@@ -75,6 +75,17 @@ class RockPaperScissorsPsychGame {
 
         this.socket.on('lobby:updated', (data) => {
             console.log('[SOCKET] Lobby updated:', data);
+            if (data.players) {
+                this.players = data.players;
+            }
+            this.updateLobbyUI();
+        });
+
+        this.socket.on('lobby:player-joined', (data) => {
+            console.log('[SOCKET] Player joined:', data);
+            if (data.players) {
+                this.players = data.players;
+            }
             this.updateLobbyUI();
         });
 

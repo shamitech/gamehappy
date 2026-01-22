@@ -1859,10 +1859,10 @@ io.on('connection', (socket) => {
    */
   socket.on('game:create', (data, callback) => {
     try {
-      const { playerName } = data;
-      console.log(`[GAME:CREATE] Creating Flag Guardians game for player: ${playerName}, socket token: ${playerToken}`);
+      const { playerName, gameType = 'flagguardians' } = data;
+      console.log(`[GAME:CREATE] Creating ${gameType} game for player: ${playerName}, socket token: ${playerToken}`);
 
-      const result = gameServer.createGame('flagguardians', playerToken, playerName);
+      const result = gameServer.createGame(gameType, playerToken, playerName);
       console.log(`[GAME:CREATE] Game creation result:`, result);
       
       if (result.success) {
@@ -1898,7 +1898,7 @@ io.on('connection', (socket) => {
         callback({ success: false, message: result.message });
       }
     } catch (err) {
-      console.error('[GAME:CREATE] Error creating Flag Guardians game:', err);
+      console.error('[GAME:CREATE] Error creating game:', err);
       callback({ success: false, message: 'Server error' });
     }
   });
@@ -1909,7 +1909,7 @@ io.on('connection', (socket) => {
   socket.on('game:join', (data, callback) => {
     try {
       const { gameCode, playerName } = data;
-      console.log(`Player ${playerName} joining Flag Guardians game: ${gameCode}`);
+      console.log(`Player ${playerName} joining game: ${gameCode}`);
 
       const result = gameServer.joinGame(gameCode, playerToken, playerName);
       
@@ -1918,13 +1918,24 @@ io.on('connection', (socket) => {
 
         // Broadcast player joined
         const game = gameServer.getGame(gameCode);
-        io.to(`game-${gameCode}`).emit('lobby:player-joined', {
-          playerName,
-          playerToken,
-          players: result.game.players,
-          redTeam: game.redTeam,
-          blueTeam: game.blueTeam
-        });
+        
+        if (game.gameType === 'rockpaperscissorspsych') {
+          // For PSYCH game, just send updated players list
+          io.to(`game-${gameCode}`).emit('lobby:player-joined', {
+            playerName,
+            playerToken,
+            players: result.game.players
+          });
+        } else {
+          // For other games like Flag Guardians, include team info
+          io.to(`game-${gameCode}`).emit('lobby:player-joined', {
+            playerName,
+            playerToken,
+            players: result.game.players,
+            redTeam: game.redTeam,
+            blueTeam: game.blueTeam
+          });
+        }
 
         callback({ 
           success: true, 
@@ -1936,7 +1947,7 @@ io.on('connection', (socket) => {
         callback({ success: false, message: result.message });
       }
     } catch (err) {
-      console.error('Error joining Flag Guardians game:', err);
+      console.error('Error joining game:', err);
       callback({ success: false, message: 'Server error' });
     }
   });
@@ -2069,22 +2080,39 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const result = game.startGame();
-      
-      if (result.success) {
-        // Broadcast game started
+      // Handle different game types
+      if (game.gameType === 'rockpaperscissorspsych') {
+        // For PSYCH game, start immediately with first round
+        game.gameState = 'started';
+        game.phase = 'intention-select';
+        game.roundNumber = 1;
+
+        // Broadcast game started to all players
         io.to(`game-${gameCode}`).emit('game:started', {
-          phase: result.phase,
-          redTeam: game.redTeam,
-          blueTeam: game.blueTeam,
-          redPlacingPlayer: result.redPlacingPlayer,
-          bluePlacingPlayer: result.bluePlacingPlayer,
-          houses: result.houses
+          roundNumber: game.roundNumber,
+          activePlayers: Array.from(game.activePlayers.values())
         });
 
         callback({ success: true });
       } else {
-        callback({ success: false, message: result.message });
+        // For other games (Flag Guardians, etc.)
+        const result = game.startGame();
+        
+        if (result.success) {
+          // Broadcast game started
+          io.to(`game-${gameCode}`).emit('game:started', {
+            phase: result.phase,
+            redTeam: game.redTeam,
+            blueTeam: game.blueTeam,
+            redPlacingPlayer: result.redPlacingPlayer,
+            bluePlacingPlayer: result.bluePlacingPlayer,
+            houses: result.houses
+          });
+
+          callback({ success: true });
+        } else {
+          callback({ success: false, message: result.message });
+        }
       }
     } catch (err) {
       console.error('Error starting game:', err);
