@@ -2063,7 +2063,7 @@ io.on('connection', (socket) => {
   });
 
   /**
-   * Start Flag Guardians game
+   * Start game (supports all game types)
    */
   socket.on('game:start', (data, callback) => {
     try {
@@ -2080,39 +2080,30 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Handle different game types
-      if (game.gameType === 'rockpaperscissorspsych') {
-        // For PSYCH game, start immediately with first round
-        game.gameState = 'started';
-        game.phase = 'intention-select';
-        game.roundNumber = 1;
+      // Call game-specific startGame method
+      const result = game.startGame();
+      
+      if (result.success) {
+        // Build event data based on game type
+        let eventData = {
+          roundNumber: result.roundNumber,
+          activePlayers: result.activePlayers
+        };
+
+        // Add game-specific data if available (for Flag Guardians)
+        if (result.phase) eventData.phase = result.phase;
+        if (game.redTeam) eventData.redTeam = game.redTeam;
+        if (game.blueTeam) eventData.blueTeam = game.blueTeam;
+        if (result.redPlacingPlayer) eventData.redPlacingPlayer = result.redPlacingPlayer;
+        if (result.bluePlacingPlayer) eventData.bluePlacingPlayer = result.bluePlacingPlayer;
+        if (result.houses) eventData.houses = result.houses;
 
         // Broadcast game started to all players
-        io.to(`game-${gameCode}`).emit('game:started', {
-          roundNumber: game.roundNumber,
-          activePlayers: Array.from(game.activePlayers.values())
-        });
+        io.to(`game-${gameCode}`).emit('game:started', eventData);
 
         callback({ success: true });
       } else {
-        // For other games (Flag Guardians, etc.)
-        const result = game.startGame();
-        
-        if (result.success) {
-          // Broadcast game started
-          io.to(`game-${gameCode}`).emit('game:started', {
-            phase: result.phase,
-            redTeam: game.redTeam,
-            blueTeam: game.blueTeam,
-            redPlacingPlayer: result.redPlacingPlayer,
-            bluePlacingPlayer: result.bluePlacingPlayer,
-            houses: result.houses
-          });
-
-          callback({ success: true });
-        } else {
-          callback({ success: false, message: result.message });
-        }
+        callback({ success: false, message: result.message });
       }
     } catch (err) {
       console.error('Error starting game:', err);
