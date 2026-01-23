@@ -84,15 +84,23 @@ function attemptMatch($conn) {
         $player1Id = $players[0]['user_id'];
         $player2Id = $players[1]['user_id'];
         $gameCode = generateGameCode();
+        
+        // Randomly assign colors (player1 gets white or black, player2 gets opposite)
+        $player1Color = rand(0, 1) ? 'white' : 'black';
+        $player2Color = $player1Color === 'white' ? 'black' : 'white';
 
         // Create game session
         $stmt = $conn->prepare("INSERT INTO game_sessions (game_type, player1_id, player2_id, game_code, status, created_at) VALUES ('friendly', ?, ?, ?, 'active', NOW())");
         $stmt->bind_param('iis', $player1Id, $player2Id, $gameCode);
         
         if ($stmt->execute()) {
-            // Update queue status to 'matched' with game_code
-            $stmt = $conn->prepare("UPDATE matchmaking_queue SET status = 'matched', game_code = ? WHERE user_id IN (?, ?)");
-            $stmt->bind_param('sii', $gameCode, $player1Id, $player2Id);
+            // Update queue status to 'matched' with game_code and assigned colors
+            $stmt = $conn->prepare("UPDATE matchmaking_queue SET status = 'matched', game_code = ?, player_color = ? WHERE user_id = ?");
+            $stmt->bind_param('ssi', $gameCode, $player1Color, $player1Id);
+            $stmt->execute();
+            
+            $stmt = $conn->prepare("UPDATE matchmaking_queue SET status = 'matched', game_code = ?, player_color = ? WHERE user_id = ?");
+            $stmt->bind_param('ssi', $gameCode, $player2Color, $player2Id);
             $stmt->execute();
         }
     }
@@ -112,6 +120,14 @@ function checkMatch($conn, $userId) {
     $row = $result->fetch_assoc();
 
     if ($row['status'] === 'matched') {
+        // Get your color and opponent info
+        $stmt = $conn->prepare("SELECT player_color FROM matchmaking_queue WHERE user_id = ? AND game_code = ?");
+        $stmt->bind_param('is', $userId, $row['game_code']);
+        $stmt->execute();
+        $colorResult = $stmt->get_result();
+        $colorRow = $colorResult->fetch_assoc();
+        $yourColor = $colorRow['player_color'];
+        
         // Get opponent info
         $stmt = $conn->prepare("SELECT user_id, username FROM matchmaking_queue WHERE game_code = ? AND user_id != ?");
         $stmt->bind_param('si', $row['game_code'], $userId);
@@ -125,7 +141,7 @@ function checkMatch($conn, $userId) {
             'game_code' => $row['game_code'],
             'opponent_id' => $opponent['user_id'],
             'opponent_name' => $opponent['username'],
-            'your_color' => rand(0, 1) ? 'white' : 'black'
+            'your_color' => $yourColor
         ]);
     } else {
         echo json_encode([

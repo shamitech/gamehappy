@@ -110,6 +110,7 @@ class GameHappyDB {
                 username VARCHAR(20) NOT NULL,
                 status VARCHAR(20) DEFAULT 'waiting',
                 game_code VARCHAR(6),
+                player_color VARCHAR(10),
                 joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )";
