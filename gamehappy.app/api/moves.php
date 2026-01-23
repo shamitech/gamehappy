@@ -4,6 +4,18 @@
  * Handles move storage and retrieval for real-time game sync
  */
 
+// Global error handler to ensure JSON response
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Server error: ' . $errstr,
+        'error' => $errstr,
+        'line' => $errline
+    ]);
+    exit;
+});
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -13,29 +25,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Database connection
-require_once 'auth/Database.php';
-$db = new GameHappyDB();
-$conn = $db->getConnection();
+try {
+    // Database connection
+    require_once 'auth/Database.php';
+    $db = new GameHappyDB();
+    $conn = $db->getConnection();
 
-$action = $_GET['action'] ?? null;
+    $action = $_GET['action'] ?? null;
 
-session_start();
-$userId = $_SESSION['user_id'] ?? null;
+    session_start();
+    $userId = $_SESSION['user_id'] ?? null;
 
-if (!$userId) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
-    exit;
-}
+    if (!$userId) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+        exit;
+    }
 
-if ($action === 'send_move') {
-    sendMove($conn, $userId);
-} elseif ($action === 'get_moves') {
-    getMoves($conn, $userId);
-} else {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid action']);
+    if ($action === 'send_move') {
+        sendMove($conn, $userId);
+    } elseif ($action === 'get_moves') {
+        getMoves($conn, $userId);
+    } else {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Exception: ' . $e->getMessage()
+    ]);
 }
 
 function sendMove($conn, $userId) {
