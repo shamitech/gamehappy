@@ -27,112 +27,113 @@ if ($method === 'POST') {
             exit;
         }
 
-    if (strlen($username) < 3 || strlen($username) > 20) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Username must be 3-20 characters'
-        ]);
-        exit;
-    }
-
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Invalid email format'
-        ]);
-        exit;
-    }
-
-    if (strlen($password) < 8) {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Password must be at least 8 characters'
-        ]);
-        exit;
-    }
-
-    // Initialize database
-    $db = new GameHappyDB();
-    $db->createTables(); // Ensure tables exist
-    
-    // Check if username exists
-    $result = $db->execute(
-        "SELECT id FROM users WHERE username = ?",
-        [$username]
-    );
-
-    if ($result->num_rows > 0) {
-        http_response_code(409);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Username already exists'
-        ]);
-        exit;
-    }
-
-    // Check if email exists
-    $result = $db->execute(
-        "SELECT id FROM users WHERE email = ?",
-        [$email]
-    );
-
-    if ($result->num_rows > 0) {
-        http_response_code(409);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Email already registered'
-        ]);
-        exit;
-    }
-
-    // Hash password
-    $password_hash = password_hash($password, PASSWORD_BCRYPT);
-
-    // Insert user - get fresh connection for transaction
-    $conn = $db->connect();
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)");
-    
-    if (!$stmt) {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Database error: ' . $conn->error
-        ]);
-        $conn->close();
-        exit;
-    }
-    
-    $stmt->bind_param("sss", $username, $email, $password_hash);
-    
-    if ($stmt->execute()) {
-        $user_id = $conn->insert_id;
-        
-        // Create user stats record
-        $stmt2 = $conn->prepare("INSERT INTO user_stats (user_id) VALUES (?)");
-        if ($stmt2) {
-            $stmt2->bind_param("i", $user_id);
-            $stmt2->execute();
-            $stmt2->close();
+        if (strlen($username) < 3 || strlen($username) > 20) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Username must be 3-20 characters'
+            ]);
+            exit;
         }
 
-        echo json_encode([
-            'success' => true,
-            'message' => 'Account created successfully',
-            'userId' => $user_id
-        ]);
-    } else {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Registration failed: ' . $stmt->error
-        ]);
-    }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid email format'
+            ]);
+            exit;
+        }
 
-    $stmt->close();
-    $conn->close();
+        if (strlen($password) < 8) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Password must be at least 8 characters'
+            ]);
+            exit;
+        }
+
+        // Initialize database
+        $db = new GameHappyDB();
+        $db->createTables(); // Ensure tables exist
+        
+        // Check if username exists
+        $result = $db->execute(
+            "SELECT id FROM users WHERE username = ?",
+            [$username]
+        );
+
+        if ($result->num_rows > 0) {
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Username already exists'
+            ]);
+            exit;
+        }
+
+        // Check if email exists
+        $result = $db->execute(
+            "SELECT id FROM users WHERE email = ?",
+            [$email]
+        );
+
+        if ($result->num_rows > 0) {
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Email already registered'
+            ]);
+            exit;
+        }
+
+        // Hash password
+        $password_hash = password_hash($password, PASSWORD_BCRYPT);
+
+        // Insert user - get fresh connection for transaction
+        $conn = $db->connect();
+        $stmt = $conn->prepare("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)");
+        
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Database error: ' . $conn->error
+            ]);
+            $conn->close();
+            exit;
+        }
+        
+        $stmt->bind_param("sss", $username, $email, $password_hash);
+        
+        if ($stmt->execute()) {
+            $user_id = $conn->insert_id;
+            
+            // Create user stats record
+            $stmt2 = $conn->prepare("INSERT INTO user_stats (user_id) VALUES (?)");
+            if ($stmt2) {
+                $stmt2->bind_param("i", $user_id);
+                $stmt2->execute();
+                $stmt2->close();
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Account created successfully',
+                'userId' => $user_id
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Registration failed: ' . $stmt->error
+            ]);
+        }
+
+        $stmt->close();
+        $conn->close();
+
     } catch (Exception $e) {
         http_response_code(500);
         error_log("Signup error: " . $e->getMessage());
