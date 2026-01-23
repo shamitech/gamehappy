@@ -23,6 +23,7 @@ try {
     require_once __DIR__ . '/Database.php';
 
     $method = $_SERVER['REQUEST_METHOD'];
+    error_log("DEBUG: Method = " . $method);
 
     if ($method !== 'POST') {
         http_response_code(405);
@@ -32,14 +33,20 @@ try {
 
     // Get raw input
     $raw_input = file_get_contents('php://input');
+    error_log("DEBUG: Raw input received: " . strlen($raw_input) . " bytes");
+    error_log("DEBUG: Raw input content: " . substr($raw_input, 0, 200));
+    
     $data = json_decode($raw_input, true);
+    error_log("DEBUG: JSON decode result: " . json_encode($data));
     
     // Debug: if data is null, json_decode failed
     if ($data === null && !empty($raw_input)) {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'message' => 'Invalid JSON input: ' . $raw_input
+            'message' => 'Invalid JSON input: ' . $raw_input,
+            'version' => $VERSION,
+            'marker' => 'JAN-23-2026-DEPLOY-001'
         ]);
         exit;
     }
@@ -47,6 +54,8 @@ try {
     $username = trim($data['username'] ?? '');
     $email = trim($data['email'] ?? '');
     $password = $data['password'] ?? '';
+    
+    error_log("DEBUG: Parsed username=" . $username . ", email=" . $email);
 
     // Validation
     if (empty($username) || empty($email) || empty($password)) {
