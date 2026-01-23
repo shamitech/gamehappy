@@ -25,7 +25,19 @@ try {
         exit;
     }
 
-    $data = json_decode(file_get_contents('php://input'), true);
+    // Get raw input
+    $raw_input = file_get_contents('php://input');
+    $data = json_decode($raw_input, true);
+    
+    // Debug: if data is null, json_decode failed
+    if ($data === null && !empty($raw_input)) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid JSON input: ' . $raw_input
+        ]);
+        exit;
+    }
 
     $username = trim($data['username'] ?? '');
     $email = trim($data['email'] ?? '');
