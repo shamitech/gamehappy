@@ -53,22 +53,76 @@ class FriendlyChessGame {
         this.searching = true;
         document.getElementById('search-status').classList.remove('hidden');
 
-        // Simulate finding opponent after 2-4 seconds
-        setTimeout(() => {
-            if (this.searching) {
-                this.startGame({
-                    gameId: this.generateGameCode(),
-                    playerColor: Math.random() > 0.5 ? 'white' : 'black',
-                    opponentId: 'opponent_' + Math.random().toString(36).substr(2, 9),
-                    opponentName: 'Friend Player'
-                });
+        // Join matchmaking queue on server
+        fetch('/api/matchmaking.php?action=join_queue', {
+            method: 'POST',
+            credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Error: ' + data.message);
+                this.searching = false;
+                document.getElementById('search-status').classList.add('hidden');
+                return;
             }
-        }, 2000 + Math.random() * 2000);
+
+            // Poll for match every 1 second
+            this.matchCheckInterval = setInterval(() => this.checkForMatch(), 1000);
+        })
+        .catch(err => {
+            console.error('Error joining queue:', err);
+            alert('Connection error. Make sure you are logged in.');
+            this.searching = false;
+            document.getElementById('search-status').classList.add('hidden');
+        });
+    }
+
+    checkForMatch() {
+        if (!this.searching) {
+            clearInterval(this.matchCheckInterval);
+            return;
+        }
+
+        fetch('/api/matchmaking.php?action=check_match', {
+            credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Error checking match:', data.message);
+                return;
+            }
+
+            if (data.matched) {
+                clearInterval(this.matchCheckInterval);
+                this.startGame({
+                    gameId: data.game_code,
+                    playerColor: data.your_color,
+                    opponentId: data.opponent_id,
+                    opponentName: data.opponent_name
+                });
+            } else {
+                // Update queue position display
+                const statusText = document.querySelector('#search-status p');
+                if (statusText) {
+                    statusText.textContent = `Searching for opponent... (Position: ${data.queue_position}, Total waiting: ${data.players_waiting})`;
+                }
+            }
+        })
+        .catch(err => console.error('Error checking match:', err));
     }
 
     cancelSearch() {
         this.searching = false;
+        clearInterval(this.matchCheckInterval);
         document.getElementById('search-status').classList.add('hidden');
+
+        // Notify server to leave queue
+        fetch('/api/matchmaking.php?action=leave_queue', {
+            method: 'POST',
+            credentials: 'include'
+        }).catch(err => console.error('Error leaving queue:', err));
     }
 
     createGame() {

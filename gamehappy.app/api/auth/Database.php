@@ -89,14 +89,28 @@ class GameHappyDB {
             // Game Sessions table
             $sessions_sql = "CREATE TABLE IF NOT EXISTS game_sessions (
                 id INT PRIMARY KEY AUTO_INCREMENT,
-                user_id INT NOT NULL,
                 game_type VARCHAR(50) NOT NULL,
-                opponent_id INT,
+                player1_id INT NOT NULL,
+                player2_id INT,
+                game_code VARCHAR(6) UNIQUE,
+                status VARCHAR(20) DEFAULT 'active',
                 result VARCHAR(20),
+                winner_id INT,
                 moves_made INT DEFAULT 0,
                 duration_seconds INT DEFAULT 0,
-                elo_change INT DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (player1_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (player2_id) REFERENCES users(id) ON DELETE CASCADE
+            )";
+
+            // Matchmaking Queue table
+            $queue_sql = "CREATE TABLE IF NOT EXISTS matchmaking_queue (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                user_id INT NOT NULL,
+                username VARCHAR(20) NOT NULL,
+                status VARCHAR(20) DEFAULT 'waiting',
+                game_code VARCHAR(6),
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )";
 
@@ -112,10 +126,18 @@ class GameHappyDB {
                 error_log("Error creating game_sessions table: " . $conn->error);
             }
 
+            if (!$conn->query($queue_sql)) {
+                error_log("Error creating matchmaking_queue table: " . $conn->error);
+            }
+
             $conn->close();
         } catch (Exception $e) {
             error_log("Database initialization error: " . $e->getMessage());
         }
+    }
+
+    public function getConnection() {
+        return $this->connect();
     }
 
     public function query($sql) {
