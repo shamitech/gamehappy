@@ -7,6 +7,12 @@ class ChessBoard {
         this.board = this.initializeBoard();
         this.moveHistory = [];
         this.currentPlayer = 'white';
+        // Track if kings and rooks have moved for castling
+        this.hasKingMoved = { white: false, black: false };
+        this.hasRookMoved = {
+            white: { kingside: false, queenside: false },
+            black: { kingside: false, queenside: false }
+        };
     }
 
     initializeBoard() {
@@ -132,7 +138,74 @@ class ChessBoard {
         const [fromRow, fromCol] = from;
         const [toRow, toCol] = to;
 
-        return Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1;
+        // Normal king move (1 square in any direction)
+        if (Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1) {
+            return true;
+        }
+
+        // Castling: king moves 2 squares horizontally
+        if (fromRow === toRow && Math.abs(fromCol - toCol) === 2) {
+            return this.isValidCastling(from, to);
+        }
+
+        return false;
+    }
+
+    isValidCastling(kingFrom, kingTo) {
+        const [kingRow, kingCol] = kingFrom;
+        const [toRow, toCol] = kingTo;
+        const color = this.board[kingRow][kingCol].color;
+
+        // King must not have moved
+        if (this.hasKingMoved[color]) return false;
+
+        // Must be on back rank
+        const backRank = color === 'white' ? 7 : 0;
+        if (kingRow !== backRank || toRow !== backRank) return false;
+
+        // King can't be in check
+        if (this.isInCheck(color)) return false;
+
+        // Determine which side and rook position
+        const isKingside = toCol > kingCol;
+        const rookCol = isKingside ? 7 : 0;
+        const rook = this.board[kingRow][rookCol];
+
+        // Rook must exist and not have moved
+        if (!rook || rook.type !== 'rook') return false;
+        if (this.hasRookMoved[color][isKingside ? 'kingside' : 'queenside']) return false;
+
+        // Path must be clear between king and rook
+        const startCol = Math.min(kingCol, rookCol);
+        const endCol = Math.max(kingCol, rookCol);
+        for (let col = startCol + 1; col < endCol; col++) {
+            if (this.board[kingRow][col]) return false;
+        }
+
+        // King can't move through check
+        const kingMoveCol = isKingside ? kingCol + 1 : kingCol - 1;
+        if (this.wouldBeInCheck([kingRow, kingCol], [kingRow, kingMoveCol], color)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    wouldBeInCheck(from, to, color) {
+        // Simulate the move
+        const piece = this.board[from[0]][from[1]];
+        const captured = this.board[to[0]][to[1]];
+
+        this.board[to[0]][to[1]] = piece;
+        this.board[from[0]][from[1]] = null;
+
+        const inCheck = this.isInCheck(color);
+
+        // Undo the move
+        this.board[from[0]][from[1]] = piece;
+        this.board[to[0]][to[1]] = captured;
+
+        return inCheck;
     }
 
     isPathClear(from, to) {
@@ -159,9 +232,36 @@ class ChessBoard {
 
         const [fromRow, fromCol] = from;
         const [toRow, toCol] = to;
+        const piece = this.board[fromRow][fromCol];
+        const color = piece.color;
 
-        this.board[toRow][toCol] = this.board[fromRow][fromCol];
+        // Move piece
+        this.board[toRow][toCol] = piece;
         this.board[fromRow][fromCol] = null;
+
+        // Track king moves for castling
+        if (piece.type === 'king') {
+            this.hasKingMoved[color] = true;
+
+            // Handle castling: move rook if king moves 2 squares
+            if (Math.abs(fromCol - toCol) === 2) {
+                const isKingside = toCol > fromCol;
+                const rookFromCol = isKingside ? 7 : 0;
+                const rookToCol = isKingside ? 5 : 3;
+                this.board[toRow][rookToCol] = this.board[toRow][rookFromCol];
+                this.board[toRow][rookFromCol] = null;
+                this.hasRookMoved[color][isKingside ? 'kingside' : 'queenside'] = true;
+            }
+        }
+
+        // Track rook moves for castling
+        if (piece.type === 'rook') {
+            if (fromCol === 0) {
+                this.hasRookMoved[color]['queenside'] = true;
+            } else if (fromCol === 7) {
+                this.hasRookMoved[color]['kingside'] = true;
+            }
+        }
 
         this.moveHistory.push({ from, to, timestamp: Date.now() });
         this.currentPlayer = this.currentPlayer === 'white' ? 'black' : 'white';
