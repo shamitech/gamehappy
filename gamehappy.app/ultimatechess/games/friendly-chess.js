@@ -186,7 +186,6 @@ class FriendlyChessGame {
         boardElement.innerHTML = '';
 
         const board = this.chess.getBoard();
-        const pieces = ['♖', '♗', '♘', '♕', '♔', '♙', '♜', '♝', '♞', '♛', '♚', '♟'];
         const pieceMap = {
             'white_rook': '♖', 'white_knight': '♘', 'white_bishop': '♗',
             'white_queen': '♕', 'white_king': '♔', 'white_pawn': '♙',
@@ -194,13 +193,15 @@ class FriendlyChessGame {
             'black_queen': '♛', 'black_king': '♚', 'black_pawn': '♟'
         };
 
-        // If player is black, flip the board
-        const startRow = this.playerColor === 'black' ? 0 : 7;
-        const endRow = this.playerColor === 'black' ? 8 : -1;
-        const rowStep = this.playerColor === 'black' ? 1 : -1;
+        // Board orientation: white at bottom (rows 7->0), black at bottom (rows 0->7)
+        // If player is white, start from row 7 and go to row 0
+        // If player is black, start from row 0 and go to row 7
+        const startRow = this.playerColor === 'white' ? 7 : 0;
+        const endRow = this.playerColor === 'white' ? -1 : 8;
+        const rowStep = this.playerColor === 'white' ? -1 : 1;
 
         for (let row = startRow; row !== endRow; row += rowStep) {
-            for (let col = this.playerColor === 'black' ? 0 : 7; col >= (this.playerColor === 'black' ? 7 : 0); col--) {
+            for (let col = this.playerColor === 'white' ? 7 : 0; col !== (this.playerColor === 'white' ? -1 : 8); col += (this.playerColor === 'white' ? -1 : 1)) {
                 const square = document.createElement('div');
                 const isLight = (row + col) % 2 === 0;
                 square.className = `square ${isLight ? 'light' : 'dark'}`;
