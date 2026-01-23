@@ -87,7 +87,7 @@ function sendMove($conn, $userId) {
     )");
     
     $stmt = $conn->prepare("INSERT INTO game_moves (game_code, player_id, from_row, from_col, to_row, to_col) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param('siiii', $gameCode, $userId, $fromRow, $fromCol, $toRow, $toCol);
+    $stmt->bind_param('siiiii', $gameCode, $userId, $fromRow, $fromCol, $toRow, $toCol);
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Move recorded']);

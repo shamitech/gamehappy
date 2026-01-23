@@ -115,6 +115,19 @@ class GameHappyDB {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )";
 
+            // Game Moves table
+            $moves_sql = "CREATE TABLE IF NOT EXISTS game_moves (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                game_code VARCHAR(6) NOT NULL,
+                player_id INT NOT NULL,
+                from_row INT NOT NULL,
+                from_col INT NOT NULL,
+                to_row INT NOT NULL,
+                to_col INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
+            )";
+
             if (!$conn->query($users_sql)) {
                 error_log("Error creating users table: " . $conn->error);
             }
@@ -129,6 +142,10 @@ class GameHappyDB {
 
             if (!$conn->query($queue_sql)) {
                 error_log("Error creating matchmaking_queue table: " . $conn->error);
+            }
+
+            if (!$conn->query($moves_sql)) {
+                error_log("Error creating game_moves table: " . $conn->error);
             }
 
             $conn->close();
