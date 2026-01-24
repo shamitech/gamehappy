@@ -173,7 +173,10 @@ class FriendlyChessGame {
         this.chess.resetBoard();
         this.searching = false;
         this.lastMoveId = 0;
-        this.lastMoveTime = Date.now();
+        
+        // Only set lastMoveTime if you're white (first player to move)
+        // If you're black, opponent moves first, so timer shouldn't start yet
+        this.lastMoveTime = this.playerColor === 'white' ? Date.now() : 0;
 
         // Update UI
         document.getElementById('search-status').classList.add('hidden');
@@ -385,8 +388,16 @@ class FriendlyChessGame {
         const isOpponentsTurn = this.chess.currentPlayer !== this.playerColor;
         const nudgeBtn = document.getElementById('nudge-button');
         
-        // Enable nudge button: 10+ seconds since I moved AND it's opponent's turn
-        nudgeBtn.disabled = !(isOpponentsTurn && secondsSinceMyMove >= 10);
+        // Show button ONLY when: 10+ seconds since I moved AND it's opponent's turn
+        const shouldShow = isOpponentsTurn && secondsSinceMyMove >= 10;
+        
+        if (shouldShow) {
+            nudgeBtn.classList.remove('hidden');
+            nudgeBtn.disabled = false;
+        } else {
+            nudgeBtn.classList.add('hidden');
+            nudgeBtn.disabled = true;
+        }
     }
 
     nudgeOpponent() {
