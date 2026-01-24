@@ -338,7 +338,6 @@ class FriendlyChessGame {
         // Reset move timer
         this.lastMoveTime = Date.now();
     }
-    }
 
     checkForOpponentMoves() {
         if (!this.gameActive) {
