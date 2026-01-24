@@ -360,7 +360,16 @@ class ChessBoard {
         }
         return null;
     }
-
+    // Called when receiving opponent moves via API to sync en passant tracking
+    setSyncedPawnDoubleMove(moveData) {
+        if (moveData && moveData.is_pawn_double_move) {
+            this.lastPawnDoubleMove = {
+                from: moveData.from,
+                to: moveData.to,
+                color: this.currentPlayer === 'white' ? 'black' : 'white'
+            };
+        }
+    }
     getGameStatus() {
         const whiteCheckmate = this.isCheckmate('white');
         const blackCheckmate = this.isCheckmate('black');

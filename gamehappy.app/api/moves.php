@@ -66,6 +66,7 @@ function sendMove($conn, $userId) {
     $fromCol = $data['from_col'] ?? null;
     $toRow = $data['to_row'] ?? null;
     $toCol = $data['to_col'] ?? null;
+    $isPawnDoubleMove = $data['is_pawn_double_move'] ?? 0;
     
     if (!$gameCode || $fromRow === null || $fromCol === null || $toRow === null || $toCol === null) {
         http_response_code(400);
@@ -82,12 +83,13 @@ function sendMove($conn, $userId) {
         from_col INT NOT NULL,
         to_row INT NOT NULL,
         to_col INT NOT NULL,
+        is_pawn_double_move TINYINT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
     )");
     
-    $stmt = $conn->prepare("INSERT INTO game_moves (game_code, player_id, from_row, from_col, to_row, to_col) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param('siiiii', $gameCode, $userId, $fromRow, $fromCol, $toRow, $toCol);
+    $stmt = $conn->prepare("INSERT INTO game_moves (game_code, player_id, from_row, from_col, to_row, to_col, is_pawn_double_move) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param('siiiiii', $gameCode, $userId, $fromRow, $fromCol, $toRow, $toCol, $isPawnDoubleMove);
     
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Move recorded']);
@@ -116,12 +118,13 @@ function getMoves($conn, $userId) {
         from_col INT NOT NULL,
         to_row INT NOT NULL,
         to_col INT NOT NULL,
+        is_pawn_double_move TINYINT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (player_id) REFERENCES users(id) ON DELETE CASCADE
     )");
     
     // Get moves from other players only, after lastMoveId
-    $stmt = $conn->prepare("SELECT id, player_id, from_row, from_col, to_row, to_col FROM game_moves WHERE game_code = ? AND id > ? AND player_id != ? ORDER BY created_at ASC");
+    $stmt = $conn->prepare("SELECT id, player_id, from_row, from_col, to_row, to_col, is_pawn_double_move FROM game_moves WHERE game_code = ? AND id > ? AND player_id != ? ORDER BY created_at ASC");
     $stmt->bind_param('sii', $gameCode, $lastMoveId, $userId);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -131,7 +134,8 @@ function getMoves($conn, $userId) {
         $moves[] = [
             'id' => $row['id'],
             'from' => [$row['from_row'], $row['from_col']],
-            'to' => [$row['to_row'], $row['to_col']]
+            'to' => [$row['to_row'], $row['to_col']],
+            'is_pawn_double_move' => (bool)$row['is_pawn_double_move']
         ];
     }
     

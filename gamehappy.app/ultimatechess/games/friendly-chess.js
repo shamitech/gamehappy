@@ -305,6 +305,9 @@ class FriendlyChessGame {
     sendMoveToOpponent(move) {
         // Send move to server for opponent to retrieve
         const [from, to] = move;
+        const fromPiece = this.chess.board[from[0]][from[1]];
+        const isPawnDoubleMove = fromPiece && fromPiece.type === 'pawn' && Math.abs(from[0] - to[0]) === 2;
+        
         fetch('/api/moves.php?action=send_move', {
             method: 'POST',
             credentials: 'include',
@@ -314,7 +317,8 @@ class FriendlyChessGame {
                 from_row: from[0],
                 from_col: from[1],
                 to_row: to[0],
-                to_col: to[1]
+                to_col: to[1],
+                is_pawn_double_move: isPawnDoubleMove ? 1 : 0
             })
         })
         .catch(err => console.error('Error sending move:', err));
@@ -338,6 +342,9 @@ class FriendlyChessGame {
             
             if (data.moves && data.moves.length > 0) {
                 data.moves.forEach(moveData => {
+                    // Sync pawn double move for en passant
+                    this.chess.setSyncedPawnDoubleMove(moveData);
+                    
                     // Apply opponent's move
                     const success = this.chess.makeMove(moveData.from, moveData.to);
                     if (success) {
