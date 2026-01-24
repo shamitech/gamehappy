@@ -246,6 +246,11 @@ class ChessBoard {
         const [toRow, toCol] = to;
         const piece = this.board[fromRow][fromCol];
         const color = piece.color;
+        const isEnPassantCapture = piece.type === 'pawn' && 
+                                  this.lastPawnDoubleMove && 
+                                  this.lastPawnDoubleMove.color !== color &&
+                                  this.lastPawnDoubleMove.to[0] === fromRow &&
+                                  this.lastPawnDoubleMove.to[1] === toCol;
 
         // Move piece
         this.board[toRow][toCol] = piece;
@@ -276,23 +281,20 @@ class ChessBoard {
         }
 
         // Handle en passant capture
-        if (piece.type === 'pawn' && Math.abs(fromCol - toCol) === 1 && toRow !== fromRow) {
-            // Pawn is moving diagonally
-            if (this.board[toRow][toCol]) {
-                // Normal diagonal capture
-            } else if (this.lastPawnDoubleMove && this.lastPawnDoubleMove.to[0] === fromRow && this.lastPawnDoubleMove.to[1] === toCol) {
-                // En passant capture - remove the pawn that just moved 2 squares
-                this.board[fromRow][toCol] = null;
-            }
+        if (isEnPassantCapture) {
+            // Remove the captured pawn
+            this.board[fromRow][toCol] = null;
+            // Clear en passant after capture
+            this.lastPawnDoubleMove = null;
+        } else if (piece.type !== 'pawn' || Math.abs(fromRow - toRow) !== 2) {
+            // If this is NOT a pawn double move, clear en passant
+            // This means: any move except a 2-square pawn advance clears en passant
+            this.lastPawnDoubleMove = null;
         }
 
         // Track pawn double moves for en passant
         if (piece.type === 'pawn' && Math.abs(fromRow - toRow) === 2) {
             this.lastPawnDoubleMove = { from, to, color, moveNumber: this.moveHistory.length };
-        } else {
-            // Clear en passant opportunity on any non-pawn-double move
-            // En passant is only valid for the immediate next move after a 2-square pawn advance
-            this.lastPawnDoubleMove = null;
         }
 
         this.moveHistory.push({ from, to, timestamp: Date.now() });
