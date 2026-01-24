@@ -334,9 +334,6 @@ class FriendlyChessGame {
             })
         })
         .catch(err => console.error('Error sending move:', err));
-        
-        // Reset move timer
-        this.lastMoveTime = Date.now();
     }
 
     checkForOpponentMoves() {
@@ -367,6 +364,8 @@ class FriendlyChessGame {
                     const success = this.chess.makeMove(moveData.from, moveData.to);
                     if (success) {
                         this.lastMoveId = moveData.id;
+                        // Update lastMoveTime when opponent moves - this resets the nudge timer
+                        this.lastMoveTime = Date.now();
                         this.renderBoard();
                         this.updateGameStatus();
                     } else {
