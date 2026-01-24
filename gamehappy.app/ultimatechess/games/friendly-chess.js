@@ -414,6 +414,7 @@ class FriendlyChessGame {
         
         const nudgeBtn = document.getElementById('nudge-button');
         nudgeBtn.disabled = true; // Disable button immediately after clicking
+        nudgeBtn.style.display = 'none'; // Hide the button
         
         // Track that we sent a nudge
         this.lastNudgeSentTime = Date.now();
@@ -520,8 +521,8 @@ class FriendlyChessGame {
                 clearInterval(this.nudgeTimeout);
                 this.nudgeResponded = true;
                 
-                // Reset nudge button on opponent's screen - treat opponent's response as their "move"
-                // This resets the 10-second counter on the opponent's screen
+                // Reset nudge button timer on both screens - opponent responded counts as their "move"
+                // This resets the 10-second counter so the button can reappear after 10 more seconds
                 this.lastMoveTime = Date.now();
             } else {
                 console.error('Failed to respond to nudge:', data.message);
