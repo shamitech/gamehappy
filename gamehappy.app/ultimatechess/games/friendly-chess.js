@@ -17,6 +17,7 @@ class FriendlyChessGame {
         this.gameActive = false;
         this.nudgeTimeout = null;
         this.nudgeCheckInterval = null;
+        this.nudgeButtonInterval = null;
         this.nudgeResponded = false;
         this.selectedSquare = null;
         this.validMoves = [];
@@ -191,8 +192,9 @@ class FriendlyChessGame {
         // Start polling for nudges every 1000ms
         this.nudgeCheckInterval = setInterval(() => this.checkForNudges(), 1000);
         
-        // Enable nudge button after 10 seconds (after first move)
-        setTimeout(() => this.updateNudgeButtonState(), 10000);
+        // Update nudge button state every 500ms (check if 10 seconds have passed and whose turn it is)
+        this.nudgeButtonInterval = setInterval(() => this.updateNudgeButtonState(), 500);
+
     }
 
     renderBoard() {
@@ -333,9 +335,9 @@ class FriendlyChessGame {
         })
         .catch(err => console.error('Error sending move:', err));
         
-        // Reset move timer and update nudge button state
+        // Reset move timer
         this.lastMoveTime = Date.now();
-        this.updateNudgeButtonState();
+    }
     }
 
     checkForOpponentMoves() {
@@ -505,6 +507,9 @@ class FriendlyChessGame {
     endGame(message, winner) {
         this.gameActive = false;
         clearInterval(this.moveCheckInterval);
+        clearInterval(this.nudgeCheckInterval);
+        clearInterval(this.nudgeButtonInterval);
+        clearInterval(this.nudgeTimeout);
         document.getElementById('result-title').textContent = message;
         document.getElementById('result-message').textContent = winner ? 
             `${winner.toUpperCase()} is victorious!` : 
