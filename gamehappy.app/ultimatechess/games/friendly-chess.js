@@ -388,7 +388,7 @@ class FriendlyChessGame {
         
         // Don't show button until you've moved
         if (!this.hasMoved) {
-            nudgeBtn.classList.add('hidden');
+            nudgeBtn.style.display = 'none';
             nudgeBtn.disabled = true;
             return;
         }
@@ -400,10 +400,10 @@ class FriendlyChessGame {
         const shouldShow = isOpponentsTurn && secondsSinceMyMove >= 10;
         
         if (shouldShow) {
-            nudgeBtn.classList.remove('hidden');
+            nudgeBtn.style.display = 'block';
             nudgeBtn.disabled = false;
         } else {
-            nudgeBtn.classList.add('hidden');
+            nudgeBtn.style.display = 'none';
             nudgeBtn.disabled = true;
         }
     }
