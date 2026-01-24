@@ -343,14 +343,22 @@ class FriendlyChessGame {
             if (data.moves && data.moves.length > 0) {
                 data.moves.forEach(moveData => {
                     // Sync pawn double move for en passant
-                    this.chess.setSyncedPawnDoubleMove(moveData);
+                    if (moveData.is_pawn_double_move) {
+                        this.chess.lastPawnDoubleMove = {
+                            from: moveData.from,
+                            to: moveData.to,
+                            color: this.chess.currentPlayer === 'white' ? 'black' : 'white'
+                        };
+                    }
                     
-                    // Apply opponent's move
+                    // Apply opponent's move - makeMove handles validation and currentPlayer toggle
                     const success = this.chess.makeMove(moveData.from, moveData.to);
                     if (success) {
                         this.lastMoveId = moveData.id;
                         this.renderBoard();
                         this.updateGameStatus();
+                    } else {
+                        console.error('Failed to apply opponent move:', moveData);
                     }
                 });
             }
