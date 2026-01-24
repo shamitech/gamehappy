@@ -16,9 +16,12 @@ class FriendlyChessGame {
         this.searching = false;
         this.gameActive = false;
         this.nudgeTimeout = null;
+        this.nudgeCheckInterval = null;
         this.nudgeResponded = false;
         this.selectedSquare = null;
         this.validMoves = [];
+        this.lastMoveTime = 0;
+        this.lastMoveId = 0;
 
         this.initializeWebSocket();
         this.setupEventListeners();
@@ -169,6 +172,7 @@ class FriendlyChessGame {
         this.chess.resetBoard();
         this.searching = false;
         this.lastMoveId = 0;
+        this.lastMoveTime = Date.now();
 
         // Update UI
         document.getElementById('search-status').classList.add('hidden');
@@ -183,6 +187,12 @@ class FriendlyChessGame {
         
         // Start polling for opponent moves every 500ms
         this.moveCheckInterval = setInterval(() => this.checkForOpponentMoves(), 500);
+        
+        // Start polling for nudges every 1000ms
+        this.nudgeCheckInterval = setInterval(() => this.checkForNudges(), 1000);
+        
+        // Enable nudge button after 10 seconds (after first move)
+        setTimeout(() => this.updateNudgeButtonState(), 10000);
     }
 
     renderBoard() {
@@ -323,8 +333,9 @@ class FriendlyChessGame {
         })
         .catch(err => console.error('Error sending move:', err));
         
-        // Reset nudge timer on successful move
-        this.resetNudgeTimer();
+        // Reset move timer and update nudge button state
+        this.lastMoveTime = Date.now();
+        this.updateNudgeButtonState();
     }
 
     checkForOpponentMoves() {
@@ -366,48 +377,102 @@ class FriendlyChessGame {
         .catch(err => console.error('Error checking moves:', err));
     }
 
-    nudgeOpponent() {
+    updateNudgeButtonState() {
         if (!this.gameActive) return;
-
-        // Show nudge alert on opponent's side (we're simulating this)
-        alert('Nudge sent! Opponent has 30 seconds to respond.');
-
-        // Set timeout for forfeit
-        this.startNudgeTimer();
+        
+        const secondsSinceMove = (Date.now() - this.lastMoveTime) / 1000;
+        const isPlayersTurn = this.chess.currentPlayer === this.playerColor;
+        const nudgeBtn = document.getElementById('nudge-button');
+        
+        // Enable nudge button if it's not your turn and 10+ seconds since last move
+        nudgeBtn.disabled = isPlayersTurn || secondsSinceMove < 10;
     }
 
-    startNudgeTimer() {
-        this.nudgeResponded = false;
-        let timeLeft = 30;
+    nudgeOpponent() {
+        if (!this.gameActive) return;
+        
+        fetch('/api/nudge.php?action=send_nudge', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                game_code: this.gameId
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Nudge sent!');
+            }
+        })
+        .catch(err => console.error('Error sending nudge:', err));
+    }
 
+    checkForNudges() {
+        if (!this.gameActive) return;
+        
+        fetch(`/api/nudge.php?action=check_nudge&game_code=${this.gameId}`, {
+            credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) return;
+            
+            if (data.has_nudge) {
+                if (data.forfeit) {
+                    // Opponent forfeited
+                    this.endGame(this.playerColor === 'white' ? 'White wins by forfeit!' : 'Black wins by forfeit!', this.playerColor);
+                } else {
+                    // Show nudge alert
+                    document.getElementById('nudge-alert').classList.remove('hidden');
+                    this.startNudgeTimer(data.nudge_id, data.seconds_remaining);
+                }
+            }
+        })
+        .catch(err => console.error('Error checking nudges:', err));
+    }
+
+    startNudgeTimer(nudgeId, initialSeconds) {
+        let timeLeft = initialSeconds || 15;
+        const countdownEl = document.getElementById('nudge-countdown');
+        
+        if (this.nudgeTimeout) clearInterval(this.nudgeTimeout);
+        
         this.nudgeTimeout = setInterval(() => {
             timeLeft--;
+            countdownEl.textContent = timeLeft;
+            
             if (timeLeft <= 0) {
                 clearInterval(this.nudgeTimeout);
                 if (!this.nudgeResponded) {
-                    this.opponentForfeit();
+                    this.endGame('You forfeited by not responding!', 'opponent');
                 }
             }
         }, 1000);
     }
 
-    resetNudgeTimer() {
-        if (this.nudgeTimeout) {
-            clearInterval(this.nudgeTimeout);
-            this.nudgeTimeout = null;
-        }
-        this.nudgeResponded = false;
-    }
-
     respondToNudge() {
-        this.nudgeResponded = true;
-        document.getElementById('nudge-alert').classList.add('hidden');
-        alert("I'm here! Keep playing.");
+        const nudgeAlert = document.getElementById('nudge-alert');
+        const nudgeId = nudgeAlert.dataset.nudgeId;
+        
+        fetch('/api/nudge.php?action=respond_nudge', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nudge_id: nudgeId
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                nudgeAlert.classList.add('hidden');
+                clearInterval(this.nudgeTimeout);
+                this.nudgeResponded = true;
+            }
+        })
+        .catch(err => console.error('Error responding to nudge:', err));
     }
-
-    opponentForfeit() {
-        this.gameActive = false;
-        this.endGame(this.playerColor + ' wins by forfeit!', this.playerColor);
     }
 
     updateGameStatus() {
