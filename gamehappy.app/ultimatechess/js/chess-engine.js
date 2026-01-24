@@ -108,8 +108,8 @@ class ChessBoard {
         if (Math.abs(fromCol - toCol) === 1 && toRow === fromRow + direction && !this.board[toRow][toCol]) {
             if (this.lastPawnDoubleMove && 
                 this.lastPawnDoubleMove.color !== color &&
-                this.lastPawnDoubleMove.to[0] === fromRow &&
-                this.lastPawnDoubleMove.to[1] === toCol) {
+                this.lastPawnDoubleMove.to[0] === fromRow &&  // Enemy pawn on same row as our pawn
+                this.lastPawnDoubleMove.to[1] === toCol) {    // Enemy pawn in the column we're capturing
                 return true;
             }
         }
