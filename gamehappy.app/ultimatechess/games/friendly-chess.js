@@ -473,7 +473,6 @@ class FriendlyChessGame {
         })
         .catch(err => console.error('Error responding to nudge:', err));
     }
-    }
 
     updateGameStatus() {
         const status = this.chess.getGameStatus();
