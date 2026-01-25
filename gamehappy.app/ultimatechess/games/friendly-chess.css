@@ -611,21 +611,27 @@
     body {
         padding: 0;
         margin: 0;
+        width: 100%;
         overflow-x: hidden;
     }
 
     .container {
         width: 100%;
-        max-width: 100%;
         padding: 0;
         margin: 0;
         overflow-x: hidden;
     }
 
-    header {
-        padding: 8px 4px;
+    .game-container {
+        padding: 8px;
         margin: 0;
-        margin-bottom: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    header {
+        padding: 8px 0;
+        margin: 0 0 8px 0;
     }
 
     header h1 {
@@ -637,27 +643,42 @@
         display: none;
     }
 
-    #chessboard {
-        grid-template-columns: repeat(8, 1fr);
-        grid-template-rows: repeat(8, 1fr);
-        padding: 0;
-        border: 1px solid #999;
-        width: 90vw;
-        max-width: 90vw;
-        aspect-ratio: 1;
+    .board-container {
+        width: 100%;
         margin: 0;
-        overflow: hidden;
+        padding: 0;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+    }
+
+    #chessboard {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 1;
+        border: 1px solid #999;
+        padding: 0;
+        margin: 0;
+        background: #888;
+    }
+
+    .square {
+        flex: 1 1 calc(12.5% - 0px);
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        box-sizing: border-box;
     }
 
     .piece-element {
-        font-size: 1rem;
-    }
-
-    .board-container {
-        margin: 0;
-        padding: 4px;
-        width: 100%;
-        box-sizing: border-box;
+        font-size: 1.5rem;
+        line-height: 1;
     }
 
     .game-header {
@@ -665,8 +686,7 @@
         grid-template-columns: 1fr 1fr;
         gap: 6px;
         margin-bottom: 8px;
-        padding: 8px 4px;
-        margin: 0;
+        padding: 0;
     }
 
     .player-section {
@@ -679,10 +699,12 @@
     .player-name {
         font-size: 0.75rem;
         font-weight: bold;
+        margin: 0;
     }
 
     .player-rating {
         font-size: 0.65rem;
+        margin: 0;
     }
 
     .game-info {
@@ -693,8 +715,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 6px;
-        padding: 8px 4px;
-        margin: 0;
+        padding: 0;
         margin-top: 8px;
     }
 
@@ -704,13 +725,8 @@
         border-radius: 4px;
     }
 
-    .game-container {
-        padding: 0;
-        margin: 0;
-    }
-
-    .square {
-        width: auto;
-        height: auto;
+    .btn-back {
+        margin-top: 8px;
+        width: 100%;
     }
 }
