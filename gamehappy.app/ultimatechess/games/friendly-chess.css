@@ -608,9 +608,174 @@
 }
 
 @media (max-width: 579px) {
+    html {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
+    body {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    .screen {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    #game-screen {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100%;
+        max-width: 100%;
+    }
+
     .game-container {
+        display: flex;
+        flex-direction: column;
         padding-left: 0;
         padding-right: 0;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        flex: 1;
+    }
+
+    .game-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 8px;
+        padding: 0 8px;
+        margin: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .board-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+        overflow: hidden;
+    }
+
+    #chessboard {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        width: calc(100vw - 0px);
+        max-width: calc(100vw - 0px);
+        aspect-ratio: 1;
+        border: 1px solid #999;
+        padding: 0;
+        margin: 0;
+        background: #888;
+    }
+
+    .square {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        box-sizing: border-box;
+    }
+
+    .piece-element {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .player-section {
+        padding: 6px;
+        font-size: 0.75rem;
+        background: white;
+        border-radius: 4px;
+    }
+
+    .player-name {
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .player-rating {
+        font-size: 0.65rem;
+        margin: 0;
+    }
+
+    .game-info {
+        display: none;
+    }
+
+    .game-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        padding: 0 8px;
+        margin: 0;
+        margin-top: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .btn {
+        padding: 8px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+    }
+
+    .btn-back {
+        margin-top: 8px;
+        margin-left: 0;
+        margin-right: 0;
+        width: calc(100vw - 0px);
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
+    header {
+        padding: 8px 8px;
+        margin: 0;
+    }
+
+    header h1 {
+        font-size: 1.2rem;
+        margin: 0;
+    }
+
+    header .tagline {
+        display: none;
     }
 }
 
