@@ -282,13 +282,16 @@ class FriendlyChessGame {
             this.validMoves = [];
         } else if (this.validMoves.some(move => move[0] === row && move[1] === col)) {
             // Valid move
+            console.log('Making move from', this.selectedSquare, 'to', [row, col]);
             const success = this.chess.makeMove(this.selectedSquare, [row, col]);
+            console.log('Move success:', success);
             if (success) {
                 // Save move before clearing selectedSquare
                 const move = [this.selectedSquare, [row, col]];
                 this.selectedSquare = null;
                 this.validMoves = [];
                 this.renderBoard();
+                console.log('Calling updateGameStatus after move');
                 this.updateGameStatus();
                 this.sendMoveToOpponent(move);
             }
