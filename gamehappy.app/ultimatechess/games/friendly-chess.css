@@ -311,6 +311,7 @@
                 linear-gradient(135deg, #b58863 0%, #a67c52 100%);
 }
 
+.game-controls {
     display: flex;
     gap: 10px;
     justify-content: center;
