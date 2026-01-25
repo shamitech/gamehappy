@@ -607,6 +607,13 @@
     }
 }
 
+@media (max-width: 579px) {
+    .game-container {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
 @media (max-width: 480px) {
     body {
         padding: 0;
