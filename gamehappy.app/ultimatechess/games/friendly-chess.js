@@ -226,6 +226,9 @@ class FriendlyChessGame {
         const colStep = this.playerColor === 'white' ? 1 : -1;
 
         for (let row = startRow; row !== endRow; row += rowStep) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'board-row';
+            
             for (let col = startCol; col !== endCol; col += colStep) {
                 const square = document.createElement('div');
                 const isLight = (row + col) % 2 === 0;
@@ -257,8 +260,10 @@ class FriendlyChessGame {
                 }
 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
-                boardElement.appendChild(square);
+                rowDiv.appendChild(square);
             }
+            
+            boardElement.appendChild(rowDiv);
         }
     }
 

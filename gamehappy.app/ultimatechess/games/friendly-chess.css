@@ -676,7 +676,6 @@
 
     .board-container {
         width: 100%;
-        max-width: 100%;
         margin: 0;
         padding: 0;
         box-sizing: border-box;
@@ -684,9 +683,8 @@
     }
 
     #chessboard {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        grid-template-rows: repeat(8, 1fr);
+        display: flex;
+        flex-direction: column;
         width: 100%;
         max-width: 100%;
         aspect-ratio: 1;
@@ -696,7 +694,18 @@
         background: #888;
     }
 
+    .board-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        flex: 1;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
     .square {
+        flex: 1;
         aspect-ratio: 1;
         display: flex;
         align-items: center;
@@ -821,7 +830,8 @@
     }
 
     #chessboard {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         grid-template-columns: repeat(8, 1fr);
         grid-template-rows: repeat(8, 1fr);
         width: 100%;
@@ -833,7 +843,18 @@
         background: #888;
     }
 
+    .board-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        flex: 1;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+
     .square {
+        flex: 1;
         aspect-ratio: 1;
         display: flex;
         align-items: center;
