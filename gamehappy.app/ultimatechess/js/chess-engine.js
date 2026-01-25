@@ -343,6 +343,7 @@ class ChessBoard {
     }
 
     hasLegalMoves(color) {
+        const legalMoves = [];
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const piece = this.board[row][col];
@@ -350,14 +351,21 @@ class ChessBoard {
                     for (let toRow = 0; toRow < 8; toRow++) {
                         for (let toCol = 0; toCol < 8; toCol++) {
                             if (this.isValidMove([row, col], [toRow, toCol], color)) {
-                                return true;
+                                legalMoves.push({
+                                    from: [row, col],
+                                    to: [toRow, toCol],
+                                    piece: piece.type
+                                });
                             }
                         }
                     }
                 }
             }
         }
-        return false;
+        if (legalMoves.length > 0) {
+            console.log(`${color} Legal Moves:`, legalMoves);
+        }
+        return legalMoves.length > 0;
     }
 
     findKing(color) {
