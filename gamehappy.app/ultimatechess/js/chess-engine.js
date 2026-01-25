@@ -60,7 +60,23 @@ class ChessBoard {
         const target = this.board[toRow][toCol];
         if (target && target.color === color) return false;
 
-        return this.validatePieceMove(piece, from, to);
+        // First check if the piece move itself is valid
+        if (!this.validatePieceMove(piece, from, to)) return false;
+        
+        // Now check if this move would leave the king in check
+        // Make the move temporarily
+        this.board[toRow][toCol] = piece;
+        this.board[fromRow][fromCol] = null;
+        
+        // Check if king is in check after this move
+        const kingInCheck = this.isInCheck(color);
+        
+        // Undo the move
+        this.board[fromRow][fromCol] = piece;
+        this.board[toRow][toCol] = target;
+        
+        // Move is only valid if king is NOT in check
+        return !kingInCheck;
     }
 
     validatePieceMove(piece, from, to) {
