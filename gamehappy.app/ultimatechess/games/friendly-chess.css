@@ -653,8 +653,9 @@
     }
 
     #chessboard {
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(8, 1fr);
         width: 100%;
         max-width: 100%;
         aspect-ratio: 1;
@@ -665,7 +666,6 @@
     }
 
     .square {
-        flex: 1 1 calc(12.5% - 0px);
         aspect-ratio: 1;
         display: flex;
         align-items: center;
