@@ -532,97 +532,157 @@
 
     .board-container {
         margin: 15px 0;
+        padding: 0 10px;
     }
 
     .game-header {
         grid-template-columns: 1fr;
         margin-bottom: 20px;
         padding-bottom: 15px;
+        padding: 0 10px;
     }
 
     .game-controls {
         gap: 8px;
+        padding: 0 10px;
     }
 
     .btn {
-        padding: 8px 12px;
-        font-size: 0.9rem;
+        padding: 10px 14px;
+        font-size: 0.95rem;
+    }
+
+    .container {
+        padding: 10px;
     }
 }
 
 @media (max-width: 480px) {
+    /* Ultra-compact mobile board */
     #chessboard {
-        grid-template-columns: repeat(8, 35px);
-        grid-template-rows: repeat(8, 35px);
-        padding: 12px;
-        border: 6px solid #2a2a2a;
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+        padding: 10px;
+        border: 5px solid #2a2a2a;
         box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+        margin: 0 auto;
     }
 
     .piece-element {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
+    }
+
+    .piece-element.white-piece,
+    .piece-element.black-piece {
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4)) !important;
     }
 
     .board-container {
         margin: 10px 0;
+        padding: 0;
+        overflow-x: auto;
     }
 
     .game-header {
-        gap: 10px;
+        gap: 12px;
         margin-bottom: 15px;
+        padding: 0 8px;
+    }
+
+    .player-section {
+        padding: 12px;
+        border-radius: 6px;
     }
 
     .player-name {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        font-weight: bold;
     }
 
     .player-rating {
         font-size: 0.8rem;
     }
 
+    .game-info {
+        padding: 0 8px;
+    }
+
     .game-info h2 {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
+        margin: 10px 0 5px 0;
     }
 
     .game-id {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .game-controls {
-        gap: 6px;
-        margin-top: 15px;
+        gap: 5px;
+        margin-top: 12px;
+        padding: 0 8px;
+        flex-wrap: wrap;
     }
 
     .btn {
-        padding: 6px 10px;
-        font-size: 0.8rem;
-        flex: 1;
-        min-width: auto;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        flex: 1 1 calc(50% - 5px);
+        min-width: 100px;
+        border-radius: 6px;
     }
 
     .btn-back {
-        padding: 8px 15px;
-        font-size: 0.85rem;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        width: auto;
+        display: inline-block;
+    }
+
+    header {
+        padding: 15px 0;
+        margin-bottom: 10px;
     }
 
     header h1 {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
+        margin-bottom: 3px;
     }
 
     header .tagline {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .end-game-container {
-        margin: 30px 10px;
-        padding: 25px 15px;
+        margin: 20px 8px;
+        padding: 20px 12px;
+        border-radius: 12px;
     }
 
     .game-result h1 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
+        margin-bottom: 10px;
     }
 
     .game-result p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .nudge-alert {
+        max-width: 90vw;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px;
+        font-size: 0.9rem;
+    }
+
+    .nudge-message p {
         font-size: 1rem;
+    }
+
+    .container {
+        padding: 8px;
+        max-width: 100%;
     }
 }
