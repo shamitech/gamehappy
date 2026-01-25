@@ -180,11 +180,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 30px 0;
+    margin: 20px 0;
     perspective: 1200px;
     width: 100%;
-    max-width: 100vw;
-    overflow: hidden;
+    max-width: 100%;
+    padding: 0;
 }
 
 #chessboard {
@@ -203,7 +203,7 @@
     position: relative;
     background-clip: padding-box;
     width: fit-content;
-    max-width: calc(100vw - 20px);
+    max-width: 95vw;
     box-sizing: border-box;
 }
 
@@ -567,32 +567,33 @@
 /* Mobile Responsive Design */
 @media (max-width: 768px) {
     #chessboard {
-        grid-template-columns: repeat(8, 45px);
-        grid-template-rows: repeat(8, 45px);
-        padding: 15px;
-        border: 8px solid #2a2a2a;
-        max-width: calc(100vw - 30px);
+        grid-template-columns: repeat(8, 54px);
+        grid-template-rows: repeat(8, 54px);
+        padding: 12px;
+        border: 6px solid #2a2a2a;
+        max-width: 95vw;
     }
 
     .piece-element {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
 
     .board-container {
-        margin: 15px 0;
-        padding: 0 10px;
+        margin: 12px auto;
+        padding: 0 5px;
+        width: 100%;
     }
 
     .game-header {
         grid-template-columns: 1fr;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        padding: 0 10px;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        padding: 0 8px;
     }
 
     .game-controls {
         gap: 8px;
-        padding: 0 10px;
+        padding: 0 8px;
     }
 
     .btn {
@@ -601,23 +602,23 @@
     }
 
     .container {
-        padding: 10px;
+        padding: 8px;
     }
 }
 
 @media (max-width: 480px) {
-    /* Ultra-compact mobile board - fits exactly in viewport */
+    /* Mobile board takes almost full width */
     #chessboard {
-        grid-template-columns: repeat(8, 38px);
-        grid-template-rows: repeat(8, 38px);
+        grid-template-columns: repeat(8, 50px);
+        grid-template-rows: repeat(8, 50px);
         padding: 10px;
         border: 4px solid #2a2a2a;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-        max-width: calc(100vw - 20px);
+        max-width: 95vw;
     }
 
     .piece-element {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
 
     .piece-element.white-piece,
@@ -626,112 +627,112 @@
     }
 
     .board-container {
-        margin: 10px auto;
-        padding: 0 5px;
+        margin: 8px auto;
+        padding: 0;
         width: 100%;
         max-width: 100%;
     }
 
     .game-header {
-        gap: 12px;
-        margin-bottom: 15px;
-        padding: 0 8px;
+        gap: 10px;
+        margin-bottom: 12px;
+        padding: 0 6px;
     }
 
     .player-section {
-        padding: 12px;
+        padding: 10px;
         border-radius: 6px;
     }
 
     .player-name {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-weight: bold;
     }
 
     .player-rating {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .game-info {
-        padding: 0 8px;
+        padding: 0 6px;
     }
 
     .game-info h2 {
-        font-size: 1.1rem;
-        margin: 10px 0 5px 0;
+        font-size: 1rem;
+        margin: 8px 0 3px 0;
     }
 
     .game-id {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     .game-controls {
         gap: 5px;
-        margin-top: 12px;
-        padding: 0 8px;
+        margin-top: 10px;
+        padding: 0 6px;
         flex-wrap: wrap;
     }
 
     .btn {
-        padding: 8px 12px;
-        font-size: 0.85rem;
-        flex: 1 1 calc(50% - 5px);
-        min-width: 100px;
+        padding: 8px 10px;
+        font-size: 0.8rem;
+        flex: 1 1 calc(50% - 3px);
+        min-width: 80px;
         border-radius: 6px;
     }
 
     .btn-back {
         padding: 8px 12px;
         font-size: 0.8rem;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         width: auto;
         display: inline-block;
     }
 
     header {
-        padding: 15px 0;
-        margin-bottom: 10px;
+        padding: 12px 0;
+        margin-bottom: 8px;
     }
 
     header h1 {
-        font-size: 1.3rem;
-        margin-bottom: 3px;
+        font-size: 1.2rem;
+        margin-bottom: 2px;
     }
 
     header .tagline {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 
     .end-game-container {
-        margin: 20px 8px;
-        padding: 20px 12px;
+        margin: 15px 6px;
+        padding: 18px 10px;
         border-radius: 12px;
     }
 
     .game-result h1 {
-        font-size: 1.6rem;
-        margin-bottom: 10px;
+        font-size: 1.5rem;
+        margin-bottom: 8px;
     }
 
     .game-result p {
-        font-size: 0.95rem;
-        line-height: 1.5;
+        font-size: 0.9rem;
+        line-height: 1.4;
     }
 
     .nudge-alert {
-        max-width: 90vw;
+        max-width: 92vw;
         left: 50%;
         transform: translateX(-50%);
-        padding: 15px;
-        font-size: 0.9rem;
+        padding: 12px;
+        font-size: 0.85rem;
     }
 
     .nudge-message p {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
 
     .container {
-        padding: 5px;
+        padding: 4px;
         max-width: 100%;
         overflow-x: hidden;
     }
