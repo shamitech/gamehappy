@@ -595,9 +595,13 @@ class FriendlyChessGame {
         clearInterval(this.nudgeButtonInterval);
         clearInterval(this.nudgeTimeout);
         document.getElementById('result-title').textContent = message;
-        document.getElementById('result-message').textContent = winner ? 
-            `${winner.toUpperCase()} is victorious!` : 
-            'Game ended in a draw';
+        
+        let resultMessage = 'Game ended in a draw';
+        if (winner) {
+            const winnerName = winner === 'white' ? 'White' : 'Black';
+            resultMessage = `${winnerName} is victorious!`;
+        }
+        document.getElementById('result-message').textContent = resultMessage;
         this.showEndGameScreen();
     }
 
