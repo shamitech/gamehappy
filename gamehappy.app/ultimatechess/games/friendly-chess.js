@@ -549,6 +549,16 @@ class FriendlyChessGame {
     }
 
     updateGameStatus() {
+        const whiteCheckmate = this.chess.isCheckmate('white');
+        const blackCheckmate = this.chess.isCheckmate('black');
+        const whiteInCheck = this.chess.isInCheck('white');
+        const blackInCheck = this.chess.isInCheck('black');
+        const whiteHasLegalMoves = this.chess.hasLegalMoves('white');
+        const blackHasLegalMoves = this.chess.hasLegalMoves('black');
+        
+        console.log('White - In Check:', whiteInCheck, 'Has Legal Moves:', whiteHasLegalMoves, 'Checkmate:', whiteCheckmate);
+        console.log('Black - In Check:', blackInCheck, 'Has Legal Moves:', blackHasLegalMoves, 'Checkmate:', blackCheckmate);
+        
         const status = this.chess.getGameStatus();
         console.log('Game Status:', status, 'Current Player:', this.chess.currentPlayer);
         if (status.status !== 'playing') {
