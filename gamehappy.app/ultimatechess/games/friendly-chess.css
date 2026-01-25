@@ -270,14 +270,20 @@
     0% {
         transform: translate(0, 0) scale(1);
     }
-    20% {
-        transform: translate(calc(var(--move-x) * 0.2), calc(var(--move-y) * 0.2 - 30px)) scale(0.95);
+    10% {
+        transform: translate(calc(var(--move-x) * 0.1), calc(var(--move-y) * 0.1 - 20px)) scale(0.98);
+    }
+    25% {
+        transform: translate(calc(var(--move-x) * 0.25), calc(var(--move-y) * 0.25 - 35px)) scale(0.96);
     }
     50% {
-        transform: translate(calc(var(--move-x) * 0.5), calc(var(--move-y) * 0.5 - 45px)) scale(0.9);
+        transform: translate(calc(var(--move-x) * 0.5), calc(var(--move-y) * 0.5 - 40px)) scale(0.95);
     }
-    80% {
-        transform: translate(calc(var(--move-x) * 0.8), calc(var(--move-y) * 0.8 - 20px)) scale(0.95);
+    75% {
+        transform: translate(calc(var(--move-x) * 0.75), calc(var(--move-y) * 0.75 - 25px)) scale(0.97);
+    }
+    90% {
+        transform: translate(calc(var(--move-x) * 0.9), calc(var(--move-y) * 0.9 - 8px)) scale(0.99);
     }
     100% {
         transform: translate(var(--move-x), var(--move-y)) scale(1);
@@ -303,7 +309,7 @@
 }
 
 .piece-element.knight-jump {
-    animation: knightArc 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: knightArc 0.6s ease-in-out forwards;
     z-index: 100;
     position: relative;
 }
