@@ -521,3 +521,113 @@
 .hidden {
     display: none !important;
 }
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    #chessboard {
+        grid-template-columns: repeat(8, 45px);
+        grid-template-rows: repeat(8, 45px);
+        padding: 15px;
+        border: 8px solid #2a2a2a;
+    }
+
+    .piece-element {
+        font-size: 2rem;
+    }
+
+    .board-container {
+        margin: 15px 0;
+    }
+
+    .game-header {
+        grid-template-columns: 1fr;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+    }
+
+    .game-controls {
+        gap: 8px;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #chessboard {
+        grid-template-columns: repeat(8, 35px);
+        grid-template-rows: repeat(8, 35px);
+        padding: 12px;
+        border: 6px solid #2a2a2a;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .piece-element {
+        font-size: 1.6rem;
+    }
+
+    .board-container {
+        margin: 10px 0;
+    }
+
+    .game-header {
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .player-name {
+        font-size: 0.9rem;
+    }
+
+    .player-rating {
+        font-size: 0.8rem;
+    }
+
+    .game-info h2 {
+        font-size: 1.2rem;
+    }
+
+    .game-id {
+        font-size: 0.8rem;
+    }
+
+    .game-controls {
+        gap: 6px;
+        margin-top: 15px;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        flex: 1;
+        min-width: auto;
+    }
+
+    .btn-back {
+        padding: 8px 15px;
+        font-size: 0.85rem;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    header .tagline {
+        font-size: 0.9rem;
+    }
+
+    .end-game-container {
+        margin: 30px 10px;
+        padding: 25px 15px;
+    }
+
+    .game-result h1 {
+        font-size: 1.8rem;
+    }
+
+    .game-result p {
+        font-size: 1rem;
+    }
+}
