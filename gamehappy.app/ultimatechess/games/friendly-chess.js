@@ -214,9 +214,6 @@ class FriendlyChessGame {
             'black_queen': '♛', 'black_king': '♚', 'black_pawn': '♟'
         };
 
-        // Board orientation: 
-        // White player: row 0 at top (black pieces), row 7 at bottom (white pieces)
-        // Black player: row 7 at top (white pieces), row 0 at bottom (black pieces)
         const startRow = this.playerColor === 'white' ? 0 : 7;
         const endRow = this.playerColor === 'white' ? 8 : -1;
         const rowStep = this.playerColor === 'white' ? 1 : -1;
@@ -226,9 +223,6 @@ class FriendlyChessGame {
         const colStep = this.playerColor === 'white' ? 1 : -1;
 
         for (let row = startRow; row !== endRow; row += rowStep) {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'board-row';
-            
             for (let col = startCol; col !== endCol; col += colStep) {
                 const square = document.createElement('div');
                 const isLight = (row + col) % 2 === 0;
@@ -236,12 +230,10 @@ class FriendlyChessGame {
                 square.dataset.row = row;
                 square.dataset.col = col;
 
-                // Check if this is the selected square
                 if (this.selectedSquare && this.selectedSquare[0] === row && this.selectedSquare[1] === col) {
                     square.classList.add('selected');
                 }
 
-                // Check if this is a valid move
                 if (this.validMoves.some(move => move[0] === row && move[1] === col)) {
                     square.classList.add('valid-move');
                 }
@@ -251,19 +243,15 @@ class FriendlyChessGame {
                     const key = `${piece.color}_${piece.type}`;
                     const pieceChar = pieceMap[key] || '';
                     
-                    // Create a piece element instead of just text
                     const pieceEl = document.createElement('div');
-                    pieceEl.className = `piece-element ${piece.color === 'white' ? 'white-piece' : 'black-piece'}`;
+                    pieceEl.className = `piece ${piece.color === 'white' ? 'white' : 'black'}`;
                     pieceEl.textContent = pieceChar;
-                    pieceEl.dataset.piece = piece.type;
                     square.appendChild(pieceEl);
                 }
 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
-                rowDiv.appendChild(square);
+                boardElement.appendChild(square);
             }
-            
-            boardElement.appendChild(rowDiv);
         }
     }
 
