@@ -207,11 +207,14 @@ class FriendlyChessGame {
         boardElement.innerHTML = '';
 
         const board = this.chess.getBoard();
-        const pieceMap = {
-            'white_rook': '♖', 'white_knight': '♘', 'white_bishop': '♗',
-            'white_queen': '♕', 'white_king': '♔', 'white_pawn': '♙',
-            'black_rook': '♜', 'black_knight': '♞', 'black_bishop': '♝',
-            'black_queen': '♛', 'black_king': '♚', 'black_pawn': '♟'
+        
+        const pieceSVGs = {
+            'rook': '<svg viewBox="0 0 100 100"><path d="M20,80 L20,30 L30,30 L30,20 L35,20 L35,30 L45,30 L45,15 L55,15 L55,30 L65,30 L65,20 L70,20 L70,30 L80,30 L80,80 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>',
+            'knight': '<svg viewBox="0 0 100 100"><path d="M30,80 L30,50 L35,45 L40,50 L45,40 L50,35 L55,40 L60,50 L65,45 L70,50 L70,80 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>',
+            'bishop': '<svg viewBox="0 0 100 100"><circle cx="50" cy="25" r="8" fill="currentColor"/><path d="M50,33 L40,50 L45,60 L55,60 L60,50 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/><path d="M40,60 L60,60 L60,80 L40,80 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>',
+            'queen': '<svg viewBox="0 0 100 100"><circle cx="50" cy="20" r="6" fill="currentColor"/><circle cx="35" cy="28" r="4" fill="currentColor"/><circle cx="65" cy="28" r="4" fill="currentColor"/><path d="M30,35 L35,50 L40,45 L50,55 L60,45 L65,50 L70,35 L70,80 L30,80 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>',
+            'king': '<svg viewBox="0 0 100 100"><rect x="48" y="15" width="4" height="12" fill="currentColor"/><circle cx="50" cy="20" r="5" fill="currentColor"/><path d="M35,32 L40,40 L45,50 L55,50 L60,40 L65,32 L65,80 L35,80 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>',
+            'pawn': '<svg viewBox="0 0 100 100"><circle cx="50" cy="25" r="7" fill="currentColor"/><path d="M45,32 L45,50 L40,60 L60,60 L55,50 L55,32 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/><path d="M40,60 L60,60 L60,80 L40,80 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/></svg>'
         };
 
         const startRow = this.playerColor === 'white' ? 0 : 7;
@@ -240,13 +243,10 @@ class FriendlyChessGame {
 
                 const piece = board[row][col];
                 if (piece) {
-                    const key = `${piece.color}_${piece.type}`;
-                    const pieceChar = pieceMap[key] || '';
-                    
-                    const pieceEl = document.createElement('div');
-                    pieceEl.className = `piece ${piece.color === 'white' ? 'white' : 'black'}`;
-                    pieceEl.textContent = pieceChar;
-                    square.appendChild(pieceEl);
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.className = `piece ${piece.color === 'white' ? 'white' : 'black'}`;
+                    pieceDiv.innerHTML = pieceSVGs[piece.type];
+                    square.appendChild(pieceDiv);
                 }
 
                 square.addEventListener('click', () => this.handleSquareClick(row, col));

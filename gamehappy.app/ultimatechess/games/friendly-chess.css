@@ -117,39 +117,32 @@
 
 /* Piece */
 .piece {
-    font-size: 8vw;
-    line-height: 0.85;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 900;
-    letter-spacing: -2px;
-    -webkit-text-fill-color: inherit;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -webkit-text-stroke: 0.5px currentColor;
 }
 
 .piece.white {
     color: #ffffff;
-    -webkit-text-fill-color: #ffffff;
-    text-shadow: 
-        -1px -1px 1px rgba(0,0,0,0.3),
-        1px -1px 1px rgba(0,0,0,0.3),
-        -1px 1px 1px rgba(0,0,0,0.3),
-        1px 1px 1px rgba(0,0,0,0.3);
+    filter: drop-shadow(-1px -1px 1px rgba(0,0,0,0.4))
+            drop-shadow(1px -1px 1px rgba(0,0,0,0.4))
+            drop-shadow(-1px 1px 1px rgba(0,0,0,0.4))
+            drop-shadow(1px 1px 1px rgba(0,0,0,0.4));
 }
 
 .piece.black {
     color: #000000;
-    -webkit-text-fill-color: #000000;
-    text-shadow: 
-        -1px -1px 1px rgba(255,255,255,0.2),
-        1px -1px 1px rgba(255,255,255,0.2),
-        -1px 1px 1px rgba(255,255,255,0.2),
-        1px 1px 1px rgba(255,255,255,0.2);
+    filter: drop-shadow(-1px -1px 1px rgba(255,255,255,0.3))
+            drop-shadow(1px -1px 1px rgba(255,255,255,0.3))
+            drop-shadow(-1px 1px 1px rgba(255,255,255,0.3))
+            drop-shadow(1px 1px 1px rgba(255,255,255,0.3));
+}
+
+.piece svg {
+    width: 85%;
+    height: 85%;
 }
 
 /* Game Controls */
