@@ -126,32 +126,27 @@
     justify-content: center;
     font-weight: 900;
     letter-spacing: -2px;
+    -webkit-text-fill-color: inherit;
 }
 
 .piece.white {
     color: #ffffff;
+    -webkit-text-fill-color: #ffffff;
     text-shadow: 
-        -1.5px -1.5px 0 #333,
-        1.5px -1.5px 0 #333,
-        -1.5px 1.5px 0 #333,
-        1.5px 1.5px 0 #333,
-        0 -2px 2px #333,
-        0 2px 2px #333,
-        -2px 0 2px #333,
-        2px 0 2px #333;
+        -1px -1px 1px rgba(0,0,0,0.3),
+        1px -1px 1px rgba(0,0,0,0.3),
+        -1px 1px 1px rgba(0,0,0,0.3),
+        1px 1px 1px rgba(0,0,0,0.3);
 }
 
 .piece.black {
     color: #000000;
+    -webkit-text-fill-color: #000000;
     text-shadow: 
-        -1.5px -1.5px 0 #fff,
-        1.5px -1.5px 0 #fff,
-        -1.5px 1.5px 0 #fff,
-        1.5px 1.5px 0 #fff,
-        0 -2px 2px #fff,
-        0 2px 2px #fff,
-        -2px 0 2px #fff,
-        2px 0 2px #fff;
+        -1px -1px 1px rgba(255,255,255,0.2),
+        1px -1px 1px rgba(255,255,255,0.2),
+        -1px 1px 1px rgba(255,255,255,0.2),
+        1px 1px 1px rgba(255,255,255,0.2);
 }
 
 /* Game Controls */
