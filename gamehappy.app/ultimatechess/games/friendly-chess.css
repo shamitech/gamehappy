@@ -117,15 +117,15 @@
 
 /* Piece */
 .piece {
-    font-size: 5.5vw;
-    line-height: 0.9;
+    font-size: 8vw;
+    line-height: 0.85;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 900;
-    letter-spacing: -1px;
+    letter-spacing: -2px;
 }
 
 .piece.white {
@@ -270,7 +270,7 @@
     }
 
     .piece {
-        font-size: 4.5vw;
+        font-size: 6vw;
     }
 
     .game-controls {
