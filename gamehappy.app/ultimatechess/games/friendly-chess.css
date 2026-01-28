@@ -117,23 +117,43 @@
 
 /* Piece */
 .piece {
-    font-size: 3vw;
-    line-height: 1;
+    font-size: 5.5vw;
+    line-height: 0.9;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 900;
+    letter-spacing: -1px;
 }
 
 .piece.white {
     color: #fff;
-    text-shadow: 1px 1px 2px #000;
+    text-shadow: 
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000,
+        -2px 0 0 #000,
+        2px 0 0 #000,
+        0 -2px 0 #000,
+        0 2px 0 #000,
+        0 0 8px rgba(0,0,0,0.5);
 }
 
 .piece.black {
     color: #222;
-    text-shadow: 1px 1px 2px #fff;
+    text-shadow: 
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff,
+        -2px 0 0 #fff,
+        2px 0 0 #fff,
+        0 -2px 0 #fff,
+        0 2px 0 #fff,
+        0 0 6px rgba(255,255,255,0.4);
 }
 
 /* Game Controls */
@@ -250,7 +270,7 @@
     }
 
     .piece {
-        font-size: 2.2vw;
+        font-size: 4.5vw;
     }
 
     .game-controls {
