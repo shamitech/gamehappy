@@ -1,4 +1,5 @@
 -- Open World Game Database Schema
+-- Phase 1 Admin System Tables
 
 -- Worlds (Admin-created top-level worlds/areas)
 CREATE TABLE IF NOT EXISTS ow_worlds (
