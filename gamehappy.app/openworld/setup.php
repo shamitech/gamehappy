@@ -80,17 +80,16 @@ foreach ($lines as $line) {
         
         // Only execute non-empty, non-DROP statements
         if (!empty($statement) && strpos(strtoupper($statement), 'DROP') !== 0) {
-            // Suppress errors and execute (they might be harmless duplicates)
-            if (@$db->query($statement)) {
-                $statement_count++;
-            } else {
-                // Log actual errors only if not a duplicate/exists error
-                $error = $db->error;
+            try {
+                if ($db->query($statement)) {
+                    $statement_count++;
+                }
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                // Ignore duplicate/exists errors - they're OK
                 if (strpos($error, 'already exists') === false && 
-                    strpos($error, 'Duplicate') === false &&
-                    strpos($error, 'Duplicate entry') === false &&
-                    strpos($error, 'Duplicate key name') === false) {
-                    log_message("  ⚠️  SQL Error: " . $error . "\n");
+                    strpos($error, 'Duplicate') === false) {
+                    log_message("  ⚠️  SQL Warning: " . $error . "\n");
                 }
             }
         }
