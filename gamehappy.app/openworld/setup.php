@@ -55,26 +55,50 @@ if (!$schema) {
     exit(1);
 }
 
-// Split by semicolons and execute each statement
-$statements = array_filter(array_map('trim', explode(';', $schema)));
+// Parse and execute SQL statements properly
+$lines = explode("\n", $schema);
+$current_statement = '';
 $created = 0;
 $errors = [];
+$statement_count = 0;
 
-foreach ($statements as $statement) {
-    if (empty($statement)) continue;
-    if (strpos($statement, '--') === 0) continue; // Skip comments
+foreach ($lines as $line) {
+    $trimmed = trim($line);
     
-    // Skip DROP statements for now
-    if (strpos(strtoupper($statement), 'DROP') === 0) continue;
+    // Skip empty lines and comments
+    if (empty($trimmed) || strpos($trimmed, '--') === 0) {
+        continue;
+    }
     
-    if (!$db->query($statement)) {
-        // Check if it's a "table already exists" error (that's OK)
-        if (strpos($db->error, 'already exists') === false && strpos($db->error, 'Duplicate') === false) {
-            $errors[] = $db->error;
+    // Add line to current statement
+    $current_statement .= ' ' . $line;
+    
+    // Check if statement is complete (ends with semicolon)
+    if (substr(rtrim($trimmed), -1) === ';') {
+        // Remove the semicolon and trim
+        $statement = trim(substr($current_statement, 0, -1));
+        
+        if (!empty($statement) && strpos(strtoupper($statement), 'DROP') !== 0) {
+            if ($db->query($statement)) {
+                $statement_count++;
+            } else {
+                // Check if it's a "table already exists" error (that's OK)
+                if (strpos($db->error, 'already exists') === false && 
+                    strpos($db->error, 'Duplicate') === false &&
+                    strpos($db->error, 'Duplicate entry') === false) {
+                    log_message("  ❌ Error: " . $db->error);
+                    log_message("     Statement: " . substr($statement, 0, 80) . "...\n");
+                    $errors[] = $db->error;
+                }
+            }
         }
+        
+        // Reset for next statement
+        $current_statement = '';
     }
 }
 
+log_message("  ✓ Executed $statement_count SQL statements\n");
 log_message("✅ Database tables created/verified\n");
 
 // Step 3: Verify tables exist
