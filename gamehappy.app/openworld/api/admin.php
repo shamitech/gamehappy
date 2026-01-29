@@ -167,7 +167,8 @@ function createPlace($pdo, $username) {
 }
 
 function getPlaces($pdo) {
-    $worldId = $_GET['world_id'] ?? null;
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $worldId = $json_data['world_id'] ?? $_GET['world_id'] ?? null;
     
     if (!$worldId) {
         throw new Exception('World ID required');
@@ -290,7 +291,8 @@ function addMechanic($pdo) {
 }
 
 function getObjects($pdo) {
-    $placeId = $_GET['place_id'] ?? null;
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $placeId = $json_data['place_id'] ?? $_GET['place_id'] ?? null;
     
     if (!$placeId) {
         throw new Exception('Place ID required');
