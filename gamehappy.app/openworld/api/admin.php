@@ -99,18 +99,25 @@ function createWorld($pdo, $username) {
             'message' => 'World created successfully'
         ]);
     }
+    exit;
 }
 
 function getWorlds($pdo) {
-    $stmt = $pdo->prepare("
-        SELECT id, name, description, created_at, is_public,
-               (SELECT COUNT(*) FROM ow_places WHERE world_id = ow_worlds.id) as place_count
-        FROM ow_worlds
-        ORDER BY created_at DESC
-    ");
-    $stmt->execute();
-    $worlds = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo json_encode(['success' => true, 'worlds' => $worlds]);
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, name, description, created_at, is_public,
+                   (SELECT COUNT(*) FROM ow_places WHERE world_id = ow_worlds.id) as place_count
+            FROM ow_worlds
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute();
+        $worlds = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'worlds' => $worlds]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    }
+    exit;
 }
 
 function createPlace($pdo, $username) {
@@ -139,6 +146,7 @@ function createPlace($pdo, $username) {
             'message' => 'Place created successfully'
         ]);
     }
+    exit;
 }
 
 function getPlaces($pdo) {
@@ -158,6 +166,7 @@ function getPlaces($pdo) {
     $stmt->execute([$worldId]);
     $places = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['success' => true, 'places' => $places]);
+    exit;
 }
 
 function linkPlaces($pdo) {
@@ -201,6 +210,7 @@ function linkPlaces($pdo) {
             'message' => 'Places linked successfully'
         ]);
     }
+    exit;
 }
 
 function createObject($pdo, $username) {
@@ -229,6 +239,7 @@ function createObject($pdo, $username) {
             'message' => 'Object created successfully'
         ]);
     }
+    exit;
 }
 
 function addMechanic($pdo) {
@@ -258,7 +269,9 @@ function addMechanic($pdo) {
             'message' => 'Mechanic added successfully'
         ]);
     }
+    exit;
 }
+
 function getObjects($pdo) {
     $placeId = $_GET['place_id'] ?? null;
     
@@ -276,4 +289,5 @@ function getObjects($pdo) {
     $stmt->execute([$placeId]);
     $objects = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['success' => true, 'objects' => $objects]);
+    exit;
 }
