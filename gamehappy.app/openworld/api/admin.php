@@ -13,8 +13,8 @@ ini_set('display_errors', 0);
 
 // Get database connection
 $db_host = 'localhost';
-$db_user = 'root';
-$db_pass = '';
+$db_user = 'gamehappy';
+$db_pass = 'GameHappy2026';
 $db_name = 'gamehappy';
 
 try {
