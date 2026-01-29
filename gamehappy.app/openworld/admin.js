@@ -22,19 +22,22 @@ function checkAuth() {
         .then(data => {
             if (data.success) {
                 loggedIn = true;
-                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('login-screen').classList.remove('visible');
                 document.getElementById('dashboard').style.display = 'block';
                 loadWorlds();
             } else {
                 showLoginScreen();
             }
         })
-        .catch(err => showLoginScreen());
+        .catch(err => {
+            console.error('Auth check failed:', err);
+            showLoginScreen();
+        });
 }
 
 function showLoginScreen() {
     loggedIn = false;
-    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('login-screen').classList.add('visible');
     document.getElementById('dashboard').style.display = 'none';
 }
 
