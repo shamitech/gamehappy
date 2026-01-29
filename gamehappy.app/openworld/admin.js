@@ -108,15 +108,23 @@ async function loadWorlds() {
             body: JSON.stringify({ action: 'get_worlds' })
         });
 
+        if (!response.ok) {
+            console.error('API error:', response.status, response.statusText);
+            showMessage('API Error: ' + response.status, 'error');
+            return;
+        }
+
         const data = await response.json();
         if (data.success) {
-            worlds = data.worlds;
+            worlds = data.worlds || [];
             renderWorldsList();
             loadWorldsForPlaces();
         } else {
-            showMessage('Error loading worlds', 'error');
+            console.error('API returned false:', data);
+            showMessage('Error: ' + (data.message || 'Unknown error'), 'error');
         }
     } catch (error) {
+        console.error('Load worlds error:', error);
         showMessage('Connection error: ' + error.message, 'error');
     }
 }
