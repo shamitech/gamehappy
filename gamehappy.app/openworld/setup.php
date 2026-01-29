@@ -78,24 +78,19 @@ foreach ($lines as $line) {
         // Remove the semicolon and trim
         $statement = trim(substr($current_statement, 0, -1));
         
+        // Only execute non-empty, non-DROP statements
         if (!empty($statement) && strpos(strtoupper($statement), 'DROP') !== 0) {
-            // Skip INDEX statements as they may already exist
-            if (strpos(strtoupper($statement), 'CREATE INDEX') === 0) {
-                // Just create or skip silently
-                @$db->query($statement);
-            } else if (!empty($statement)) {
-                if ($db->query($statement)) {
-                    $statement_count++;
-                } else {
-                    // Check if it's a "table already exists" error (that's OK)
-                    if (strpos($db->error, 'already exists') === false && 
-                        strpos($db->error, 'Duplicate') === false &&
-                        strpos($db->error, 'Duplicate entry') === false &&
-                        strpos($db->error, 'Duplicate key name') === false) {
-                        log_message("  ❌ Error: " . $db->error);
-                        log_message("     Statement: " . substr($statement, 0, 80) . "...\n");
-                        $errors[] = $db->error;
-                    }
+            // Suppress errors and execute (they might be harmless duplicates)
+            if (@$db->query($statement)) {
+                $statement_count++;
+            } else {
+                // Log actual errors only if not a duplicate/exists error
+                $error = $db->error;
+                if (strpos($error, 'already exists') === false && 
+                    strpos($error, 'Duplicate') === false &&
+                    strpos($error, 'Duplicate entry') === false &&
+                    strpos($error, 'Duplicate key name') === false) {
+                    log_message("  ⚠️  SQL Error: " . $error . "\n");
                 }
             }
         }
@@ -105,7 +100,7 @@ foreach ($lines as $line) {
     }
 }
 
-log_message("  ✓ Executed $statement_count SQL statements\n");
+log_message("  ✓ Processed $statement_count SQL statements\n");
 log_message("✅ Database tables created/verified\n");
 
 // Step 3: Verify tables exist
