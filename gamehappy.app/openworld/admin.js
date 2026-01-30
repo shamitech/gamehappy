@@ -436,6 +436,7 @@ function renderObjectsList() {
             </div>
             <div class="list-item-actions">
                 <button class="btn-secondary" onclick="openMechanicsModal(${obj.id})">Add Mechanic</button>
+                <button class="btn-secondary" onclick="viewObjectMechanics(${obj.id})">View Mechanics</button>
                 <button class="btn-secondary" onclick="editObject(${obj.id})">Edit</button>
             </div>
         </div>
@@ -452,6 +453,80 @@ function openMechanicsModal(objectId) {
 
 function closeMechanicsModal() {
     document.getElementById('mechanics-modal').style.display = 'none';
+}
+
+async function viewObjectMechanics(objectId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_object_mechanics',
+                object_id: objectId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showMechanicsModal(data.object, data.mechanics);
+        } else {
+            showMessage('Error loading mechanics: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showMessage('Error loading mechanics: ' + error.message, 'error');
+    }
+}
+
+function showMechanicsModal(object, mechanics) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <button class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            <h2>${escapeHtml(object.name)} - Mechanics</h2>
+            <div style="max-height: 400px; overflow-y: auto; margin: 20px 0;">
+                ${mechanics.length === 0 ? '<p style="color: #90caf9; font-style: italic;">No mechanics added yet</p>' : mechanics.map(m => `
+                    <div style="background: #141829; padding: 15px; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid #2a5298;">
+                        <div style="color: #64b5f6; font-weight: bold; margin-bottom: 5px;">${escapeHtml(m.name)}</div>
+                        <div style="color: #90caf9; font-size: 13px; margin-bottom: 8px;">Type: <span style="color: #ffd700;">${m.type}</span></div>
+                        <div style="color: #b0bec5; font-size: 13px; margin-bottom: 8px;">${escapeHtml(m.description || '(no description)')}</div>
+                        ${m.action_value ? `<div style="color: #81c784; font-size: 12px; background: #0f1419; padding: 8px; border-radius: 3px; font-family: monospace; word-break: break-all;">Config: ${escapeHtml(typeof m.action_value === 'string' ? m.action_value : JSON.stringify(m.action_value))}</div>` : ''}
+                        <button class="btn-secondary" onclick="deleteMechanic(${m.id}, '${object.name}')" style="margin-top: 10px; background: #b71c1c; border-color: #ff5252; color: #ff5252;">Delete</button>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="btn-primary" onclick="this.parentElement.parentElement.remove()">Close</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+async function deleteMechanic(mechanicId, objectName) {
+    if (!confirm(`Delete this mechanic from ${objectName}?`)) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_mechanic',
+                mechanic_id: mechanicId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showMessage('Mechanic deleted', 'success');
+            loadPlaceObjects();
+            // Close the modal by removing it
+            document.querySelectorAll('.modal').forEach(m => m.remove());
+        } else {
+            showMessage('Error deleting mechanic: ' + data.message, 'error');
+        }
+    } catch (error) {
+        showMessage('Error deleting mechanic: ' + error.message, 'error');
+    }
 }
 
 function showMechanicSettings() {

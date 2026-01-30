@@ -74,6 +74,12 @@ try {
         case 'get_objects':
             getObjects($pdo);
             break;
+        case 'get_object_mechanics':
+            getObjectMechanics($pdo);
+            break;
+        case 'delete_mechanic':
+            deleteMechanic($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -308,5 +314,58 @@ function getObjects($pdo) {
     $stmt->execute([$placeId]);
     $objects = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode(['success' => true, 'objects' => $objects]);
+    exit;
+}
+
+function getObjectMechanics($pdo) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $objectId = $json_data['object_id'] ?? null;
+    
+    if (!$objectId) {
+        throw new Exception('Object ID required');
+    }
+    
+    // Get object info
+    $stmt = $pdo->prepare("SELECT id, name, description FROM ow_objects WHERE id = ?");
+    $stmt->execute([$objectId]);
+    $object = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$object) {
+        throw new Exception('Object not found');
+    }
+    
+    // Get mechanics for this object
+    $stmt = $pdo->prepare("
+        SELECT id, type, name, description, action_value
+        FROM ow_mechanics
+        WHERE object_id = ?
+        ORDER BY created_at ASC
+    ");
+    $stmt->execute([$objectId]);
+    $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Parse action_value JSON for each mechanic
+    foreach ($mechanics as &$mechanic) {
+        if ($mechanic['action_value']) {
+            $mechanic['action_value'] = json_decode($mechanic['action_value'], true);
+        }
+    }
+    
+    echo json_encode(['success' => true, 'object' => $object, 'mechanics' => $mechanics]);
+    exit;
+}
+
+function deleteMechanic($pdo) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $mechanicId = $json_data['mechanic_id'] ?? null;
+    
+    if (!$mechanicId) {
+        throw new Exception('Mechanic ID required');
+    }
+    
+    $stmt = $pdo->prepare("DELETE FROM ow_mechanics WHERE id = ?");
+    $stmt->execute([$mechanicId]);
+    
+    echo json_encode(['success' => true, 'message' => 'Mechanic deleted']);
     exit;
 }
