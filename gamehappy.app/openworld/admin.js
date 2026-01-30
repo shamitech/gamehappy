@@ -220,7 +220,6 @@ async function loadPlacesForWorld(worldId) {
         const data = await response.json();
         if (data.success) {
             places = data.places;
-            loadExitDestinations();
             renderPlacesList();
         }
     } catch (error) {
@@ -262,12 +261,6 @@ async function createPlace(e) {
     } catch (error) {
         showMessage('Error creating place', 'error', 'place-message');
     }
-}
-
-async function loadExitDestinations() {
-    const select = document.getElementById('exit-destination');
-    select.innerHTML = '<option value="">-- Select Destination --</option>' + 
-        places.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
 }
 
 async function linkPlaces(e) {
