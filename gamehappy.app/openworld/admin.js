@@ -27,13 +27,13 @@ async function checkAuth() {
         const response = await fetch('/openworld/api/auth.php?action=checkAuth');
         const data = await response.json();
         
-        if (!data.authenticated) {
-            document.getElementById('login-screen').classList.add('visible');
-            document.getElementById('dashboard').style.display = 'none';
-        } else {
+        if (data.authenticated) {
             document.getElementById('login-screen').classList.remove('visible');
             document.getElementById('dashboard').style.display = 'block';
             loadWorlds();
+        } else {
+            document.getElementById('login-screen').classList.add('visible');
+            document.getElementById('dashboard').style.display = 'none';
         }
     } catch (error) {
         console.error('Auth check failed:', error);

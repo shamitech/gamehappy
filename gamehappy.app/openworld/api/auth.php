@@ -16,6 +16,7 @@ switch ($action) {
         logout();
         break;
     case 'check':
+    case 'checkAuth':
         checkAuth();
         break;
     default:
@@ -56,11 +57,15 @@ function checkAuth() {
     if ($_SESSION['admin_logged_in'] ?? false) {
         echo json_encode([
             'success' => true,
+            'authenticated' => true,
             'username' => $_SESSION['admin_username'] ?? 'admin'
         ]);
     } else {
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+        echo json_encode([
+            'success' => false,
+            'authenticated' => false,
+            'message' => 'Not authenticated'
+        ]);
     }
 }
 ?>
