@@ -236,7 +236,7 @@ button {
 #direction-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-rows: auto auto auto;
     gap: 10px;
     margin: 0 0 20px 0;
     align-items: center;
@@ -245,26 +245,27 @@ button {
     position: relative;
 }
 
-/* Vertical bars for up/down */
+/* Vertical bars for up/down - positioned inside center tile */
 .vertical-bar {
-    grid-column: 1 / -1;
-    width: 100%;
-    height: 50px;
+    position: absolute;
+    width: calc(100% - 4px);
+    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;
-    position: relative;
-    border: 2px solid #444;
-    border-radius: 4px;
-    background-color: #1a3a3a;
+    left: 2px;
+    border: 1px solid #444;
+    border-radius: 2px;
+    background-color: rgba(26, 58, 58, 0.8);
+    z-index: 10;
 }
 
 .vertical-bar.up {
-    grid-row: 1;
+    top: 2px;
 }
 
 .vertical-bar.down {
-    grid-row: 5;
+    bottom: 2px;
 }
 
 .vertical-bar .btn-add {
@@ -273,8 +274,8 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    font-size: 20px;
+    gap: 8px;
+    font-size: 16px;
     padding: 0;
     border: none;
     background: transparent;
@@ -305,10 +306,9 @@ button {
     margin-left: auto;
 }
 
-/* North - top center (adjusted for vertical bar) */
+/* North - top center */
 #direction-buttons > .direction-button.north {
-    grid-row: 2;
-
+    grid-column: 2;
     grid-row: 1;
     width: 140px;
     height: 140px;
@@ -317,7 +317,7 @@ button {
 /* South - bottom center */
 #direction-buttons > .direction-button.south {
     grid-column: 2;
-    grid-row: 4;
+    grid-row: 3;
     width: 140px;
     height: 140px;
 }
@@ -325,7 +325,7 @@ button {
 /* East - middle right */
 #direction-buttons > .direction-button.east {
     grid-column: 3;
-    grid-row: 3;
+    grid-row: 2;
     width: 140px;
     height: 140px;
 }
@@ -333,7 +333,7 @@ button {
 /* West - middle left */
 #direction-buttons > .direction-button.west {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
     width: 140px;
     height: 140px;
 }
@@ -341,7 +341,7 @@ button {
 /* Northeast - top right */
 #direction-buttons > .direction-button.northeast {
     grid-column: 3;
-    grid-row: 2;
+    grid-row: 1;
     width: 140px;
     height: 140px;
 }
@@ -349,7 +349,7 @@ button {
 /* Northwest - top left */
 #direction-buttons > .direction-button.northwest {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
     width: 140px;
     height: 140px;
 }
@@ -357,7 +357,7 @@ button {
 /* Southeast - bottom right */
 #direction-buttons > .direction-button.southeast {
     grid-column: 3;
-    grid-row: 4;
+    grid-row: 3;
     width: 140px;
     height: 140px;
 }
@@ -365,7 +365,7 @@ button {
 /* Southwest - bottom left */
 #direction-buttons > .direction-button.southwest {
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 3;
     width: 140px;
     height: 140px;
 }
@@ -374,7 +374,7 @@ button {
 #direction-buttons::before {
     content: attr(data-place-name);
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     background: #1a3a52;
     border: 2px solid #2196F3;
     color: #64B5F6;
@@ -388,6 +388,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
     z-index: 1;
     word-wrap: break-word;
     overflow: hidden;
