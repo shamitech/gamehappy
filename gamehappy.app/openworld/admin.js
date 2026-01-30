@@ -755,23 +755,29 @@ async function createExitLink(direction, toPlaceId) {
             }
             
             // Smart spatial synchronization for adjacent places
-            // If assigning diagonally or to cardinal directions, sync adjacent places
-            for (const exit of currentPlaceExits) {
-                const calculatedDirection = calculateRelativeDirection(direction, exit.direction);
-                if (calculatedDirection) {
-                    try {
-                        await fetch(API_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                action: 'link_places',
-                                from_place_id: toPlaceId,
-                                to_place_id: exit.to_place_id,
-                                direction: calculatedDirection
-                            })
-                        });
-                    } catch (error) {
-                        console.error('Spatial sync failed:', error);
+            // Check all 8 possible directions from the new place and auto-assign any that exist
+            const allDirections = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
+            
+            for (const checkDir of allDirections) {
+                // For each direction FROM the new place, find if a place exists in that calculated position
+                for (const exit of currentPlaceExits) {
+                    const calculatedDirection = calculateRelativeDirection(direction, exit.direction);
+                    if (calculatedDirection === checkDir) {
+                        try {
+                            await fetch(API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'link_places',
+                                    from_place_id: toPlaceId,
+                                    to_place_id: exit.to_place_id,
+                                    direction: checkDir
+                                })
+                            });
+                        } catch (error) {
+                            console.error('Spatial sync failed:', error);
+                        }
+                        break; // Found the place for this direction, move to next
                     }
                 }
             }
