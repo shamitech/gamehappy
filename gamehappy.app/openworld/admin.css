@@ -423,9 +423,9 @@ button {
 /* North badge - positioned between north place bottom and center place top */
 .connection-badge-north {
     position: absolute;
-    top: 50%;
+    top: -14px;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateX(-50%);
     z-index: 10;
 }
 
