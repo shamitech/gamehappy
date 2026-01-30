@@ -640,8 +640,8 @@ function renderDirectionButtons(existingExits) {
             `;
         } else {
             return `
-                <button type="button" class="btn-add" onclick="showDestinationView('${dir}')" style="width: 100%; padding: 15px;">
-                    ↑ ${dir.charAt(0).toUpperCase() + dir.slice(1)}
+                <button type="button" class="btn-add" onclick="showDestinationView('${dir}')" style="width: 100%; padding: 15px; min-height: 80px;">
+                    ${dir === 'north' ? '↑' : dir === 'south' ? '↓' : dir === 'east' ? '→' : dir === 'west' ? '←' : dir === 'up' ? '⬆' : '⬇'} ${dir.charAt(0).toUpperCase() + dir.slice(1)}
                 </button>
             `;
         }
