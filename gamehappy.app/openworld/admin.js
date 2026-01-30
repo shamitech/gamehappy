@@ -688,23 +688,29 @@ function renderDestinationList(direction) {
         return;
     }
 
-    // Filter out the current place and any places already assigned to this place
-    const assignedPlaceIds = new Set(currentPlaceExits.map(e => e.to_place_id));
-    const availablePlaces = places.filter(p => p.id !== navState.place_id && !assignedPlaceIds.has(p.id));
+    // Filter out only the current place - allow same place in multiple directions
+    // But check if a place is already assigned to THIS specific direction
+    const assignedToThisDirection = currentPlaceExits.find(e => e.direction.toLowerCase() === direction.toLowerCase());
+    const availablePlaces = places.filter(p => p.id !== navState.place_id);
     
     if (availablePlaces.length === 0) {
-        container.innerHTML = '<p class="empty-state">No other places available (all places already assigned)</p>';
+        container.innerHTML = '<p class="empty-state">No other places available</p>';
         return;
     }
 
-    container.innerHTML = availablePlaces.map(place => `
-        <div class="list-item clickable" onclick="createExitLink('${direction}', ${place.id})" style="cursor: pointer;">
+    container.innerHTML = availablePlaces.map(place => {
+        const isCurrentDirection = assignedToThisDirection && assignedToThisDirection.to_place_id === place.id;
+        const disabledStyle = isCurrentDirection ? 'opacity: 0.5; cursor: not-allowed;' : '';
+        const onclick = isCurrentDirection ? '' : `onclick="createExitLink('${direction}', ${place.id})"`;
+        
+        return `
+        <div class="list-item clickable" ${onclick} style="cursor: pointer; ${disabledStyle}">
             <div class="list-item-content">
-                <div class="list-item-title">${escapeHtml(place.name)}</div>
+                <div class="list-item-title">${escapeHtml(place.name)}${isCurrentDirection ? ' (assigned to this direction)' : ''}</div>
                 <div class="list-item-desc">${escapeHtml(place.description || '(no description)')}</div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 async function createExitLink(direction, toPlaceId) {
