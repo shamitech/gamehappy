@@ -646,16 +646,39 @@ function renderDirectionButtons(existingExits) {
         'southwest': '↙'
     };
     
+    const connectionTypeLabels = {
+        'full': 'Full',
+        'passage': 'Passage',
+        'closed': 'Closed',
+        'locked': 'Locked',
+        'no_throughway': 'No Path'
+    };
+    
+    const connectionTypeColors = {
+        'full': '#00ff00',
+        'passage': '#00ccff',
+        'closed': '#ffaa00',
+        'locked': '#ff4444',
+        'no_throughway': '#888888'
+    };
+    
     container.innerHTML = directions.map(dir => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
         const icon = directionIcons[dir];
+        const connType = exit?.connection_type || 'full';
         
         if (exists) {
             return `
                 <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                        <div class="connection-type-badge" 
+                             style="background-color: ${connectionTypeColors[connType]}"
+                             title="${connectionTypeLabels[connType]}"
+                             onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
+                            ${connectionTypeLabels[connType].charAt(0)}
+                        </div>
                         <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
                     </div>
                 </div>
@@ -1029,3 +1052,73 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ===== CONNECTION TYPE FUNCTIONS =====
+function showConnectionTypeModal(exitId, currentType) {
+    // Store current exit ID for updating
+    window.currentExitId = exitId;
+    window.currentExitType = currentType;
+    
+    const connectionTypes = [
+        { id: 'full', label: 'Full', description: 'Completely open area (like being outside or a huge room)', color: '#00ff00' },
+        { id: 'passage', label: 'Passage', description: 'Open passage like an arch or doorway (can look through)', color: '#00ccff' },
+        { id: 'closed', label: 'Closed', description: 'Closed door or hatch (need to open)', color: '#ffaa00' },
+        { id: 'locked', label: 'Locked', description: 'Locked door or hatch (need an item)', color: '#ff4444' },
+        { id: 'no_throughway', label: 'No Throughway', description: 'Exists spatially but cannot enter', color: '#888888' }
+    ];
+    
+    const container = document.getElementById('connection-type-options');
+    container.innerHTML = connectionTypes.map(type => `
+        <div style="
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid ${type.color};
+            border-radius: 4px;
+            cursor: pointer;
+            background: ${currentType === type.id ? 'rgba(' + hexToRgb(type.color).join(',') + ',0.2)' : 'transparent'};
+            transition: all 0.2s;
+        " 
+        onclick="updateConnectionType('${type.id}')">
+            <div style="font-weight: bold; color: ${type.color};">${type.label}</div>
+            <div style="font-size: 12px; color: #aaa; margin-top: 4px;">${type.description}</div>
+        </div>
+    `).join('');
+    
+    openModal('modal-connection-type');
+}
+
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : [0, 0, 0];
+}
+
+async function updateConnectionType(newType) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_exit_type',
+                exit_id: window.currentExitId,
+                connection_type: newType
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Reload exits to show updated type
+            await loadExitsForPlace(navState.place_id);
+            closeModal('modal-connection-type');
+        } else {
+            alert('Error updating connection type: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error updating connection type:', error);
+        alert('Error updating connection type');
+    }
+}
+

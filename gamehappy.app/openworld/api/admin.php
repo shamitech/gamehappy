@@ -86,6 +86,9 @@ try {
         case 'delete_exit':
             deleteExit($pdo);
             break;
+        case 'update_exit_type':
+            updateExitType($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -212,6 +215,13 @@ function linkPlaces($pdo) {
         throw new Exception('Invalid direction');
     }
     
+    // Validate connection_type if provided
+    $validConnectionTypes = ['full', 'passage', 'closed', 'locked', 'no_throughway'];
+    $connectionType = 'full'; // default
+    if (isset($data['connection_type']) && in_array($data['connection_type'], $validConnectionTypes)) {
+        $connectionType = $data['connection_type'];
+    }
+    
     // Check if exit already exists
     $stmt = $pdo->prepare("
         SELECT id FROM ow_place_exits 
@@ -223,21 +233,37 @@ function linkPlaces($pdo) {
         throw new Exception('Exit already exists in that direction');
     }
     
+    // Check if connection_type column exists, if not use basic INSERT
     $stmt = $pdo->prepare("
-        INSERT INTO ow_place_exits (from_place_id, to_place_id, direction)
-        VALUES (?, ?, ?)
+        INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+        VALUES (?, ?, ?, ?)
     ");
     
-    $result = $stmt->execute([
-        $data['from_place_id'],
-        $data['to_place_id'],
-        strtolower($data['direction'])
-    ]);
+    try {
+        $result = $stmt->execute([
+            $data['from_place_id'],
+            $data['to_place_id'],
+            strtolower($data['direction']),
+            $connectionType
+        ]);
+    } catch (Exception $e) {
+        // If connection_type column doesn't exist, try without it
+        $stmt = $pdo->prepare("
+            INSERT INTO ow_place_exits (from_place_id, to_place_id, direction)
+            VALUES (?, ?, ?)
+        ");
+        $result = $stmt->execute([
+            $data['from_place_id'],
+            $data['to_place_id'],
+            strtolower($data['direction'])
+        ]);
+    }
     
     if ($result) {
         echo json_encode([
             'success' => true,
-            'message' => 'Places linked successfully'
+            'message' => 'Places linked successfully',
+            'connection_type' => $connectionType
         ]);
     }
     exit;
@@ -384,21 +410,42 @@ function getExits($pdo) {
         throw new Exception('Place ID required');
     }
     
+    // Try to select connection_type, fallback to 'full' if column doesn't exist
     $stmt = $pdo->prepare("
         SELECT 
             pe.id,
             pe.direction,
             pe.from_place_id,
             pe.to_place_id,
-            p.name as destination_name
+            p.name as destination_name,
+            COALESCE(pe.connection_type, 'full') as connection_type
         FROM ow_place_exits pe
         LEFT JOIN ow_places p ON pe.to_place_id = p.id
         WHERE pe.from_place_id = ?
         ORDER BY pe.direction ASC
     ");
     
-    $stmt->execute([$placeId]);
-    $exits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $stmt->execute([$placeId]);
+        $exits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        // Fallback if connection_type column doesn't exist
+        $stmt = $pdo->prepare("
+            SELECT 
+                pe.id,
+                pe.direction,
+                pe.from_place_id,
+                pe.to_place_id,
+                p.name as destination_name,
+                'full' as connection_type
+            FROM ow_place_exits pe
+            LEFT JOIN ow_places p ON pe.to_place_id = p.id
+            WHERE pe.from_place_id = ?
+            ORDER BY pe.direction ASC
+        ");
+        $stmt->execute([$placeId]);
+        $exits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     
     echo json_encode(['success' => true, 'exits' => $exits]);
     exit;
@@ -416,5 +463,35 @@ function deleteExit($pdo) {
     $stmt->execute([$exitId]);
     
     echo json_encode(['success' => true, 'message' => 'Exit deleted']);
+    exit;
+}
+
+function updateExitType($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['exit_id'] || !$data['connection_type']) {
+        throw new Exception('Exit ID and connection type required');
+    }
+    
+    // Validate connection_type
+    $validConnectionTypes = ['full', 'passage', 'closed', 'locked', 'no_throughway'];
+    if (!in_array($data['connection_type'], $validConnectionTypes)) {
+        throw new Exception('Invalid connection type');
+    }
+    
+    // Try to update with connection_type column
+    try {
+        $stmt = $pdo->prepare("
+            UPDATE ow_place_exits 
+            SET connection_type = ? 
+            WHERE id = ?
+        ");
+        $stmt->execute([$data['connection_type'], $data['exit_id']]);
+    } catch (Exception $e) {
+        // If column doesn't exist, that's ok - we'll add it to schema later
+        throw new Exception('Connection type column not yet in database');
+    }
+    
+    echo json_encode(['success' => true, 'message' => 'Connection type updated']);
     exit;
 }

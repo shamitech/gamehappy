@@ -382,6 +382,7 @@ button {
     text-align: center;
     width: 100%;
     height: 100%;
+    position: relative;
 }
 
 .exit-destination {
@@ -390,6 +391,29 @@ button {
     font-size: 13px;
     word-wrap: break-word;
     max-width: 120px;
+}
+
+.connection-type-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+    font-size: 12px;
+    cursor: pointer;
+    border: 2px solid #333;
+    transition: all 0.2s;
+}
+
+.connection-type-badge:hover {
+    transform: scale(1.1);
+    border-color: #000;
 }
 
 .direction-button button.btn-remove {
