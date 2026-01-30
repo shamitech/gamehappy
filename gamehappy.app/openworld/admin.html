@@ -264,15 +264,14 @@
             
             <div id="exits-view" style="display: block;">
                 <div id="direction-buttons"></div>
+                <div id="exit-message" class="message" style="margin-top: 15px;"></div>
             </div>
 
-            <div id="select-destination-view" style="display: none; max-height: 350px; overflow-y: auto;">
-                <h3 style="color: #64b5f6; margin-bottom: 15px;">Select Destination for <span id="selected-direction-name" style="color: #ffd700;"></span></h3>
+            <div id="select-destination-overlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); border-radius: 4px; z-index: 10; padding: 20px; overflow-y: auto;">
+                <h3 style="color: #64b5f6; margin-bottom: 15px; margin-top: 0;">Select Destination for <span id="selected-direction-name" style="color: #ffd700;"></span></h3>
                 <div id="destination-list" style="margin-bottom: 15px;"></div>
-                <button type="button" class="btn-secondary" onclick="showExitsView()" style="width: 100%; margin-top: 10px;">← Back</button>
+                <button type="button" class="btn-secondary" onclick="closeDestinationSelector()" style="width: 100%; margin-top: 10px;">Cancel</button>
             </div>
-
-            <div id="exit-message" class="message" style="margin-top: 15px;"></div>
         </div>
     </div>
 

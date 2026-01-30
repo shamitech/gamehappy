@@ -582,15 +582,31 @@ async function openManageExitsModal(placeId, placeName) {
 
 function showExitsView() {
     document.getElementById('exits-view').style.display = 'block';
-    document.getElementById('select-destination-view').style.display = 'none';
+    document.getElementById('select-destination-overlay').style.display = 'none';
     document.getElementById('exit-message').textContent = '';
 }
 
 function showDestinationView(direction) {
-    document.getElementById('exits-view').style.display = 'none';
-    document.getElementById('select-destination-view').style.display = 'block';
+    document.getElementById('select-destination-overlay').style.display = 'block';
     document.getElementById('selected-direction-name').textContent = direction.charAt(0).toUpperCase() + direction.slice(1);
     renderDestinationList(direction);
+}
+
+function closeDestinationSelector() {
+    showExitsView();
+}
+
+async function navigateExitsMap(placeId) {
+    // Navigate to a different place within the exits modal
+    navState.place_id = placeId;
+    // Find place name from the places array
+    const place = places.find(p => p.id === placeId);
+    if (place) {
+        navState.place_name = place.name;
+    }
+    document.getElementById('exits-place-name').textContent = navState.place_name;
+    await loadExitsForPlace(placeId);
+    showExitsView();
 }
 
 async function loadExitsForPlace(placeId) {
@@ -640,10 +656,10 @@ function renderDirectionButtons(existingExits) {
         
         if (exists) {
             return `
-                <div class="direction-button ${dir} has-exit">
+                <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
-                        <button type="button" class="btn-remove" onclick="deleteExit(${exit.id})">Remove</button>
+                        <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
                     </div>
                 </div>
             `;
