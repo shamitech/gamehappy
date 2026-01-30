@@ -853,9 +853,6 @@ async function deleteExit(exitId) {
         } else {
             showMessage('Error: ' + data.message, 'error', 'exit-message');
         }
-        } else {
-            showMessage('Error: ' + data.message, 'error', 'exit-message');
-        }
     } catch (error) {
         showMessage('Error deleting exit', 'error', 'exit-message');
     }
