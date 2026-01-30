@@ -252,10 +252,20 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #444;
-    border-radius: 2px;
+    border-left: 1px solid #444;
+    border-right: 1px solid #444;
+    border-top: 1px solid #444;
+    border-bottom: 1px solid #444;
     background-color: rgba(26, 58, 58, 0.8);
     flex-shrink: 0;
+}
+
+.vertical-bar-inside.up {
+    border-bottom: none;
+}
+
+.vertical-bar-inside.down {
+    border-top: none;
 }
 
 .vertical-bar-inside .btn-add {
@@ -309,10 +319,11 @@ button {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 4px;
-    gap: 2px;
+    justify-content: space-between;
+    padding: 0;
+    gap: 0;
     position: relative;
+    overflow: hidden;
 }
 
 .center-tile .place-name {
@@ -322,6 +333,7 @@ button {
     flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 /* North - top center */
