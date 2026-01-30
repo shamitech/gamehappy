@@ -750,7 +750,8 @@ async function createExitLink(direction, toPlaceId) {
                         });
                         // Don't worry if this fails - it might already exist
                     } catch (error) {
-                    console.error('Spatial sync failed:', error);
+                        console.error('Spatial sync failed:', error);
+                    }
                 }
             }
             
