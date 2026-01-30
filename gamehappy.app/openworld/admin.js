@@ -744,7 +744,19 @@ async function createExitLink(direction, toPlaceId) {
 async function deleteExit(exitId) {
     if (!confirm('Delete this exit?')) return;
     
+    // Map opposite directions
+    const oppositeDirections = {
+        'north': 'south',
+        'south': 'north',
+        'east': 'west',
+        'west': 'east'
+    };
+    
+    // Find the exit to get its destination and direction
+    const exitToDelete = currentPlaceExits.find(e => e.id === exitId);
+    
     try {
+        // Delete the forward exit
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -756,8 +768,51 @@ async function deleteExit(exitId) {
 
         const data = await response.json();
         if (data.success) {
+            // If we found the exit, also delete the reverse exit in the destination place
+            if (exitToDelete) {
+                const oppositeDirection = oppositeDirections[exitToDelete.direction.toLowerCase()];
+                
+                // Find exits from the destination place back to current place
+                try {
+                    const reverseExitsResponse = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'get_exits',
+                            place_id: exitToDelete.to_place_id
+                        })
+                    });
+                    
+                    const reverseExitsData = await reverseExitsResponse.json();
+                    if (reverseExitsData.success) {
+                        // Find the reverse exit
+                        const reverseExit = reverseExitsData.exits.find(e => 
+                            e.direction.toLowerCase() === oppositeDirection && 
+                            e.to_place_id === navState.place_id
+                        );
+                        
+                        if (reverseExit) {
+                            // Delete the reverse exit
+                            await fetch(API_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'delete_exit',
+                                    exit_id: reverseExit.id
+                                })
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error deleting reverse exit:', error);
+                }
+            }
+            
             showMessage('Exit deleted', 'success', 'exit-message');
             await loadExitsForPlace(navState.place_id);
+        } else {
+            showMessage('Error: ' + data.message, 'error', 'exit-message');
+        }
         } else {
             showMessage('Error: ' + data.message, 'error', 'exit-message');
         }
