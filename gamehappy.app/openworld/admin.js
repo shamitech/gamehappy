@@ -617,6 +617,7 @@ async function loadExitsForPlace(placeId) {
 
         const data = await response.json();
         if (data.success) {
+            console.log('Loaded exits for place', placeId, ':', data.exits);
             renderDirectionButtons(data.exits);
         } else {
             renderDirectionButtons([]);
