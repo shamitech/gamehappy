@@ -16,6 +16,7 @@ let worlds = [];
 let places = [];
 let objects = [];
 let currentObjectMechanics = [];
+let currentPlaceExits = [];
 
 // ===== AUTHENTICATION =====
 window.addEventListener('load', () => {
@@ -616,6 +617,9 @@ async function loadExitsForPlace(placeId) {
 }
 
 function renderDirectionButtons(existingExits) {
+    // Store exits globally for use in destination list filtering
+    currentPlaceExits = existingExits;
+    
     const directions = ['north', 'south', 'east', 'west'];
     const existingDirections = new Set(existingExits.map(e => e.direction.toLowerCase()));
     
@@ -664,11 +668,12 @@ function renderDestinationList(direction) {
         return;
     }
 
-    // Filter out the current place
-    const availablePlaces = places.filter(p => p.id !== navState.place_id);
+    // Filter out the current place and any places already assigned to this place
+    const assignedPlaceIds = new Set(currentPlaceExits.map(e => e.to_place_id));
+    const availablePlaces = places.filter(p => p.id !== navState.place_id && !assignedPlaceIds.has(p.id));
     
     if (availablePlaces.length === 0) {
-        container.innerHTML = '<p class="empty-state">No other places to link to</p>';
+        container.innerHTML = '<p class="empty-state">No other places available (all places already assigned)</p>';
         return;
     }
 
