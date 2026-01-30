@@ -327,6 +327,12 @@ button {
     padding: 2px 6px;
 }
 
+/* Badges on vertical bars should not be positioned absolutely */
+.vertical-bar .connection-type-badge {
+    position: static;
+    margin-left: auto;
+}
+
 /* Center tile containing vertical bars */
 .center-tile {
     grid-column: 2;
