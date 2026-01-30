@@ -623,7 +623,8 @@ button {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    overflow: hidden;
+    overflow: auto;
+    padding: 20px;
 }
 
 .modal-content {
@@ -633,7 +634,7 @@ button {
     border-radius: 4px;
     width: fit-content;
     position: relative;
-    max-height: 90vh;
+    max-height: 80vh;
     overflow-y: auto;
 }
 
