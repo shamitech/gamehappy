@@ -673,13 +673,13 @@ function renderDirectionButtons(existingExits) {
                 <div class="direction-button ${dir} has-exit" onclick="navigateExitsMap(${exit.to_place_id})" style="cursor: pointer;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
-                        <div class="connection-type-badge" 
-                             style="background-color: ${connectionTypeColors[connType]}"
-                             title="${connectionTypeLabels[connType]}"
-                             onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
-                            ${connectionTypeLabels[connType].charAt(0)}
-                        </div>
                         <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
+                    </div>
+                    <div class="connection-type-badge connection-badge-${dir}" 
+                         style="background-color: ${connectionTypeColors[connType]}"
+                         title="${connectionTypeLabels[connType]}"
+                         onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
+                        ${connectionTypeLabels[connType].charAt(0)}
                     </div>
                 </div>
             `;

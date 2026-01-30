@@ -241,7 +241,8 @@ button {
     margin: 20px 0;
     align-items: center;
     justify-items: center;
-    padding: 0;
+    padding: 20px;
+    position: relative;
 }
 
 /* North - top center */
@@ -395,8 +396,6 @@ button {
 
 .connection-type-badge {
     position: absolute;
-    top: -8px;
-    right: -8px;
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -414,6 +413,63 @@ button {
 .connection-type-badge:hover {
     transform: scale(1.1);
     border-color: #000;
+}
+
+/* Position badges on edges between center and adjacent places */
+#direction-buttons {
+    position: relative;
+}
+
+/* North badge - top center edge */
+.connection-badge-north {
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* South badge - bottom center edge */
+.connection-badge-south {
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* East badge - right center edge */
+.connection-badge-east {
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+}
+
+/* West badge - left center edge */
+.connection-badge-west {
+    top: 50%;
+    left: -14px;
+    transform: translateY(-50%);
+}
+
+/* Northeast badge - top-right corner edge */
+.connection-badge-northeast {
+    top: -14px;
+    right: -14px;
+}
+
+/* Northwest badge - top-left corner edge */
+.connection-badge-northwest {
+    top: -14px;
+    left: -14px;
+}
+
+/* Southeast badge - bottom-right corner edge */
+.connection-badge-southeast {
+    bottom: -14px;
+    right: -14px;
+}
+
+/* Southwest badge - bottom-left corner edge */
+.connection-badge-southwest {
+    bottom: -14px;
+    left: -14px;
 }
 
 .direction-button button.btn-remove {
