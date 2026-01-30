@@ -235,7 +235,7 @@ button {
 
 #direction-buttons {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: auto auto auto;
     gap: 10px;
     margin: 0 0 20px 0;
@@ -243,12 +243,15 @@ button {
     justify-items: center;
     padding: 0 20px 20px 20px;
     position: relative;
+    margin-right: 150px;
 }
 
 /* Vertical bars container on the right */
 .vertical-bars-container {
-    grid-column: 4;
-    grid-row: 1 / 4;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: 10px;
