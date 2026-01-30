@@ -592,181 +592,16 @@ function closeDestinationSelector() {
 }
 
 async function navigateExitsMap(placeId, direction) {
-    try {
-        // Animate the tiles to their new positions based on navigation direction
-        const container = document.getElementById('direction-buttons');
-        const buttons = container.querySelectorAll('.direction-button');
-        
-        console.log('Navigating to', placeId, 'via', direction, 'buttons:', buttons.length);
-        
-        // Direction rotation map - how directions shift when you move in a direction
-        const directionRotations = {
-            'north': {
-                'north': 'center', 'center': 'south', 'south': 'out',
-                'northeast': 'east', 'northwest': 'west', 'southeast': 'out', 'southwest': 'out',
-                'east': 'out', 'west': 'out'
-            },
-            'south': {
-                'south': 'center', 'center': 'north', 'north': 'out',
-                'southeast': 'east', 'southwest': 'west', 'northeast': 'out', 'northwest': 'out',
-                'east': 'out', 'west': 'out'
-            },
-            'east': {
-                'east': 'center', 'center': 'west', 'west': 'out',
-                'northeast': 'north', 'southeast': 'south', 'northwest': 'out', 'southwest': 'out',
-                'north': 'out', 'south': 'out'
-            },
-            'west': {
-                'west': 'center', 'center': 'east', 'east': 'out',
-                'northwest': 'north', 'southwest': 'south', 'northeast': 'out', 'southeast': 'out',
-                'north': 'out', 'south': 'out'
-            },
-            'northeast': {
-                'northeast': 'center', 'center': 'southwest', 'southwest': 'out',
-                'north': 'west', 'east': 'south', 'northwest': 'out', 'southeast': 'out',
-                'west': 'out', 'south': 'out'
-            },
-            'northwest': {
-                'northwest': 'center', 'center': 'southeast', 'southeast': 'out',
-                'north': 'east', 'west': 'south', 'northeast': 'out', 'southwest': 'out',
-                'east': 'out', 'south': 'out'
-            },
-            'southeast': {
-                'southeast': 'center', 'center': 'northwest', 'northwest': 'out',
-                'south': 'west', 'east': 'north', 'southwest': 'out', 'northeast': 'out',
-                'west': 'out', 'north': 'out'
-            },
-            'southwest': {
-                'southwest': 'center', 'center': 'northeast', 'northeast': 'out',
-                'south': 'east', 'west': 'north', 'southeast': 'out', 'northwest': 'out',
-                'east': 'out', 'north': 'out'
-            }
-        };
-        
-        const gridPositions = {
-            'northwest': { row: 0, col: 0 },
-            'north': { row: 0, col: 1 },
-            'northeast': { row: 0, col: 2 },
-            'west': { row: 1, col: 0 },
-            'center': { row: 1, col: 1 },
-            'east': { row: 1, col: 2 },
-            'southwest': { row: 2, col: 0 },
-            'south': { row: 2, col: 1 },
-            'southeast': { row: 2, col: 2 }
-        };
-        
-        // Store current positions for each button
-        const animationData = [];
-        buttons.forEach(button => {
-            const dirClass = Array.from(button.classList).find(cls => 
-                ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'].includes(cls)
-            );
-            
-            if (dirClass && directionRotations[direction]) {
-                const newPosition = directionRotations[direction][dirClass];
-                if (newPosition) {
-                    // Get current position on screen
-                    const rect = button.getBoundingClientRect();
-                    const containerRect = container.getBoundingClientRect();
-                    
-                    animationData.push({
-                        button,
-                        oldDir: dirClass,
-                        newDir: newPosition,
-                        startX: rect.left - containerRect.left,
-                        startY: rect.top - containerRect.top,
-                        startWidth: rect.width,
-                        startHeight: rect.height
-                    });
-                }
-            }
-        });
-        
-        console.log('Animations to run:', animationData.length);
-        
-        if (animationData.length === 0) {
-            console.warn('No animations found, skipping animation');
-            await completeNavigation(placeId);
-            return;
-        }
-        
-        // Switch container to position relative for absolute positioning
-        const originalDisplay = container.style.display;
-        const originalPosition = container.style.position;
-        container.style.position = 'relative';
-        
-        // Position buttons absolutely at their starting positions
-        animationData.forEach(({ button, startX, startY, startWidth, startHeight }) => {
-            button.style.position = 'absolute';
-            button.style.left = startX + 'px';
-            button.style.top = startY + 'px';
-            button.style.width = startWidth + 'px';
-            button.style.height = startHeight + 'px';
-        });
-        
-        // Animate each button
-        const animationDuration = 0.5; // seconds
-        const startTime = Date.now();
-        
-        const animateFrame = () => {
-            const elapsed = (Date.now() - startTime) / 1000;
-            const progress = Math.min(elapsed / animationDuration, 1);
-            
-            animationData.forEach(({ button, oldDir, newDir, startX, startY, startWidth, startHeight }) => {
-                const oldPos = gridPositions[oldDir];
-                const newPos = gridPositions[newDir];
-                
-                if (!oldPos || !newPos) {
-                    console.warn('Missing position for', oldDir, 'or', newDir);
-                    return;
-                }
-                
-                // Calculate target position (130px cell + 10px gap)
-                const cellSize = startWidth + 10; // approximate cell size with gap
-                const targetX = startX + (newPos.col - oldPos.col) * cellSize;
-                const targetY = startY + (newPos.row - oldPos.row) * cellSize;
-                
-                // Interpolate position
-                const currentX = startX + (targetX - startX) * progress;
-                const currentY = startY + (targetY - startY) * progress;
-                
-                // Calculate opacity - fade out if going out of view
-                let opacity = 1;
-                if (newDir === 'out') {
-                    opacity = 1 - progress;
-                }
-                
-                button.style.left = currentX + 'px';
-                button.style.top = currentY + 'px';
-                button.style.opacity = opacity;
-            });
-            
-            if (progress < 1) {
-                requestAnimationFrame(animateFrame);
-            } else {
-                // Animation complete - reset positioning and load new place
-                animationData.forEach(({ button }) => {
-                    button.style.position = '';
-                    button.style.left = '';
-                    button.style.top = '';
-                    button.style.width = '';
-                    button.style.height = '';
-                    button.style.opacity = '';
-                    button.style.transform = '';
-                });
-                container.style.position = originalPosition;
-                completeNavigation(placeId).catch(err => console.error('Navigation error:', err));
-            }
-        };
-        
-        requestAnimationFrame(animateFrame);
-    } catch (error) {
-        console.error('Navigation animation error:', error);
-        completeNavigation(placeId).catch(err => console.error('Navigation error:', err));
-    }
-}
-
-async function completeNavigation(placeId) {
+    // Navigate to a different place within the exits modal with fade animation
+    const container = document.getElementById('direction-buttons');
+    
+    // Fade out
+    container.style.opacity = '0';
+    container.style.transition = 'opacity 0.3s ease-out';
+    
+    // Wait for fade out
+    await new Promise(resolve => setTimeout(resolve, 150));
+    
     // Update place info
     navState.place_id = placeId;
     const place = places.find(p => p.id === placeId);
@@ -777,8 +612,14 @@ async function completeNavigation(placeId) {
     
     // Load exits for new place
     await loadExitsForPlace(placeId);
+    
+    // Fade in
+    container.style.transition = 'opacity 0.4s ease-in';
+    container.style.opacity = '1';
+    
     showExitsView();
 }
+
 
 async function loadExitsForPlace(placeId) {
     try {
