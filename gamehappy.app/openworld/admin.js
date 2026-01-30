@@ -720,7 +720,7 @@ function renderDirectionButtons(existingExits) {
         }
     }).join('');
     
-    // Build vertical bars HTML
+    // Build vertical bars HTML (for inside center tile)
     const renderVerticalBar = (dir) => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
@@ -730,7 +730,7 @@ function renderDirectionButtons(existingExits) {
         
         if (exists) {
             return `
-                <div class="vertical-bar ${dir}" style="cursor: pointer; position: relative;">
+                <div class="vertical-bar-inside ${dir}" style="cursor: pointer;">
                     <div class="exit-content">
                         <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
                         <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
@@ -745,7 +745,7 @@ function renderDirectionButtons(existingExits) {
             `;
         } else {
             return `
-                <div class="vertical-bar ${dir}">
+                <div class="vertical-bar-inside ${dir}">
                     <button type="button" class="btn-add" onclick="showDestinationView('${dir}')">
                         ${icon} ${dirLabel}
                     </button>
@@ -757,7 +757,146 @@ function renderDirectionButtons(existingExits) {
     const upBar = renderVerticalBar('up');
     const downBar = renderVerticalBar('down');
     
-    container.innerHTML = upBar + gridHTML + downBar;
+    // Build center tile with vertical bars inside
+    const centerTile = `
+        <div class="center-tile">
+            ${upBar}
+            <span class="place-name">${escapeHtml(navState.place_name)}</span>
+            ${downBar}
+        </div>
+    `;
+    
+    // Inject the cardinal directions and center tile
+    let html = '';
+    const cardinalDirs = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+    
+    // Reconstruct HTML with proper grid positioning
+    // North row
+    html += cardinalDirs.filter(d => d === 'northwest').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    html += cardinalDirs.filter(d => d === 'north').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    html += cardinalDirs.filter(d => d === 'northeast').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    // Middle row
+    html += cardinalDirs.filter(d => d === 'west').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    html += centerTile;
+    
+    html += cardinalDirs.filter(d => d === 'east').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    // Bottom row
+    html += cardinalDirs.filter(d => d === 'southwest').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    html += cardinalDirs.filter(d => d === 'south').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    html += cardinalDirs.filter(d => d === 'southeast').map(d => {
+        const exists = existingDirections.has(d);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === d);
+        const icon = directionIcons[d];
+        const connType = exit?.connection_type || 'full';
+        if (exists) {
+            return `<div class="direction-button ${d} has-exit" onclick="navigateExitsMap(${exit.to_place_id}, '${d}')" style="cursor: pointer; position: relative;">
+                <div class="exit-content"><div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button></div>
+                <div class="connection-type-badge connection-badge-${d}" style="background-color: ${connectionTypeColors[connType]}" title="${connectionTypeLabels[connType]}" onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">${connectionTypeLabels[connType].charAt(0)}</div></div>`;
+        } else {
+            return `<div class="direction-button ${d}"><button type="button" class="btn-add" onclick="showDestinationView('${d}')"><span>${icon}</span><span class="arrow-label">${d.charAt(0).toUpperCase() + d.slice(1)}</span></button></div>`;
+        }
+    }).join('');
+    
+    container.innerHTML = html;
 }
 
 function renderDestinationList(direction) {
