@@ -429,19 +429,19 @@ button {
     z-index: 10;
 }
 
-/* South badge - at bottom of south place */
+/* South badge - at top of south place */
 .connection-badge-south {
     position: absolute;
-    bottom: -14px;
+    top: -14px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
 }
 
-/* East badge - at right edge of east place */
+/* East badge - at left edge of east place */
 .connection-badge-east {
     position: absolute;
-    right: -14px;
+    left: -14px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 10;
