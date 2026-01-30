@@ -482,14 +482,49 @@ function updateExitType($pdo) {
         throw new Exception('Invalid connection type');
     }
     
+    // Direction opposites for reverse lookup
+    $oppositeDirections = [
+        'north' => 'south',
+        'south' => 'north',
+        'east' => 'west',
+        'west' => 'east',
+        'northeast' => 'southwest',
+        'southwest' => 'northeast',
+        'northwest' => 'southeast',
+        'southeast' => 'northwest'
+    ];
+    
     // Try to update with connection_type column
     try {
+        // First, get the exit details to find the reverse exit
         $stmt = $pdo->prepare("
-            UPDATE ow_place_exits 
-            SET connection_type = ? 
+            SELECT id, from_place_id, to_place_id, direction
+            FROM ow_place_exits 
             WHERE id = ?
         ");
-        $stmt->execute([$data['connection_type'], $data['exit_id']]);
+        $stmt->execute([$data['exit_id']]);
+        $exit = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($exit) {
+            // Update the main exit
+            $stmt = $pdo->prepare("
+                UPDATE ow_place_exits 
+                SET connection_type = ? 
+                WHERE id = ?
+            ");
+            $stmt->execute([$data['connection_type'], $data['exit_id']]);
+            
+            // Find and update the reverse exit if it exists
+            $reverseDirection = $oppositeDirections[$exit['direction']] ?? null;
+            if ($reverseDirection) {
+                $stmt = $pdo->prepare("
+                    UPDATE ow_place_exits 
+                    SET connection_type = ? 
+                    WHERE from_place_id = ? AND to_place_id = ? AND direction = ?
+                ");
+                $stmt->execute([$data['connection_type'], $exit['to_place_id'], $exit['from_place_id'], $reverseDirection]);
+            }
+        }
     } catch (Exception $e) {
         // If column doesn't exist, just continue - it will be added to schema later
         // Don't throw an error, just log it
