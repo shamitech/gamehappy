@@ -491,7 +491,9 @@ function updateExitType($pdo) {
         'northeast' => 'southwest',
         'southwest' => 'northeast',
         'northwest' => 'southeast',
-        'southeast' => 'northwest'
+        'southeast' => 'northwest',
+        'up' => 'down',
+        'down' => 'up'
     ];
     
     // Try to update with connection_type column

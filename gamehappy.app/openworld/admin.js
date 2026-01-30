@@ -649,7 +649,9 @@ function renderDirectionButtons(existingExits) {
     // Store exits globally for use in destination list filtering
     currentPlaceExits = existingExits;
     
-    const directions = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
+    const cardinalDirections = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'];
+    const verticalDirections = ['up', 'down'];
+    const allDirections = [...cardinalDirections, ...verticalDirections];
     const existingDirections = new Set(existingExits.map(e => e.direction.toLowerCase()));
     
     const container = document.getElementById('direction-buttons');
@@ -663,7 +665,9 @@ function renderDirectionButtons(existingExits) {
         'northeast': '↗',
         'northwest': '↖',
         'southeast': '↘',
-        'southwest': '↙'
+        'southwest': '↙',
+        'up': '⬆',
+        'down': '⬇'
     };
     
     const connectionTypeLabels = {
@@ -682,7 +686,8 @@ function renderDirectionButtons(existingExits) {
         'no_throughway': '#888888'
     };
     
-    container.innerHTML = directions.map(dir => {
+    // Render cardinal directions in grid
+    const gridHTML = cardinalDirections.map(dir => {
         const exists = existingDirections.has(dir);
         const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
         const icon = directionIcons[dir];
@@ -714,6 +719,45 @@ function renderDirectionButtons(existingExits) {
             `;
         }
     }).join('');
+    
+    // Build vertical bars HTML
+    const renderVerticalBar = (dir) => {
+        const exists = existingDirections.has(dir);
+        const exit = existingExits.find(e => e.direction.toLowerCase() === dir);
+        const icon = directionIcons[dir];
+        const connType = exit?.connection_type || 'full';
+        const dirLabel = dir === 'up' ? 'Up' : 'Down';
+        
+        if (exists) {
+            return `
+                <div class="vertical-bar ${dir}" style="cursor: pointer; position: relative;">
+                    <div class="exit-content">
+                        <div class="exit-destination">${escapeHtml(exit.destination_name || 'Unknown')}</div>
+                        <button type="button" class="btn-remove" onclick="deleteExit(${exit.id}); event.stopPropagation();">Remove</button>
+                    </div>
+                    <div class="connection-type-badge connection-badge-${dir}" 
+                         style="background-color: ${connectionTypeColors[connType]}"
+                         title="${connectionTypeLabels[connType]}"
+                         onclick="showConnectionTypeModal(${exit.id}, '${connType}'); event.stopPropagation();">
+                        ${connectionTypeLabels[connType].charAt(0)}
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="vertical-bar ${dir}">
+                    <button type="button" class="btn-add" onclick="showDestinationView('${dir}')">
+                        ${icon} ${dirLabel}
+                    </button>
+                </div>
+            `;
+        }
+    };
+    
+    const upBar = renderVerticalBar('up');
+    const downBar = renderVerticalBar('down');
+    
+    container.innerHTML = upBar + gridHTML + downBar;
 }
 
 function renderDestinationList(direction) {
@@ -745,7 +789,7 @@ function renderDestinationList(direction) {
 }
 
 async function createExitLink(direction, toPlaceId) {
-    // Map opposite directions (including diagonals)
+    // Map opposite directions (including diagonals and vertical)
     const oppositeDirections = {
         'north': 'south',
         'south': 'north',
@@ -754,7 +798,9 @@ async function createExitLink(direction, toPlaceId) {
         'northeast': 'southwest',
         'southwest': 'northeast',
         'northwest': 'southeast',
-        'southeast': 'northwest'
+        'southeast': 'northwest',
+        'up': 'down',
+        'down': 'up'
     };
     
     try {
@@ -902,7 +948,7 @@ function calculateRelativeDirection(fromDirection, toDirection) {
 async function deleteExit(exitId) {
     if (!confirm('Delete this exit?')) return;
     
-    // Map opposite directions (including diagonals)
+    // Map opposite directions (including diagonals and vertical)
     const oppositeDirections = {
         'north': 'south',
         'south': 'north',
@@ -911,7 +957,9 @@ async function deleteExit(exitId) {
         'northeast': 'southwest',
         'southwest': 'northeast',
         'northwest': 'southeast',
-        'southeast': 'northwest'
+        'southeast': 'northwest',
+        'up': 'down',
+        'down': 'up'
     };
     
     // Find the exit to get its destination and direction
