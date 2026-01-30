@@ -683,7 +683,16 @@ function renderDestinationList(direction) {
 }
 
 async function createExitLink(direction, toPlaceId) {
+    // Map opposite directions
+    const oppositeDirections = {
+        'north': 'south',
+        'south': 'north',
+        'east': 'west',
+        'west': 'east'
+    };
+    
     try {
+        // Create the forward exit
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -697,7 +706,26 @@ async function createExitLink(direction, toPlaceId) {
 
         const data = await response.json();
         if (data.success) {
-            showMessage('Exit created!', 'success', 'exit-message');
+            // Create the reverse exit in the destination place
+            const oppositeDirection = oppositeDirections[direction];
+            const reverseResponse = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'link_places',
+                    from_place_id: toPlaceId,
+                    to_place_id: navState.place_id,
+                    direction: oppositeDirection
+                })
+            });
+            
+            const reverseData = await reverseResponse.json();
+            if (reverseData.success) {
+                showMessage('Exit created with automatic reverse!', 'success', 'exit-message');
+            } else {
+                showMessage('Exit created but automatic reverse failed', 'warning', 'exit-message');
+            }
+            
             await loadExitsForPlace(navState.place_id);
             showExitsView();
         } else {
