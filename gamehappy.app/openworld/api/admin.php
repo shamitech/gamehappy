@@ -207,7 +207,7 @@ function linkPlaces($pdo) {
     }
     
     // Validate direction
-    $validDirections = ['north', 'south', 'east', 'west', 'up', 'down'];
+    $validDirections = ['north', 'south', 'east', 'west', 'up', 'down', 'northeast', 'northwest', 'southeast', 'southwest'];
     if (!in_array(strtolower($data['direction']), $validDirections)) {
         throw new Exception('Invalid direction');
     }
