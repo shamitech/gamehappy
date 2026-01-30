@@ -900,6 +900,47 @@ async function deleteExit(exitId) {
                                 })
                             });
                         }
+                        
+                        // Spatial sync cleanup: delete corresponding exits from other adjacent places
+                        // For each exit from current place, check if it relates spatially to the deleted exit
+                        for (const exit of currentPlaceExits) {
+                            const relatedDirection = calculateRelativeDirection(exitToDelete.direction, exit.direction);
+                            if (relatedDirection) {
+                                // This adjacent place has a related exit that should be deleted
+                                // Find and delete exits from exit.to_place_id to exitToDelete.to_place_id in the related direction
+                                try {
+                                    const adjacentExitsResponse = await fetch(API_URL, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            action: 'get_exits',
+                                            place_id: exit.to_place_id
+                                        })
+                                    });
+                                    
+                                    const adjacentExitsData = await adjacentExitsResponse.json();
+                                    if (adjacentExitsData.success) {
+                                        const exitToRemove = adjacentExitsData.exits.find(e => 
+                                            e.direction.toLowerCase() === relatedDirection && 
+                                            e.to_place_id === exitToDelete.to_place_id
+                                        );
+                                        
+                                        if (exitToRemove) {
+                                            await fetch(API_URL, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    action: 'delete_exit',
+                                                    exit_id: exitToRemove.id
+                                                })
+                                            });
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('Error deleting spatial sync exit:', error);
+                                }
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Error deleting reverse exit:', error);
