@@ -546,13 +546,6 @@ async function addMechanic(e) {
         showMessage('Error adding mechanic', 'error');
     }
 }
-        } else {
-            showMessage('Error: ' + data.message, 'error');
-        }
-    } catch (error) {
-        showMessage('Error adding mechanic: ' + error.message, 'error');
-    }
-}
 
 // UTILITY FUNCTIONS
 function showMessage(message, type) {
