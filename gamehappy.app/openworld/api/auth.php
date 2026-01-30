@@ -10,7 +10,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Get action from GET, POST form data, or JSON body
 $action = $_GET['action'] ?? $_POST['action'] ?? null;
+
+// If no action in GET/POST, check JSON body
+if (!$action) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $action = $json_data['action'] ?? null;
+}
 
 if (!$action) {
     http_response_code(400);
