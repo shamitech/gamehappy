@@ -374,6 +374,57 @@ function linkPlaces($pdo) {
     }
     
     if ($result) {
+        // Create the opposite direction exit (bidirectional)
+        $oppositeDirections = [
+            'north' => 'south',
+            'south' => 'north',
+            'east' => 'west',
+            'west' => 'east',
+            'northeast' => 'southwest',
+            'northwest' => 'southeast',
+            'southeast' => 'northwest',
+            'southwest' => 'northeast',
+            'up' => 'down',
+            'down' => 'up'
+        ];
+        
+        $oppositeDir = $oppositeDirections[$direction];
+        
+        // Check if opposite exit already exists
+        $stmt = $pdo->prepare("
+            SELECT id FROM ow_place_exits 
+            WHERE from_place_id = ? AND direction = ?
+        ");
+        $stmt->execute([$toPlaceId, $oppositeDir]);
+        
+        if (!$stmt->fetch()) {
+            // Create opposite direction exit
+            $stmt = $pdo->prepare("
+                INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                VALUES (?, ?, ?, ?)
+            ");
+            
+            try {
+                $stmt->execute([
+                    $toPlaceId,
+                    $fromPlaceId,
+                    $oppositeDir,
+                    $connectionType
+                ]);
+            } catch (Exception $e) {
+                // If connection_type column doesn't exist, try without it
+                $stmt = $pdo->prepare("
+                    INSERT INTO ow_place_exits (from_place_id, to_place_id, direction)
+                    VALUES (?, ?, ?)
+                ");
+                $stmt->execute([
+                    $toPlaceId,
+                    $fromPlaceId,
+                    $oppositeDir
+                ]);
+            }
+        }
+        
         // After creating the exit, check for vertical stacking opportunities
         // Find all places at the same X,Y coordinates but different Z levels
         $autoStackedPlaces = [];
