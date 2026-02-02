@@ -288,11 +288,17 @@ function linkPlaces($pdo) {
     $existingY = $toPlace['coord_y'];
     $existingZ = $toPlace['coord_z'];
     
-    // If to_place has never been positioned (all 0), update its coordinates
-    if ($existingX === null || ($existingX == 0 && $existingY == 0 && $existingZ == 0)) {
+    // Check how many exits this place already has
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM ow_place_exits WHERE from_place_id = ?");
+    $stmt->execute([$toPlaceId]);
+    $exitCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    
+    // If to_place has never been positioned (all 0) OR has no exits yet (new place), update its coordinates
+    if ($existingX === null || ($existingX == 0 && $existingY == 0 && $existingZ == 0) || $exitCount == 0) {
         $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
         $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     } else {
+        // Only validate if place is already established with exits
         // Validate that target place is at the expected coordinates
         if ($existingX != $toX || $existingY != $toY || $existingZ != $toZ) {
             throw new Exception('Target place conflicts with spatial coordinates. Expected (' . $toX . ',' . $toY . ',' . $toZ . ') but found (' . $existingX . ',' . $existingY . ',' . $existingZ . ')');
