@@ -939,7 +939,7 @@ function renderDestinationList(direction) {
     const availablePlaces = places.filter(p => 
         p.id !== navState.place_id && 
         !assignedPlaceIds.has(p.id) &&
-        (!p.coord_x && !p.coord_y && !p.coord_z) // Filter out places with assigned coordinates
+        ((p.coord_x ?? 0) === 0 && (p.coord_y ?? 0) === 0 && (p.coord_z ?? 0) === 0) // Only unassigned places (all coords at 0)
     );
     
     if (availablePlaces.length === 0) {
