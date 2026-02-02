@@ -31,8 +31,9 @@ async function checkAuth() {
         if (data.authenticated) {
             document.getElementById('login-screen').classList.remove('visible');
             document.getElementById('dashboard').style.display = 'block';
-            // Ensure database schema is ready for connection types
+            // Ensure database schema is ready for connection types and coordinates
             ensureConnectionTypeColumn();
+            ensureCoordinateColumns();
             loadWorlds();
         } else {
             document.getElementById('login-screen').classList.add('visible');
@@ -1315,6 +1316,24 @@ async function ensureConnectionTypeColumn() {
         }
     } catch (error) {
         console.error('Failed to ensure connection type column:', error);
+    }
+}
+
+async function ensureCoordinateColumns() {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'ensure_coordinates'
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            console.log('Coordinate columns ready:', data.message);
+        }
+    } catch (error) {
+        console.error('Failed to ensure coordinate columns:', error);
     }
 }
 

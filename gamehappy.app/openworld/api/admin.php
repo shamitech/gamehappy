@@ -92,6 +92,9 @@ try {
         case 'ensure_connection_type_column':
             ensureConnectionTypeColumn($pdo);
             break;
+        case 'ensure_coordinates':
+            ensureCoordinateColumns($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -236,7 +239,64 @@ function linkPlaces($pdo) {
         throw new Exception('Exit already exists in that direction');
     }
     
-    // Check if connection_type column exists, if not use basic INSERT
+    // Get or calculate coordinates for from_place
+    $stmt = $pdo->prepare("SELECT coord_x, coord_y, coord_z FROM ow_places WHERE id = ?");
+    $stmt->execute([$data['from_place_id']]);
+    $fromPlace = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$fromPlace) {
+        throw new Exception('From place not found');
+    }
+    
+    // Calculate target coordinates based on direction
+    $fromX = $fromPlace['coord_x'] ?? 0;
+    $fromY = $fromPlace['coord_y'] ?? 0;
+    $fromZ = $fromPlace['coord_z'] ?? 0;
+    
+    $direction = strtolower($data['direction']);
+    $toX = $fromX;
+    $toY = $fromY;
+    $toZ = $fromZ;
+    
+    // Calculate new coordinates
+    switch ($direction) {
+        case 'north': $toY++; break;
+        case 'south': $toY--; break;
+        case 'east': $toX++; break;
+        case 'west': $toX--; break;
+        case 'northeast': $toX++; $toY++; break;
+        case 'northwest': $toX--; $toY++; break;
+        case 'southeast': $toX++; $toY--; break;
+        case 'southwest': $toX--; $toY--; break;
+        case 'up': $toZ++; break;
+        case 'down': $toZ--; break;
+    }
+    
+    // Get current coordinates of to_place if it exists
+    $stmt = $pdo->prepare("SELECT coord_x, coord_y, coord_z FROM ow_places WHERE id = ?");
+    $stmt->execute([$data['to_place_id']]);
+    $toPlace = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$toPlace) {
+        throw new Exception('To place not found');
+    }
+    
+    $existingX = $toPlace['coord_x'];
+    $existingY = $toPlace['coord_y'];
+    $existingZ = $toPlace['coord_z'];
+    
+    // If to_place has never been positioned (all 0), update its coordinates
+    if ($existingX === null || ($existingX == 0 && $existingY == 0 && $existingZ == 0)) {
+        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
+        $stmt->execute([$toX, $toY, $toZ, $data['to_place_id']]);
+    } else {
+        // Validate that target place is at the expected coordinates
+        if ($existingX != $toX || $existingY != $toY || $existingZ != $toZ) {
+            throw new Exception('Target place conflicts with spatial coordinates. Expected (' . $toX . ',' . $toY . ',' . $toZ . ') but found (' . $existingX . ',' . $existingY . ',' . $existingZ . ')');
+        }
+    }
+    
+    // Create the exit
     $stmt = $pdo->prepare("
         INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
         VALUES (?, ?, ?, ?)
@@ -246,7 +306,7 @@ function linkPlaces($pdo) {
         $result = $stmt->execute([
             $data['from_place_id'],
             $data['to_place_id'],
-            strtolower($data['direction']),
+            $direction,
             $connectionType
         ]);
     } catch (Exception $e) {
@@ -258,7 +318,7 @@ function linkPlaces($pdo) {
         $result = $stmt->execute([
             $data['from_place_id'],
             $data['to_place_id'],
-            strtolower($data['direction'])
+            $direction
         ]);
     }
     
@@ -551,6 +611,26 @@ function ensureConnectionTypeColumn($pdo) {
             exit;
         } catch (Exception $createError) {
             throw new Exception('Failed to create column: ' . $createError->getMessage());
+        }
+    }
+}
+
+function ensureCoordinateColumns($pdo) {
+    try {
+        // Check if columns exist
+        $stmt = $pdo->query("SELECT coord_x, coord_y, coord_z FROM ow_places LIMIT 1");
+        echo json_encode(['success' => true, 'message' => 'Coordinate columns already exist']);
+        exit;
+    } catch (Exception $e) {
+        // Columns don't exist, create them
+        try {
+            $pdo->exec("ALTER TABLE ow_places ADD COLUMN coord_x INT DEFAULT 0");
+            $pdo->exec("ALTER TABLE ow_places ADD COLUMN coord_y INT DEFAULT 0");
+            $pdo->exec("ALTER TABLE ow_places ADD COLUMN coord_z INT DEFAULT 0");
+            echo json_encode(['success' => true, 'message' => 'Coordinate columns created successfully']);
+            exit;
+        } catch (Exception $createError) {
+            throw new Exception('Failed to create coordinate columns: ' . $createError->getMessage());
         }
     }
 }
