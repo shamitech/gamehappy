@@ -151,6 +151,8 @@ function createWorld($pdo, $username) {
         throw new Exception('World name required');
     }
     
+    $isPublic = isset($data['is_public']) && $data['is_public'] ? 1 : 0;
+    
     $stmt = $pdo->prepare("
         INSERT INTO ow_worlds (name, description, created_by, is_public)
         VALUES (?, ?, ?, ?)
@@ -160,7 +162,7 @@ function createWorld($pdo, $username) {
         $data['name'],
         $data['description'] ?? null,
         $username,
-        $data['is_public'] ?? false
+        $isPublic
     ]);
     
     if ($result) {
