@@ -612,7 +612,10 @@ function showExitsView() {
     document.getElementById('exit-message').textContent = '';
 }
 
-function showDestinationView(direction) {
+async function showDestinationView(direction) {
+    // Refresh places to get latest coordinates
+    await loadPlacesForWorld(navState.world_id);
+    
     document.getElementById('select-destination-overlay').style.display = 'block';
     document.getElementById('selected-direction-name').textContent = direction.charAt(0).toUpperCase() + direction.slice(1);
     renderDestinationList(direction);
