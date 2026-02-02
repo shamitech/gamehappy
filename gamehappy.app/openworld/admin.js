@@ -904,9 +904,13 @@ function renderDestinationList(direction) {
         return;
     }
 
-    // Filter out the current place and any places already assigned to other directions
+    // Filter out the current place, places already assigned to other directions, and places already assigned coordinates
     const assignedPlaceIds = new Set(currentPlaceExits.map(e => e.to_place_id));
-    const availablePlaces = places.filter(p => p.id !== navState.place_id && !assignedPlaceIds.has(p.id));
+    const availablePlaces = places.filter(p => 
+        p.id !== navState.place_id && 
+        !assignedPlaceIds.has(p.id) &&
+        (!p.coord_x && !p.coord_y && !p.coord_z) // Filter out places with assigned coordinates
+    );
     
     if (availablePlaces.length === 0) {
         container.innerHTML = '<p class="empty-state">No other places available</p>';
