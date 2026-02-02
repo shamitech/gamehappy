@@ -943,17 +943,8 @@ button {
     z-index: 1000;
 }
 
-.modal-content {
-    background: #2a2a2a;
-    padding: 30px;
-    border-radius: 8px;
-    border: 1px solid #444;
-    width: 50vw;
-    max-width: 1400px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
+.modal.visible {
+    display: flex;
 }
 
 .modal-close {
