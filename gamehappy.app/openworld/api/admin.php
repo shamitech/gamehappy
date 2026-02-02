@@ -98,6 +98,9 @@ try {
         case 'ensure_coordinates':
             ensureCoordinateColumns($pdo);
             break;
+        case 'ensure_placed':
+            ensurePlacedColumn($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -856,6 +859,24 @@ function ensureCoordinateColumns($pdo) {
             exit;
         } catch (Exception $createError) {
             throw new Exception('Failed to create coordinate columns: ' . $createError->getMessage());
+        }
+    }
+}
+
+function ensurePlacedColumn($pdo) {
+    try {
+        // Check if column exists
+        $stmt = $pdo->query("SELECT placed FROM ow_places LIMIT 1");
+        echo json_encode(['success' => true, 'message' => 'Placed column already exists']);
+        exit;
+    } catch (Exception $e) {
+        // Column doesn't exist, create it
+        try {
+            $pdo->exec("ALTER TABLE ow_places ADD COLUMN placed TINYINT DEFAULT 0");
+            echo json_encode(['success' => true, 'message' => 'Placed column created successfully']);
+            exit;
+        } catch (Exception $createError) {
+            throw new Exception('Failed to create placed column: ' . $createError->getMessage());
         }
     }
 }

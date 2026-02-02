@@ -31,9 +31,10 @@ async function checkAuth() {
         if (data.authenticated) {
             document.getElementById('login-screen').classList.remove('visible');
             document.getElementById('dashboard').style.display = 'block';
-            // Ensure database schema is ready for connection types and coordinates
+            // Ensure database schema is ready for connection types, coordinates, and placed flag
             ensureConnectionTypeColumn();
             ensureCoordinateColumns();
+            ensurePlacedColumn();
             loadWorlds();
         } else {
             document.getElementById('login-screen').classList.add('visible');
@@ -1383,6 +1384,24 @@ async function ensureCoordinateColumns() {
         }
     } catch (error) {
         console.error('Failed to ensure coordinate columns:', error);
+    }
+}
+
+async function ensurePlacedColumn() {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'ensure_placed'
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            console.log('Placed column ready:', data.message);
+        }
+    } catch (error) {
+        console.error('Failed to ensure placed column:', error);
     }
 }
 
