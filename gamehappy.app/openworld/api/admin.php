@@ -101,6 +101,33 @@ try {
         case 'ensure_placed':
             ensurePlacedColumn($pdo);
             break;
+        case 'ensure_quest_tables':
+            ensureQuestTables($pdo);
+            break;
+        case 'create_quest':
+            createQuest($pdo, $username);
+            break;
+        case 'get_quests':
+            getQuests($pdo);
+            break;
+        case 'create_quest_task':
+            createQuestTask($pdo, $username);
+            break;
+        case 'get_quest_tasks':
+            getQuestTasks($pdo);
+            break;
+        case 'link_quest_tasks':
+            linkQuestTasks($pdo);
+            break;
+        case 'delete_quest_task':
+            deleteQuestTask($pdo);
+            break;
+        case 'delete_quest_task_link':
+            deleteQuestTaskLink($pdo);
+            break;
+        case 'delete_quest':
+            deleteQuest($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -928,4 +955,306 @@ function ensurePlacedColumn($pdo) {
             throw new Exception('Failed to create placed column: ' . $createError->getMessage());
         }
     }
+}
+
+function ensureQuestTables($pdo) {
+    try {
+        // Check if tables exist
+        $stmt = $pdo->query("SELECT 1 FROM ow_quests LIMIT 1");
+        echo json_encode(['success' => true, 'message' => 'Quest tables already exist']);
+        exit;
+    } catch (Exception $e) {
+        // Tables don't exist, create them
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS ow_quests (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    world_id INT NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    description TEXT,
+                    quest_type ENUM('main', 'side') DEFAULT 'side',
+                    created_by VARCHAR(255),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (world_id) REFERENCES ow_worlds(id) ON DELETE CASCADE
+                )
+            ");
+            
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS ow_quest_tasks (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    quest_id INT NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    description TEXT,
+                    is_required TINYINT DEFAULT 0,
+                    linked_place_id INT,
+                    linked_object_id INT,
+                    task_order INT DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (quest_id) REFERENCES ow_quests(id) ON DELETE CASCADE,
+                    FOREIGN KEY (linked_place_id) REFERENCES ow_places(id) ON DELETE SET NULL,
+                    FOREIGN KEY (linked_object_id) REFERENCES ow_objects(id) ON DELETE SET NULL
+                )
+            ");
+            
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS ow_quest_task_links (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    from_task_id INT NOT NULL,
+                    to_task_id INT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (from_task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE,
+                    FOREIGN KEY (to_task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_link (from_task_id, to_task_id)
+                )
+            ");
+            
+            error_log("[ensureQuestTables] Quest tables created successfully");
+            echo json_encode(['success' => true, 'message' => 'Quest tables created successfully']);
+            exit;
+        } catch (Exception $createError) {
+            throw new Exception('Failed to create quest tables: ' . $createError->getMessage());
+        }
+    }
+}
+
+function createQuest($pdo, $username) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['world_id'] || !$data['name']) {
+        throw new Exception('World ID and quest name required');
+    }
+    
+    $questType = $data['quest_type'] ?? 'side';
+    if (!in_array($questType, ['main', 'side'])) {
+        $questType = 'side';
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO ow_quests (world_id, name, description, quest_type, created_by)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    
+    $result = $stmt->execute([
+        $data['world_id'],
+        $data['name'],
+        $data['description'] ?? null,
+        $questType,
+        $username
+    ]);
+    
+    if ($result) {
+        error_log("[createQuest] Quest created: {$data['name']} (type: $questType) by $username");
+        echo json_encode([
+            'success' => true,
+            'quest_id' => $pdo->lastInsertId(),
+            'message' => 'Quest created successfully'
+        ]);
+    } else {
+        throw new Exception('Failed to create quest');
+    }
+    exit;
+}
+
+function getQuests($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $worldId = $data['world_id'] ?? $_GET['world_id'] ?? null;
+    
+    if (!$worldId) {
+        throw new Exception('World ID required');
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT id, name, description, quest_type, created_at
+        FROM ow_quests
+        WHERE world_id = ?
+        ORDER BY quest_type DESC, created_at ASC
+    ");
+    
+    $stmt->execute([$worldId]);
+    $quests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo json_encode(['success' => true, 'quests' => $quests]);
+    exit;
+}
+
+function createQuestTask($pdo, $username) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['quest_id'] || !$data['name']) {
+        throw new Exception('Quest ID and task name required');
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO ow_quest_tasks (quest_id, name, description, is_required, linked_place_id, linked_object_id, task_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ");
+    
+    $result = $stmt->execute([
+        $data['quest_id'],
+        $data['name'],
+        $data['description'] ?? null,
+        $data['is_required'] ?? 0,
+        $data['linked_place_id'] ?? null,
+        $data['linked_object_id'] ?? null,
+        $data['task_order'] ?? 0
+    ]);
+    
+    if ($result) {
+        $taskId = $pdo->lastInsertId();
+        error_log("[createQuestTask] Task created: {$data['name']} for quest {$data['quest_id']}");
+        echo json_encode([
+            'success' => true,
+            'task_id' => $taskId,
+            'message' => 'Task created successfully'
+        ]);
+    } else {
+        throw new Exception('Failed to create quest task');
+    }
+    exit;
+}
+
+function getQuestTasks($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $questId = $data['quest_id'] ?? $_GET['quest_id'] ?? null;
+    
+    if (!$questId) {
+        throw new Exception('Quest ID required');
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT id, quest_id, name, description, is_required, linked_place_id, linked_object_id, task_order, created_at
+        FROM ow_quest_tasks
+        WHERE quest_id = ?
+        ORDER BY task_order ASC, created_at ASC
+    ");
+    
+    $stmt->execute([$questId]);
+    $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // For each task, get its linked tasks
+    foreach ($tasks as &$task) {
+        $linkStmt = $pdo->prepare("
+            SELECT to_task_id FROM ow_quest_task_links WHERE from_task_id = ?
+        ");
+        $linkStmt->execute([$task['id']]);
+        $task['linked_tasks'] = $linkStmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+    
+    echo json_encode(['success' => true, 'tasks' => $tasks]);
+    exit;
+}
+
+function linkQuestTasks($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['from_task_id'] || !$data['to_task_id']) {
+        throw new Exception('From task ID and to task ID required');
+    }
+    
+    // Prevent self-linking
+    if ($data['from_task_id'] == $data['to_task_id']) {
+        throw new Exception('Cannot link a task to itself');
+    }
+    
+    // Check if link already exists
+    $stmt = $pdo->prepare("
+        SELECT id FROM ow_quest_task_links 
+        WHERE from_task_id = ? AND to_task_id = ?
+    ");
+    $stmt->execute([$data['from_task_id'], $data['to_task_id']]);
+    
+    if ($stmt->fetch()) {
+        throw new Exception('This link already exists');
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO ow_quest_task_links (from_task_id, to_task_id)
+        VALUES (?, ?)
+    ");
+    
+    $result = $stmt->execute([
+        $data['from_task_id'],
+        $data['to_task_id']
+    ]);
+    
+    if ($result) {
+        error_log("[linkQuestTasks] Tasks linked: {$data['from_task_id']} -> {$data['to_task_id']}");
+        echo json_encode([
+            'success' => true,
+            'message' => 'Tasks linked successfully'
+        ]);
+    } else {
+        throw new Exception('Failed to link tasks');
+    }
+    exit;
+}
+
+function deleteQuestTask($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id']) {
+        throw new Exception('Task ID required');
+    }
+    
+    // Delete all links involving this task
+    $stmt = $pdo->prepare("DELETE FROM ow_quest_task_links WHERE from_task_id = ? OR to_task_id = ?");
+    $stmt->execute([$data['task_id'], $data['task_id']]);
+    
+    // Delete the task
+    $stmt = $pdo->prepare("DELETE FROM ow_quest_tasks WHERE id = ?");
+    $result = $stmt->execute([$data['task_id']]);
+    
+    if ($result) {
+        error_log("[deleteQuestTask] Task deleted: {$data['task_id']}");
+        echo json_encode(['success' => true, 'message' => 'Task deleted successfully']);
+    } else {
+        throw new Exception('Failed to delete task');
+    }
+    exit;
+}
+
+function deleteQuestTaskLink($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['from_task_id'] || !$data['to_task_id']) {
+        throw new Exception('From task ID and to task ID required');
+    }
+    
+    $stmt = $pdo->prepare("
+        DELETE FROM ow_quest_task_links 
+        WHERE from_task_id = ? AND to_task_id = ?
+    ");
+    
+    $result = $stmt->execute([
+        $data['from_task_id'],
+        $data['to_task_id']
+    ]);
+    
+    if ($result) {
+        error_log("[deleteQuestTaskLink] Link deleted: {$data['from_task_id']} -> {$data['to_task_id']}");
+        echo json_encode(['success' => true, 'message' => 'Link deleted successfully']);
+    } else {
+        throw new Exception('Failed to delete link');
+    }
+    exit;
+}
+
+function deleteQuest($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['quest_id']) {
+        throw new Exception('Quest ID required');
+    }
+    
+    // Delete all tasks and their links (cascade handled by foreign keys)
+    $stmt = $pdo->prepare("DELETE FROM ow_quests WHERE id = ?");
+    $result = $stmt->execute([$data['quest_id']]);
+    
+    if ($result) {
+        error_log("[deleteQuest] Quest deleted: {$data['quest_id']}");
+        echo json_encode(['success' => true, 'message' => 'Quest deleted successfully']);
+    } else {
+        throw new Exception('Failed to delete quest');
+    }
+    exit;
 }

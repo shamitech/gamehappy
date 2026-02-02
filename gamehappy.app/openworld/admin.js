@@ -31,10 +31,11 @@ async function checkAuth() {
         if (data.authenticated) {
             document.getElementById('login-screen').classList.remove('visible');
             document.getElementById('dashboard').style.display = 'block';
-            // Ensure database schema is ready for connection types, coordinates, and placed flag
+            // Ensure database schema is ready for connection types, coordinates, placed flag, and quests
             ensureConnectionTypeColumn();
             ensureCoordinateColumns();
             ensurePlacedColumn();
+            ensureQuestTables();
             loadWorlds();
         } else {
             document.getElementById('login-screen').classList.add('visible');
@@ -200,13 +201,20 @@ function renderWorldsList() {
     }
 
     container.innerHTML = worlds.map(world => `
-        <div class="list-item clickable" onclick="navigateToPlaces(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="cursor: pointer;">
-            <div class="list-item-content">
+        <div class="list-item">
+            <div class="list-item-content clickable" onclick="navigateToPlaces(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="cursor: pointer; flex: 1;">
                 <div class="list-item-title">${escapeHtml(world.name)}</div>
                 <div class="list-item-desc">${escapeHtml(world.description || '(no description)')}</div>
             </div>
+            <button class="btn-small" onclick="setCurrentWorldAndShowQuests(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="margin-left: 10px;">Quests</button>
         </div>
     `).join('');
+}
+
+function setCurrentWorldAndShowQuests(worldId, worldName) {
+    navState.world_id = worldId;
+    navState.world_name = worldName;
+    showQuestManagement();
 }
 
 // ===== PLACES =====
@@ -1453,6 +1461,330 @@ async function updateConnectionType(newType) {
     } catch (error) {
         console.error('Error updating connection type:', error);
         alert('Error updating connection type');
+    }
+}
+
+// ===== QUEST SYSTEM =====
+
+let quests = [];
+let currentQuestTasks = [];
+let currentQuestId = null;
+
+async function ensureQuestTables() {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'ensure_quest_tables' })
+        });
+        const data = await response.json();
+        console.log('[ensureQuestTables]', data.message);
+    } catch (error) {
+        console.error('Error ensuring quest tables:', error);
+    }
+}
+
+async function loadQuests() {
+    if (!navState.world_id) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_quests',
+                world_id: navState.world_id
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            quests = data.quests;
+            console.log('[loadQuests] Loaded', quests.length, 'quests');
+        }
+    } catch (error) {
+        console.error('Error loading quests:', error);
+    }
+}
+
+async function loadQuestTasks(questId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_quest_tasks',
+                quest_id: questId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            currentQuestTasks = data.tasks;
+            currentQuestId = questId;
+            console.log('[loadQuestTasks] Loaded', currentQuestTasks.length, 'tasks for quest', questId);
+        }
+    } catch (error) {
+        console.error('Error loading quest tasks:', error);
+    }
+}
+
+function showQuestManagement() {
+    loadQuests();
+    openModal('modal-quests');
+}
+
+function renderQuestsList() {
+    const container = document.getElementById('quests-list');
+    if (!container) return;
+    
+    if (quests.length === 0) {
+        container.innerHTML = '<p class="empty-state">No quests yet</p>';
+        return;
+    }
+    
+    const mainQuests = quests.filter(q => q.quest_type === 'main');
+    const sideQuests = quests.filter(q => q.quest_type === 'side');
+    
+    let html = '';
+    
+    if (mainQuests.length > 0) {
+        html += '<div class="quest-section"><h4>Main Quest</h4>';
+        mainQuests.forEach(quest => {
+            html += `
+                <div class="list-item">
+                    <div class="list-item-content" onclick="selectQuest(${quest.id}, '${escapeHtml(quest.name)}')">
+                        <div class="list-item-title">${escapeHtml(quest.name)}</div>
+                        <div class="list-item-desc">${escapeHtml(quest.description || '(no description)')}</div>
+                    </div>
+                    <button class="btn-small btn-danger" onclick="deleteQuestConfirm(${quest.id})">Delete</button>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+    
+    if (sideQuests.length > 0) {
+        html += '<div class="quest-section"><h4>Side Quests</h4>';
+        sideQuests.forEach(quest => {
+            html += `
+                <div class="list-item">
+                    <div class="list-item-content" onclick="selectQuest(${quest.id}, '${escapeHtml(quest.name)}')">
+                        <div class="list-item-title">${escapeHtml(quest.name)}</div>
+                        <div class="list-item-desc">${escapeHtml(quest.description || '(no description)')}</div>
+                    </div>
+                    <button class="btn-small btn-danger" onclick="deleteQuestConfirm(${quest.id})">Delete</button>
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+async function selectQuest(questId, questName) {
+    currentQuestId = questId;
+    await loadQuestTasks(questId);
+    renderQuestTasks();
+    document.getElementById('current-quest-name').textContent = escapeHtml(questName);
+    document.getElementById('quest-tasks-section').style.display = 'block';
+}
+
+function renderQuestTasks() {
+    const container = document.getElementById('quest-tasks-list');
+    if (!container) return;
+    
+    if (currentQuestTasks.length === 0) {
+        container.innerHTML = '<p class="empty-state">No tasks yet. Add one below.</p>';
+        return;
+    }
+    
+    container.innerHTML = currentQuestTasks.map(task => `
+        <div class="task-item">
+            <div class="task-content">
+                <div class="task-title">${escapeHtml(task.name)}</div>
+                <div class="task-meta">
+                    ${task.is_required ? '<span class="badge badge-required">Required</span>' : '<span class="badge badge-optional">Optional</span>'}
+                    ${task.linked_place_id ? '<span class="badge">Room</span>' : ''}
+                    ${task.linked_object_id ? '<span class="badge">Object</span>' : ''}
+                    ${task.linked_tasks.length > 0 ? `<span class="badge">${task.linked_tasks.length} links</span>` : ''}
+                </div>
+                <div class="task-desc">${escapeHtml(task.description || '(no description)')}</div>
+            </div>
+            <div class="task-actions">
+                <button class="btn-small" onclick="editQuestTask(${task.id})">Edit</button>
+                <button class="btn-small btn-danger" onclick="deleteQuestTaskConfirm(${task.id})">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openCreateQuestModal() {
+    document.getElementById('quest-type-select').value = 'side';
+    document.getElementById('quest-name-input').value = '';
+    document.getElementById('quest-desc-input').value = '';
+    openModal('modal-create-quest');
+}
+
+async function createNewQuest() {
+    const name = document.getElementById('quest-name-input').value.trim();
+    const desc = document.getElementById('quest-desc-input').value.trim();
+    const type = document.getElementById('quest-type-select').value;
+    
+    if (!name) {
+        alert('Quest name required');
+        return;
+    }
+    
+    if (type === 'main' && quests.some(q => q.quest_type === 'main')) {
+        alert('A main quest already exists for this world');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create_quest',
+                world_id: navState.world_id,
+                name: name,
+                description: desc,
+                quest_type: type
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[createNewQuest] Quest created:', data.quest_id);
+            await loadQuests();
+            renderQuestsList();
+            closeModal('modal-create-quest');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error creating quest:', error);
+        alert('Error creating quest');
+    }
+}
+
+function openCreateTaskModal() {
+    if (!currentQuestId) {
+        alert('Select a quest first');
+        return;
+    }
+    
+    document.getElementById('task-name-input').value = '';
+    document.getElementById('task-desc-input').value = '';
+    document.getElementById('task-required-input').checked = false;
+    
+    // Populate place dropdown
+    const placeSelect = document.getElementById('task-place-select');
+    placeSelect.innerHTML = '<option value="">-- None --</option>' + 
+        places.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    
+    // Populate object dropdown
+    const objectSelect = document.getElementById('task-object-select');
+    objectSelect.innerHTML = '<option value="">-- None --</option>' + 
+        objects.map(o => `<option value="${o.id}">${escapeHtml(o.name)}</option>`).join('');
+    
+    openModal('modal-create-task');
+}
+
+async function createNewQuestTask() {
+    const name = document.getElementById('task-name-input').value.trim();
+    const desc = document.getElementById('task-desc-input').value.trim();
+    const isRequired = document.getElementById('task-required-input').checked ? 1 : 0;
+    const placeId = document.getElementById('task-place-select').value || null;
+    const objectId = document.getElementById('task-object-select').value || null;
+    
+    if (!name) {
+        alert('Task name required');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create_quest_task',
+                quest_id: currentQuestId,
+                name: name,
+                description: desc,
+                is_required: isRequired,
+                linked_place_id: placeId,
+                linked_object_id: objectId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[createNewQuestTask] Task created:', data.task_id);
+            await loadQuestTasks(currentQuestId);
+            renderQuestTasks();
+            closeModal('modal-create-task');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error creating task:', error);
+        alert('Error creating task');
+    }
+}
+
+async function deleteQuestConfirm(questId) {
+    if (confirm('Delete this quest and all its tasks?')) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete_quest',
+                    quest_id: questId
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                await loadQuests();
+                renderQuestsList();
+                document.getElementById('quest-tasks-section').style.display = 'none';
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting quest:', error);
+            alert('Error deleting quest');
+        }
+    }
+}
+
+async function deleteQuestTaskConfirm(taskId) {
+    if (confirm('Delete this task and its links?')) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete_quest_task',
+                    task_id: taskId
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                await loadQuestTasks(currentQuestId);
+                renderQuestTasks();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            alert('Error deleting task');
+        }
     }
 }
 

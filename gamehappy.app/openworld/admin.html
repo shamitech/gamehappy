@@ -291,6 +291,106 @@
         </div>
     </div>
 
-    <script src="admin.js"></script>
-</body>
-</html>
+    <!-- QUESTS MODAL -->
+    <div id="modal-quests" class="modal">
+        <div class="modal-content" style="width: 50vw; max-width: 1400px;">
+            <button class="modal-close" onclick="closeModal('modal-quests')">×</button>
+            <h2>Quest Management</h2>
+            
+            <button class="btn-add" onclick="openCreateQuestModal()" style="margin-bottom: 20px;">+ Create Quest</button>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <!-- Quests List -->
+                <div>
+                    <h3>Quests</h3>
+                    <div id="quests-list" class="modal-list"></div>
+                </div>
+                
+                <!-- Tasks Section -->
+                <div id="quest-tasks-section" style="display: none;">
+                    <h3 id="current-quest-name"></h3>
+                    <button class="btn-add" onclick="openCreateTaskModal()" style="margin-bottom: 10px;">+ Add Task</button>
+                    <div id="quest-tasks-list" class="modal-list"></div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-quests')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE QUEST MODAL -->
+    <div id="modal-create-quest" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="modal-close" onclick="closeModal('modal-create-quest')">×</button>
+            <h2>Create Quest</h2>
+            
+            <div class="form-group">
+                <label for="quest-type-select">Quest Type:</label>
+                <select id="quest-type-select">
+                    <option value="side">Side Quest</option>
+                    <option value="main">Main Quest</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="quest-name-input">Quest Name:</label>
+                <input type="text" id="quest-name-input" placeholder="Enter quest name" style="width: 100%; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group">
+                <label for="quest-desc-input">Description:</label>
+                <textarea id="quest-desc-input" placeholder="Enter quest description" style="width: 100%; box-sizing: border-box; min-height: 100px;"></textarea>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-primary" onclick="createNewQuest()">Create</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-create-quest')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE TASK MODAL -->
+    <div id="modal-create-task" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="modal-close" onclick="closeModal('modal-create-task')">×</button>
+            <h2>Create Quest Task</h2>
+            
+            <div class="form-group">
+                <label for="task-name-input">Task Name:</label>
+                <input type="text" id="task-name-input" placeholder="Enter task name" style="width: 100%; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group">
+                <label for="task-desc-input">Description:</label>
+                <textarea id="task-desc-input" placeholder="Enter task description" style="width: 100%; box-sizing: border-box; min-height: 100px;"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-required-input">
+                    <input type="checkbox" id="task-required-input"> Required to progress
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-place-select">Link to Room (optional):</label>
+                <select id="task-place-select" style="width: 100%; box-sizing: border-box;">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-object-select">Link to Object (optional):</label>
+                <select id="task-object-select" style="width: 100%; box-sizing: border-box;">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-primary" onclick="createNewQuestTask()">Create</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-create-task')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
