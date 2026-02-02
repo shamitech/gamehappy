@@ -228,20 +228,75 @@ function linkPlaces($pdo) {
         $connectionType = $data['connection_type'];
     }
     
+    $direction = strtolower($data['direction']);
+    $fromPlaceId = $data['from_place_id'];
+    $toPlaceId = $data['to_place_id'];
+    
     // Check if exit already exists
     $stmt = $pdo->prepare("
         SELECT id FROM ow_place_exits 
         WHERE from_place_id = ? AND direction = ?
     ");
-    $stmt->execute([$data['from_place_id'], strtolower($data['direction'])]);
+    $stmt->execute([$fromPlaceId, $direction]);
+    $existingExit = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if ($stmt->fetch()) {
-        throw new Exception('Exit already exists in that direction');
+    // If exit in this direction already exists, auto-stack vertically
+    if ($existingExit) {
+        // Get the existing exit's destination
+        $stmt = $pdo->prepare("
+            SELECT to_place_id FROM ow_place_exits 
+            WHERE id = ?
+        ");
+        $stmt->execute([$existingExit['id']]);
+        $existingDest = $stmt->fetch(PDO::FETCH_ASSOC);
+        $existingPlaceId = $existingDest['to_place_id'];
+        
+        // Only auto-stack for cardinal directions, not vertical ones
+        if (!in_array($direction, ['up', 'down'])) {
+            // Create up/down connections between old and new places
+            // Old place (existing) gets UP to new place
+            $stmt = $pdo->prepare("
+                SELECT id FROM ow_place_exits 
+                WHERE from_place_id = ? AND direction = 'up'
+            ");
+            $stmt->execute([$existingPlaceId]);
+            if (!$stmt->fetch()) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                    VALUES (?, ?, 'up', ?)
+                ");
+                $stmt->execute([$existingPlaceId, $toPlaceId, $connectionType]);
+            }
+            
+            // New place gets DOWN to old place
+            $stmt = $pdo->prepare("
+                SELECT id FROM ow_place_exits 
+                WHERE from_place_id = ? AND direction = 'down'
+            ");
+            $stmt->execute([$toPlaceId]);
+            if (!$stmt->fetch()) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                    VALUES (?, ?, 'down', ?)
+                ");
+                $stmt->execute([$toPlaceId, $existingPlaceId, $connectionType]);
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Places stacked vertically - vertical connections created automatically',
+                'connection_type' => $connectionType,
+                'auto_stacked' => true
+            ]);
+            exit;
+        } else {
+            throw new Exception('Exit already exists in that direction');
+        }
     }
     
     // Get or calculate coordinates for from_place
     $stmt = $pdo->prepare("SELECT coord_x, coord_y, coord_z FROM ow_places WHERE id = ?");
-    $stmt->execute([$data['from_place_id']]);
+    $stmt->execute([$fromPlaceId]);
     $fromPlace = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$fromPlace) {
@@ -253,7 +308,6 @@ function linkPlaces($pdo) {
     $fromY = $fromPlace['coord_y'] ?? 0;
     $fromZ = $fromPlace['coord_z'] ?? 0;
     
-    $direction = strtolower($data['direction']);
     $toX = $fromX;
     $toY = $fromY;
     $toZ = $fromZ;
@@ -274,7 +328,7 @@ function linkPlaces($pdo) {
     
     // Get current coordinates of to_place if it exists
     $stmt = $pdo->prepare("SELECT coord_x, coord_y, coord_z FROM ow_places WHERE id = ?");
-    $stmt->execute([$data['to_place_id']]);
+    $stmt->execute([$toPlaceId]);
     $toPlace = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$toPlace) {
@@ -288,7 +342,7 @@ function linkPlaces($pdo) {
     // If to_place has never been positioned (all 0), update its coordinates
     if ($existingX === null || ($existingX == 0 && $existingY == 0 && $existingZ == 0)) {
         $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
-        $stmt->execute([$toX, $toY, $toZ, $data['to_place_id']]);
+        $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     } else {
         // Validate that target place is at the expected coordinates
         if ($existingX != $toX || $existingY != $toY || $existingZ != $toZ) {
@@ -304,8 +358,8 @@ function linkPlaces($pdo) {
     
     try {
         $result = $stmt->execute([
-            $data['from_place_id'],
-            $data['to_place_id'],
+            $fromPlaceId,
+            $toPlaceId,
             $direction,
             $connectionType
         ]);
@@ -316,8 +370,8 @@ function linkPlaces($pdo) {
             VALUES (?, ?, ?)
         ");
         $result = $stmt->execute([
-            $data['from_place_id'],
-            $data['to_place_id'],
+            $fromPlaceId,
+            $toPlaceId,
             $direction
         ]);
     }

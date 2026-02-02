@@ -954,6 +954,14 @@ async function createExitLink(direction, toPlaceId) {
 
         const data = await response.json();
         if (data.success) {
+            // Check if this was an auto-stacking operation
+            if (data.auto_stacked) {
+                showMessage('Places stacked vertically! Up/down connections created automatically.', 'success', 'exit-message');
+                await loadExitsForPlace(navState.place_id);
+                showExitsView();
+                return;
+            }
+            
             // Create the reverse exit in the destination place
             const oppositeDirection = oppositeDirections[direction];
             const reverseResponse = await fetch(API_URL, {
