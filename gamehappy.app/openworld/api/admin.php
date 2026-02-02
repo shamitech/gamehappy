@@ -151,10 +151,10 @@ function createWorld($pdo, $username) {
         throw new Exception('World name required');
     }
     
-    $isPublic = isset($data['is_public']) && $data['is_public'] ? 1 : 0;
+    $isPublic = (int)((isset($data['is_public']) && $data['is_public']) ? 1 : 0);
     
     error_log("[createWorld] Data received: " . json_encode($data));
-    error_log("[createWorld] isPublic value: $isPublic (type: " . gettype($isPublic) . ")");
+    error_log("[createWorld] isPublic value: '$isPublic' (type: " . gettype($isPublic) . ")");
     
     $stmt = $pdo->prepare("
         INSERT INTO ow_worlds (name, description, created_by, is_public)
@@ -163,12 +163,17 @@ function createWorld($pdo, $username) {
     
     error_log("[createWorld] Executing with values: name={$data['name']}, desc={$data['description']}, user=$username, is_public=$isPublic");
     
-    $result = $stmt->execute([
-        $data['name'],
-        $data['description'] ?? null,
-        $username,
-        $isPublic
-    ]);
+    try {
+        $result = $stmt->execute([
+            $data['name'],
+            $data['description'] ?? null,
+            $username,
+            $isPublic
+        ]);
+    } catch (Exception $e) {
+        error_log("[createWorld] Execute failed: " . $e->getMessage());
+        throw $e;
+    }
     
     if ($result) {
         echo json_encode([
@@ -176,6 +181,8 @@ function createWorld($pdo, $username) {
             'world_id' => $pdo->lastInsertId(),
             'message' => 'World created successfully'
         ]);
+    } else {
+        throw new Exception('Failed to insert world');
     }
     exit;
 }
