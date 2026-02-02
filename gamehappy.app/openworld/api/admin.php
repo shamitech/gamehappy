@@ -293,16 +293,21 @@ function linkPlaces($pdo) {
     $stmt->execute([$toPlaceId]);
     $exitCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // If to_place has never been positioned (all 0) OR has no exits yet (new place), update its coordinates
-    if ($existingX === null || ($existingX == 0 && $existingY == 0 && $existingZ == 0) || $exitCount == 0) {
+    // If place is already positioned somewhere, validate it matches the target coordinates
+    if (!($existingX == 0 && $existingY == 0 && $existingZ == 0)) {
+        // Place has been assigned coordinates already
+        // Only allow the link if it's at the same X,Y (vertical stacking) or matches expected coordinates
+        if ($existingX != $toX || $existingY != $toY || $existingZ != $toZ) {
+            throw new Exception('Place already assigned to another location. Cannot link to (' . $existingX . ',' . $existingY . ',' . $existingZ . ')');
+        }
+    } else if ($exitCount == 0) {
+        // Place has no coordinates and no exits - assign coordinates now
         $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
         $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     } else {
-        // Only validate if place is already established with exits
-        // Validate that target place is at the expected coordinates
-        if ($existingX != $toX || $existingY != $toY || $existingZ != $toZ) {
-            throw new Exception('Target place conflicts with spatial coordinates. Expected (' . $toX . ',' . $toY . ',' . $toZ . ') but found (' . $existingX . ',' . $existingY . ',' . $existingZ . ')');
-        }
+        // Place has exits but no coordinates - assign coordinates now
+        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
+        $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     }
     
     // Create the exit
