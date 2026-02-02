@@ -996,6 +996,8 @@ button {
     border-radius: 4px;
     font-family: inherit;
     font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .modal-content input[type="text"]:focus,
