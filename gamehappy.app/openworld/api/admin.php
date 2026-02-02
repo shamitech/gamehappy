@@ -128,6 +128,15 @@ try {
         case 'delete_quest':
             deleteQuest($pdo);
             break;
+        case 'assign_task_to_place':
+            assignTaskToPlace($pdo);
+            break;
+        case 'unassign_task_from_place':
+            unassignTaskFromPlace($pdo);
+            break;
+        case 'get_place_quest_tasks':
+            getPlaceQuestTasks($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -975,7 +984,19 @@ function ensureQuestTables($pdo) {
     try {
         // Check if tables exist
         $stmt = $pdo->query("SELECT 1 FROM ow_quests LIMIT 1");
-        echo json_encode(['success' => true, 'message' => 'Quest tables already exist']);
+        
+        // Tables exist, check if linked_place_id column exists
+        try {
+            $pdo->query("SELECT linked_place_id FROM ow_quest_tasks LIMIT 1");
+            // Column exists, we're good
+            echo json_encode(['success' => true, 'message' => 'Quest tables already exist']);
+        } catch (Exception $e) {
+            // Column doesn't exist, add it
+            $pdo->exec("ALTER TABLE ow_quest_tasks ADD COLUMN linked_place_id INT AFTER quest_id");
+            $pdo->exec("ALTER TABLE ow_quest_tasks ADD COLUMN placed TINYINT DEFAULT 0 AFTER linked_place_id");
+            $pdo->exec("ALTER TABLE ow_quest_tasks ADD FOREIGN KEY (linked_place_id) REFERENCES ow_places(id) ON DELETE SET NULL");
+            echo json_encode(['success' => true, 'message' => 'Quest tables updated']);
+        }
         exit;
     } catch (Exception $e) {
         // Tables don't exist, create them
@@ -999,8 +1020,10 @@ function ensureQuestTables($pdo) {
                     quest_id INT NOT NULL,
                     name VARCHAR(255) NOT NULL,
                     description TEXT,
+                    type ENUM('main', 'side') DEFAULT 'side',
                     is_required TINYINT DEFAULT 0,
                     linked_place_id INT,
+                    placed TINYINT DEFAULT 0,
                     linked_object_id INT,
                     task_order INT DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -1099,14 +1122,15 @@ function createQuestTask($pdo, $username) {
     }
     
     $stmt = $pdo->prepare("
-        INSERT INTO ow_quest_tasks (quest_id, name, description, is_required, linked_place_id, linked_object_id, task_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ow_quest_tasks (quest_id, name, description, type, is_required, linked_place_id, linked_object_id, task_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $result = $stmt->execute([
         $data['quest_id'],
         $data['name'],
         $data['description'] ?? null,
+        $data['type'] ?? 'side',
         $data['is_required'] ?? 0,
         $data['linked_place_id'] ?? null,
         $data['linked_object_id'] ?? null,
@@ -1136,7 +1160,7 @@ function getQuestTasks($pdo) {
     }
     
     $stmt = $pdo->prepare("
-        SELECT id, quest_id, name, description, is_required, linked_place_id, linked_object_id, task_order, created_at
+        SELECT id, quest_id, name, description, type, is_required, linked_place_id, linked_object_id, task_order, created_at
         FROM ow_quest_tasks
         WHERE quest_id = ?
         ORDER BY task_order ASC, created_at ASC
@@ -1270,5 +1294,94 @@ function deleteQuest($pdo) {
     } else {
         throw new Exception('Failed to delete quest');
     }
+    exit;
+}
+
+// ===== Place Quest Task Assignment Functions =====
+
+function assignTaskToPlace($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id'] || !$data['place_id']) {
+        throw new Exception('Task ID and Place ID required');
+    }
+    
+    $task_id = (int)$data['task_id'];
+    $place_id = (int)$data['place_id'];
+    
+    // Update the task to link it to the place
+    $stmt = $pdo->prepare("
+        UPDATE ow_quest_tasks 
+        SET linked_place_id = ?, placed = 1
+        WHERE id = ?
+    ");
+    
+    $result = $stmt->execute([$place_id, $task_id]);
+    
+    if ($result) {
+        error_log("[assignTaskToPlace] Task $task_id assigned to place $place_id");
+        echo json_encode(['success' => true, 'message' => 'Task assigned to place']);
+    } else {
+        throw new Exception('Failed to assign task to place');
+    }
+    exit;
+}
+
+function unassignTaskFromPlace($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id']) {
+        throw new Exception('Task ID required');
+    }
+    
+    $task_id = (int)$data['task_id'];
+    
+    // Clear the place link and mark as not placed
+    $stmt = $pdo->prepare("
+        UPDATE ow_quest_tasks 
+        SET linked_place_id = NULL, placed = 0
+        WHERE id = ?
+    ");
+    
+    $result = $stmt->execute([$task_id]);
+    
+    if ($result) {
+        error_log("[unassignTaskFromPlace] Task $task_id unassigned from place");
+        echo json_encode(['success' => true, 'message' => 'Task removed from place']);
+    } else {
+        throw new Exception('Failed to unassign task from place');
+    }
+    exit;
+}
+
+function getPlaceQuestTasks($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['place_id']) {
+        throw new Exception('Place ID required');
+    }
+    
+    $place_id = (int)$data['place_id'];
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            qt.id,
+            qt.name,
+            qt.description,
+            qt.type,
+            q.id as quest_id,
+            q.name as quest_name,
+            q.type as quest_type
+        FROM ow_quest_tasks qt
+        JOIN ow_quests q ON qt.quest_id = q.id
+        WHERE qt.linked_place_id = ?
+        ORDER BY q.name, qt.name
+    ");
+    
+    $stmt->execute([$place_id]);
+    $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    error_log("[getPlaceQuestTasks] Found " . count($tasks) . " tasks for place $place_id");
+    echo json_encode(['success' => true, 'tasks' => $tasks]);
     exit;
 }

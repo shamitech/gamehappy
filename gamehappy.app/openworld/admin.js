@@ -356,6 +356,9 @@ function renderPlacesList() {
                 <div class="list-item-title">${escapeHtml(place.name)}</div>
                 <div class="list-item-desc">${escapeHtml(place.description || '(no description)')}</div>
             </div>
+            <button class="btn-secondary" onclick="showPlaceDetailsView(${place.id})" style="white-space: nowrap;">
+                Settings
+            </button>
             <button class="btn-secondary" onclick="openManageExitsModal(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="white-space: nowrap;">
                 Manage Exits
             </button>
@@ -1897,6 +1900,215 @@ async function removeQuestTaskLink(fromTaskId, toTaskId) {
             console.error('Error removing link:', error);
             alert('Error removing link');
         }
+    }
+}
+
+// ===== Place Quest Task Assignment Functions =====
+
+let currentPlaceId = null;
+let currentPlaceQuestTasks = [];
+
+function goBackToPlaces() {
+    document.getElementById('view-rooms-list').style.display = 'block';
+    document.getElementById('view-quests-list').style.display = 'none';
+    document.getElementById('view-place-details').style.display = 'none';
+}
+
+async function showPlaceDetailsView(placeId) {
+    currentPlaceId = placeId;
+    console.log('[showPlaceDetailsView] Opening place:', placeId);
+    
+    // Hide other views
+    document.getElementById('view-rooms-list').style.display = 'none';
+    document.getElementById('view-quests-list').style.display = 'none';
+    document.getElementById('view-place-details').style.display = 'block';
+    
+    // Load and display place quest tasks
+    await loadPlaceQuestTasks(placeId);
+    renderPlaceQuestTasks();
+}
+
+async function loadPlaceQuestTasks(placeId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_place_quest_tasks',
+                place_id: placeId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            currentPlaceQuestTasks = data.tasks || [];
+            console.log('[loadPlaceQuestTasks] Loaded', currentPlaceQuestTasks.length, 'tasks for place', placeId);
+        } else {
+            console.error('[loadPlaceQuestTasks] Error:', data.message);
+            currentPlaceQuestTasks = [];
+        }
+    } catch (error) {
+        console.error('[loadPlaceQuestTasks] Error:', error);
+        currentPlaceQuestTasks = [];
+    }
+}
+
+function renderPlaceQuestTasks() {
+    const container = document.getElementById('place-quest-tasks-list');
+    if (!container) return;
+    
+    if (currentPlaceQuestTasks.length === 0) {
+        container.innerHTML = '<p>No quest tasks assigned to this room.</p>';
+        return;
+    }
+    
+    let html = '<ul>';
+    currentPlaceQuestTasks.forEach(task => {
+        const type = task.type === 'main' ? '<span class="badge badge-required">Main</span>' : '<span class="badge badge-optional">Side</span>';
+        html += `<li>
+            <strong>${escapeHtml(task.name)}</strong> ${type}
+            <br><em>Quest: ${escapeHtml(task.quest_name)}</em>
+            <br><small>${escapeHtml(task.description)}</small>
+            <br><button class="btn-small" onclick="removeTaskFromPlace(${task.id})">Remove from Room</button>
+        </li>`;
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+}
+
+async function openAssignTasksModal() {
+    console.log('[openAssignTasksModal] Opening task assignment modal');
+    
+    // Load all quests for dropdown
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'get_quests',
+            world_id: currentWorldId
+        })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+        const quests = data.quests || [];
+        const questSelect = document.getElementById('assign-task-quest-select');
+        questSelect.innerHTML = '<option value="">-- Select a Quest --</option>';
+        quests.forEach(quest => {
+            questSelect.innerHTML += `<option value="${quest.id}">${escapeHtml(quest.name)}</option>`;
+        });
+        
+        // Show modal
+        openModal('modal-assign-task-to-room');
+    } else {
+        alert('Error loading quests: ' + data.message);
+    }
+}
+
+async function loadAssignableTasksForQuest() {
+    const questSelect = document.getElementById('assign-task-quest-select');
+    const questId = parseInt(questSelect.value);
+    
+    if (!questId) {
+        document.getElementById('assign-task-task-select').innerHTML = '<option value="">-- Select a Task --</option>';
+        return;
+    }
+    
+    console.log('[loadAssignableTasksForQuest] Loading tasks for quest:', questId);
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_quest_tasks',
+                quest_id: questId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            const tasks = data.tasks || [];
+            const taskSelect = document.getElementById('assign-task-task-select');
+            taskSelect.innerHTML = '<option value="">-- Select a Task --</option>';
+            
+            tasks.forEach(task => {
+                // Only show tasks not already assigned to this place
+                if (!currentPlaceQuestTasks.some(t => t.id === task.id)) {
+                    taskSelect.innerHTML += `<option value="${task.id}">${escapeHtml(task.name)}</option>`;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('[loadAssignableTasksForQuest] Error:', error);
+        alert('Error loading tasks');
+    }
+}
+
+async function confirmAssignTaskToRoom() {
+    const taskSelect = document.getElementById('assign-task-task-select');
+    const taskId = parseInt(taskSelect.value);
+    
+    if (!taskId) {
+        alert('Please select a task');
+        return;
+    }
+    
+    console.log('[confirmAssignTaskToRoom] Assigning task', taskId, 'to place', currentPlaceId);
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'assign_task_to_place',
+                task_id: taskId,
+                place_id: currentPlaceId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[confirmAssignTaskToRoom] Task assigned successfully');
+            hideModal('modal-assign-task-to-room');
+            await loadPlaceQuestTasks(currentPlaceId);
+            renderPlaceQuestTasks();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[confirmAssignTaskToRoom] Error:', error);
+        alert('Error assigning task');
+    }
+}
+
+async function removeTaskFromPlace(taskId) {
+    if (!confirm('Remove this task from the room?')) return;
+    
+    console.log('[removeTaskFromPlace] Removing task', taskId, 'from place', currentPlaceId);
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'unassign_task_from_place',
+                task_id: taskId,
+                place_id: currentPlaceId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[removeTaskFromPlace] Task removed successfully');
+            await loadPlaceQuestTasks(currentPlaceId);
+            renderPlaceQuestTasks();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[removeTaskFromPlace] Error:', error);
+        alert('Error removing task');
     }
 }
 

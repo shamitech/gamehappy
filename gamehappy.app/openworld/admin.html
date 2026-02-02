@@ -92,6 +92,25 @@
                         <div id="mechanics-list" class="list-container"></div>
                     </div>
                 </section>
+
+                <!-- PLACE DETAILS VIEW -->
+                <section id="view-place-details" class="view">
+                    <div class="panel">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h2 id="place-details-title" style="margin: 0;">Room Settings</h2>
+                            <button class="btn-secondary" onclick="goBackToPlaces()">← Back to Places</button>
+                        </div>
+                        <div id="place-details-content"></div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="section-header">
+                            <h2>Quest Tasks Assigned to This Room</h2>
+                            <button class="btn-add" onclick="openAssignTasksModal()">+ Assign Task</button>
+                        </div>
+                        <div id="place-quest-tasks-list" class="list-container"></div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -424,6 +443,34 @@
             </div>
         </div>
     </div>
+
+    <!-- ASSIGN TASK TO ROOM MODAL -->
+    <div id="modal-assign-task-to-room" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <button class="modal-close" onclick="closeModal('modal-assign-task-to-room')">×</button>
+            <h2>Assign Task to Room</h2>
+            
+            <div class="form-group">
+                <label for="assign-task-quest-select">Select Quest:</label>
+                <select id="assign-task-quest-select" style="width: 100%; box-sizing: border-box;" onchange="loadAssignableTasksForQuest()">
+                    <option value="">-- Select Quest --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="assign-task-task-select">Select Task:</label>
+                <select id="assign-task-task-select" style="width: 100%; box-sizing: border-box;">
+                    <option value="">-- Select Task --</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-primary" onclick="confirmAssignTaskToRoom()">Assign Task</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-assign-task-to-room')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="admin.js"></script>
 </body>
 </html>
