@@ -153,10 +153,15 @@ function createWorld($pdo, $username) {
     
     $isPublic = isset($data['is_public']) && $data['is_public'] ? 1 : 0;
     
+    error_log("[createWorld] Data received: " . json_encode($data));
+    error_log("[createWorld] isPublic value: $isPublic (type: " . gettype($isPublic) . ")");
+    
     $stmt = $pdo->prepare("
         INSERT INTO ow_worlds (name, description, created_by, is_public)
         VALUES (?, ?, ?, ?)
     ");
+    
+    error_log("[createWorld] Executing with values: name={$data['name']}, desc={$data['description']}, user=$username, is_public=$isPublic");
     
     $result = $stmt->execute([
         $data['name'],
