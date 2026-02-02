@@ -48,10 +48,12 @@ async function checkAuth() {
 }
 
 async function performLogin() {
+    console.log('[performLogin] Called');
     const username = document.getElementById('login-username').value;
     const password = document.getElementById('login-password').value;
 
     try {
+        console.log('[performLogin] Attempting login with username:', username);
         const response = await fetch('/openworld/api/auth.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -63,14 +65,18 @@ async function performLogin() {
         });
 
         const data = await response.json();
+        console.log('[performLogin] Response:', data);
         if (data.success) {
+            console.log('[performLogin] Login successful, loading dashboard');
             document.getElementById('login-screen').classList.remove('visible');
             document.getElementById('dashboard').style.display = 'block';
             loadWorlds();
         } else {
+            console.error('[performLogin] Login failed:', data.message);
             alert('Login failed: ' + data.message);
         }
     } catch (error) {
+        console.error('[performLogin] Exception:', error);
         alert('Login error: ' + error.message);
     }
 }
