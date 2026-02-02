@@ -59,6 +59,9 @@ try {
         case 'create_place':
             createPlace($pdo, $username);
             break;
+        case 'delete_place':
+            deletePlace($pdo);
+            break;
         case 'get_places':
             getPlaces($pdo);
             break;
@@ -182,6 +185,40 @@ function createPlace($pdo, $username) {
             'success' => true,
             'place_id' => $pdo->lastInsertId(),
             'message' => 'Place created successfully'
+        ]);
+    }
+    exit;
+}
+
+function deletePlace($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['place_id']) {
+        throw new Exception('Place ID required');
+    }
+    
+    $placeId = $data['place_id'];
+    
+    // Delete all exits from this place
+    $stmt = $pdo->prepare("DELETE FROM ow_place_exits WHERE from_place_id = ?");
+    $stmt->execute([$placeId]);
+    
+    // Delete all exits to this place
+    $stmt = $pdo->prepare("DELETE FROM ow_place_exits WHERE to_place_id = ?");
+    $stmt->execute([$placeId]);
+    
+    // Delete all objects in this place
+    $stmt = $pdo->prepare("DELETE FROM ow_objects WHERE place_id = ?");
+    $stmt->execute([$placeId]);
+    
+    // Delete the place itself
+    $stmt = $pdo->prepare("DELETE FROM ow_places WHERE id = ?");
+    $result = $stmt->execute([$placeId]);
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Place deleted successfully'
         ]);
     }
     exit;

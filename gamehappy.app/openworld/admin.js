@@ -266,6 +266,33 @@ async function createPlace(e) {
     }
 }
 
+async function deletePlace(placeId, placeName) {
+    if (!confirm(`Are you sure you want to delete "${placeName}"? This will also remove all exits and connections.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_place',
+                place_id: placeId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showMessage('Place deleted!', 'success', 'place-message');
+            loadPlacesForWorld(navState.world_id);
+        } else {
+            showMessage('Error: ' + data.message, 'error', 'place-message');
+        }
+    } catch (error) {
+        showMessage('Error deleting place', 'error', 'place-message');
+    }
+}
+
 async function linkPlaces(e) {
     e.preventDefault();
     if (!navState.place_id) {
@@ -316,6 +343,9 @@ function renderPlacesList() {
             </div>
             <button class="btn-secondary" onclick="openManageExitsModal(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="white-space: nowrap;">
                 Manage Exits
+            </button>
+            <button class="btn-danger" onclick="deletePlace(${place.id}, '${escapeHtml(place.name).replace(/'/g, "\\'")}')" style="white-space: nowrap; margin-left: 5px;">
+                Delete
             </button>
         </div>
     `).join('');
