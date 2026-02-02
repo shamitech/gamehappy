@@ -1611,13 +1611,26 @@ function renderQuestTasks() {
                     ${task.linked_tasks.length > 0 ? `<span class="badge">${task.linked_tasks.length} links</span>` : ''}
                 </div>
                 <div class="task-desc">${escapeHtml(task.description || '(no description)')}</div>
+                ${task.linked_tasks.length > 0 ? `
+                    <div class="task-links">
+                        <strong>Links to:</strong>
+                        <ul>
+                            ${task.linked_tasks.map(linkedId => {
+                                const linkedTask = currentQuestTasks.find(t => t.id === linkedId);
+                                return linkedTask ? `<li>${escapeHtml(linkedTask.name)} <button class="btn-tiny" onclick="removeQuestTaskLink(${task.id}, ${linkedId})">✕</button></li>` : '';
+                            }).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
             </div>
             <div class="task-actions">
+                <button class="btn-small" onclick="openLinkTaskModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" title="Link this task to another">Link</button>
                 <button class="btn-small" onclick="editQuestTask(${task.id})">Edit</button>
                 <button class="btn-small btn-danger" onclick="deleteQuestTaskConfirm(${task.id})">Delete</button>
             </div>
         </div>
     `).join('');
+
 }
 
 function openCreateQuestModal() {
@@ -1784,6 +1797,99 @@ async function deleteQuestTaskConfirm(taskId) {
         } catch (error) {
             console.error('Error deleting task:', error);
             alert('Error deleting task');
+        }
+    }
+}
+
+let linkingFromTaskId = null;
+
+function openLinkTaskModal(fromTaskId, fromTaskName) {
+    if (currentQuestTasks.length < 2) {
+        alert('You need at least 2 tasks to create links');
+        return;
+    }
+    
+    linkingFromTaskId = fromTaskId;
+    
+    // Display the source task
+    document.getElementById('link-from-task-display').textContent = escapeHtml(fromTaskName);
+    
+    // Populate the "Link To" dropdown with all other tasks in this quest
+    const linkToSelect = document.getElementById('link-to-task-select');
+    linkToSelect.innerHTML = '<option value="">-- Select Task --</option>' +
+        currentQuestTasks
+            .filter(t => t.id !== fromTaskId)
+            .map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`)
+            .join('');
+    
+    document.getElementById('link-required-depends-checkbox').checked = true;
+    
+    openModal('modal-link-task');
+}
+
+async function confirmQuestTaskLink() {
+    const toTaskId = document.getElementById('link-to-task-select').value;
+    
+    if (!toTaskId) {
+        alert('Please select a task to link to');
+        return;
+    }
+    
+    if (toTaskId == linkingFromTaskId) {
+        alert('Cannot link a task to itself');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'link_quest_tasks',
+                from_task_id: linkingFromTaskId,
+                to_task_id: parseInt(toTaskId)
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[confirmQuestTaskLink] Tasks linked:', linkingFromTaskId, '->', toTaskId);
+            await loadQuestTasks(currentQuestId);
+            renderQuestTasks();
+            closeModal('modal-link-task');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('Error linking tasks:', error);
+        alert('Error linking tasks');
+    }
+}
+
+async function removeQuestTaskLink(fromTaskId, toTaskId) {
+    if (confirm('Remove this task link?')) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'delete_quest_task_link',
+                    from_task_id: fromTaskId,
+                    to_task_id: toTaskId
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                console.log('[removeQuestTaskLink] Link removed:', fromTaskId, '-> ', toTaskId);
+                await loadQuestTasks(currentQuestId);
+                renderQuestTasks();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (error) {
+            console.error('Error removing link:', error);
+            alert('Error removing link');
         }
     }
 }

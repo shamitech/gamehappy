@@ -394,3 +394,33 @@
         </div>
     </div>
 
+    <!-- LINK TASK MODAL -->
+    <div id="modal-link-task" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="modal-close" onclick="closeModal('modal-link-task')">×</button>
+            <h2>Link Tasks</h2>
+            
+            <div class="form-group">
+                <label>From Task:</label>
+                <div id="link-from-task-display" style="padding: 10px; background-color: #1a1a1a; border: 1px solid #444; border-radius: 4px; margin-bottom: 20px;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="link-to-task-select">Link To Task:</label>
+                <select id="link-to-task-select" style="width: 100%; box-sizing: border-box;">
+                    <option value="">-- Select Task --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="link-required-depends-checkbox"> Only show if previous task is completed (Required dependency)
+                </label>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-primary" onclick="confirmQuestTaskLink()">Link Tasks</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-link-task')">Cancel</button>
+            </div>
+        </div>
+    </div>
