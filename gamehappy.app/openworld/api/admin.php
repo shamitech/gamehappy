@@ -235,13 +235,24 @@ function getPlaces($pdo) {
         throw new Exception('World ID required');
     }
     
-    $stmt = $pdo->prepare("
-        SELECT id, name, description, created_at, 
-               COALESCE(placed, 0) as placed
-        FROM ow_places
-        WHERE world_id = ?
-        ORDER BY created_at ASC
-    ");
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, name, description, created_at, 
+                   COALESCE(placed, 0) as placed
+            FROM ow_places
+            WHERE world_id = ?
+            ORDER BY created_at ASC
+        ");
+    } catch (Exception $e) {
+        // placed column doesn't exist yet, select without it
+        $stmt = $pdo->prepare("
+            SELECT id, name, description, created_at,
+                   0 as placed
+            FROM ow_places
+            WHERE world_id = ?
+            ORDER BY created_at ASC
+        ");
+    }
     
     $stmt->execute([$worldId]);
     $places = $stmt->fetchAll(PDO::FETCH_ASSOC);
