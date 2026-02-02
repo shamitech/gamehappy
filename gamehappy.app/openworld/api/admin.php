@@ -589,7 +589,19 @@ function deleteMechanic($pdo) {
     exit;
 }
 
+function cleanupOrphanedExits($pdo) {
+    // Delete exits where destination place doesn't exist
+    $stmt = $pdo->prepare("
+        DELETE FROM ow_place_exits 
+        WHERE to_place_id NOT IN (SELECT id FROM ow_places)
+    ");
+    $stmt->execute();
+}
+
 function getExits($pdo) {
+    // First clean up any orphaned exits
+    cleanupOrphanedExits($pdo);
+    
     $json_data = json_decode(file_get_contents('php://input'), true);
     $placeId = $json_data['place_id'] ?? null;
     
