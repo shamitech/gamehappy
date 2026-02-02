@@ -234,9 +234,7 @@ function getPlaces($pdo) {
     
     $stmt = $pdo->prepare("
         SELECT id, name, description, created_at, 
-               COALESCE(coord_x, 0) as coord_x,
-               COALESCE(coord_y, 0) as coord_y,
-               COALESCE(coord_z, 0) as coord_z
+               COALESCE(placed, 0) as placed
         FROM ow_places
         WHERE world_id = ?
         ORDER BY created_at ASC
@@ -341,12 +339,12 @@ function linkPlaces($pdo) {
             throw new Exception('Place already assigned to another location. Cannot link to (' . $existingX . ',' . $existingY . ',' . $existingZ . ')');
         }
     } else if ($exitCount == 0) {
-        // Place has no coordinates and no exits - assign coordinates now
-        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
+        // Place has no coordinates and no exits - assign coordinates and mark as placed
+        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ?, placed = 1 WHERE id = ?");
         $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     } else {
-        // Place has exits but no coordinates - assign coordinates now
-        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
+        // Place has exits but no coordinates - assign coordinates and mark as placed
+        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ?, placed = 1 WHERE id = ?");
         $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     }
     

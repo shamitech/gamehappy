@@ -940,14 +940,13 @@ function renderDestinationList(direction) {
     // Filter out:
     // 1. The current place
     // 2. Places that are destinations of current place's exits
-    // 3. Places that already have coordinates assigned (positioned somewhere)
+    // 3. Places that are already placed (placed = true)
     const assignedPlaceIds = new Set(currentPlaceExits.map(e => e.to_place_id));
     
     const availablePlaces = places.filter(p => 
         p.id !== navState.place_id && 
         !assignedPlaceIds.has(p.id) &&
-        // Only show places that are completely unpositioned (all coords are 0)
-        (parseInt(p.coord_x) === 0 && parseInt(p.coord_y) === 0 && parseInt(p.coord_z) === 0)
+        !p.placed // Only show places that haven't been placed yet
     );
     
     if (availablePlaces.length === 0) {
