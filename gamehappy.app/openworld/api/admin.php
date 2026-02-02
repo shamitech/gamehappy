@@ -238,20 +238,37 @@ function getPlaces($pdo) {
     try {
         $stmt = $pdo->prepare("
             SELECT id, name, description, created_at, 
-                   COALESCE(placed, 0) as placed
+                   CASE 
+                       WHEN (coord_x != 0 OR coord_y != 0 OR coord_z != 0) THEN 1
+                       ELSE COALESCE(placed, 0)
+                   END as placed
             FROM ow_places
             WHERE world_id = ?
             ORDER BY created_at ASC
         ");
     } catch (Exception $e) {
-        // placed column doesn't exist yet, select without it
-        $stmt = $pdo->prepare("
-            SELECT id, name, description, created_at,
-                   0 as placed
-            FROM ow_places
-            WHERE world_id = ?
-            ORDER BY created_at ASC
-        ");
+        // placed column doesn't exist yet, determine placed status from coordinates
+        try {
+            $stmt = $pdo->prepare("
+                SELECT id, name, description, created_at,
+                       CASE 
+                           WHEN (coord_x != 0 OR coord_y != 0 OR coord_z != 0) THEN 1
+                           ELSE 0
+                       END as placed
+                FROM ow_places
+                WHERE world_id = ?
+                ORDER BY created_at ASC
+            ");
+        } catch (Exception $e2) {
+            // coord columns don't exist either, just return 0 for all
+            $stmt = $pdo->prepare("
+                SELECT id, name, description, created_at,
+                       0 as placed
+                FROM ow_places
+                WHERE world_id = ?
+                ORDER BY created_at ASC
+            ");
+        }
     }
     
     $stmt->execute([$worldId]);
@@ -353,25 +370,13 @@ function linkPlaces($pdo) {
             throw new Exception('Place already assigned to another location. Cannot link to (' . $existingX . ',' . $existingY . ',' . $existingZ . ')');
         }
     } else if ($exitCount == 0) {
-        // Place has no coordinates and no exits - assign coordinates and mark as placed
-        try {
-            $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ?, placed = 1 WHERE id = ?");
-            $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
-        } catch (Exception $e) {
-            // placed column might not exist yet, try without it
-            $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
-            $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
-        }
+        // Place has no coordinates and no exits - assign coordinates
+        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
+        $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     } else {
-        // Place has exits but no coordinates - assign coordinates and mark as placed
-        try {
-            $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ?, placed = 1 WHERE id = ?");
-            $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
-        } catch (Exception $e) {
-            // placed column might not exist yet, try without it
-            $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
-            $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
-        }
+        // Place has exits but no coordinates - assign coordinates
+        $stmt = $pdo->prepare("UPDATE ow_places SET coord_x = ?, coord_y = ?, coord_z = ? WHERE id = ?");
+        $stmt->execute([$toX, $toY, $toZ, $toPlaceId]);
     }
     
     // Create the exit
