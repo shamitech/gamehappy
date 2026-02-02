@@ -233,7 +233,10 @@ function getPlaces($pdo) {
     }
     
     $stmt = $pdo->prepare("
-        SELECT id, name, description, created_at
+        SELECT id, name, description, created_at, 
+               COALESCE(coord_x, 0) as coord_x,
+               COALESCE(coord_y, 0) as coord_y,
+               COALESCE(coord_z, 0) as coord_z
         FROM ow_places
         WHERE world_id = ?
         ORDER BY created_at ASC

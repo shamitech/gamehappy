@@ -937,28 +937,14 @@ function renderDestinationList(direction) {
     // Filter out:
     // 1. The current place
     // 2. Places that are destinations of current place's exits
-    // 3. Places that already have exits from them (already assigned a location)
+    // 3. Places that already have coordinates assigned (positioned somewhere)
     const assignedPlaceIds = new Set(currentPlaceExits.map(e => e.to_place_id));
-    const placesWithExits = new Set();
-    
-    // Get all places that have exits from them
-    for (const place of places) {
-        if (place.id === navState.place_id) continue;
-        
-        // We need to check if this place has exits - we'll assume any place that's in currentPlaceExits as a to_place_id has been positioned
-        // But actually, we need to know which places have exits FROM them
-        // Since we don't have that data easily, let's check: if a place appears in currentPlaceExits as to_place_id, mark it
-        if (currentPlaceExits.some(e => e.to_place_id === place.id)) {
-            // This place is a destination, so it might have exits FROM it
-            // Mark it as unavailable
-            placesWithExits.add(place.id);
-        }
-    }
     
     const availablePlaces = places.filter(p => 
         p.id !== navState.place_id && 
         !assignedPlaceIds.has(p.id) &&
-        !placesWithExits.has(p.id) // Filter out places that are already positioned
+        // Only show places that are completely unpositioned (all coords are 0)
+        (parseInt(p.coord_x) === 0 && parseInt(p.coord_y) === 0 && parseInt(p.coord_z) === 0)
     );
     
     if (availablePlaces.length === 0) {
