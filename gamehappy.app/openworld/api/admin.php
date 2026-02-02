@@ -238,60 +238,9 @@ function linkPlaces($pdo) {
         WHERE from_place_id = ? AND direction = ?
     ");
     $stmt->execute([$fromPlaceId, $direction]);
-    $existingExit = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // If exit in this direction already exists, auto-stack vertically
-    if ($existingExit) {
-        // Get the existing exit's destination
-        $stmt = $pdo->prepare("
-            SELECT to_place_id FROM ow_place_exits 
-            WHERE id = ?
-        ");
-        $stmt->execute([$existingExit['id']]);
-        $existingDest = $stmt->fetch(PDO::FETCH_ASSOC);
-        $existingPlaceId = $existingDest['to_place_id'];
-        
-        // Only auto-stack for cardinal directions, not vertical ones
-        if (!in_array($direction, ['up', 'down'])) {
-            // Create up/down connections between old and new places
-            // Old place (existing) gets UP to new place
-            $stmt = $pdo->prepare("
-                SELECT id FROM ow_place_exits 
-                WHERE from_place_id = ? AND direction = 'up'
-            ");
-            $stmt->execute([$existingPlaceId]);
-            if (!$stmt->fetch()) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
-                    VALUES (?, ?, 'up', ?)
-                ");
-                $stmt->execute([$existingPlaceId, $toPlaceId, $connectionType]);
-            }
-            
-            // New place gets DOWN to old place
-            $stmt = $pdo->prepare("
-                SELECT id FROM ow_place_exits 
-                WHERE from_place_id = ? AND direction = 'down'
-            ");
-            $stmt->execute([$toPlaceId]);
-            if (!$stmt->fetch()) {
-                $stmt = $pdo->prepare("
-                    INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
-                    VALUES (?, ?, 'down', ?)
-                ");
-                $stmt->execute([$toPlaceId, $existingPlaceId, $connectionType]);
-            }
-            
-            echo json_encode([
-                'success' => true,
-                'message' => 'Places stacked vertically - vertical connections created automatically',
-                'connection_type' => $connectionType,
-                'auto_stacked' => true
-            ]);
-            exit;
-        } else {
-            throw new Exception('Exit already exists in that direction');
-        }
+    if ($stmt->fetch()) {
+        throw new Exception('Exit already exists in that direction');
     }
     
     // Get or calculate coordinates for from_place
@@ -377,10 +326,120 @@ function linkPlaces($pdo) {
     }
     
     if ($result) {
+        // After creating the exit, check for vertical stacking opportunities
+        // Find all places at the same X,Y coordinates but different Z levels
+        $autoStackedPlaces = [];
+        
+        if (!in_array($direction, ['up', 'down'])) {
+            // Only for cardinal directions
+            $stmt = $pdo->prepare("
+                SELECT id, coord_z FROM ow_places 
+                WHERE coord_x = ? AND coord_y = ? AND id != ?
+                ORDER BY coord_z ASC
+            ");
+            $stmt->execute([$toX, $toY, $toPlaceId]);
+            $stackedPlaces = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // For each place at this X,Y location, create vertical connections
+            foreach ($stackedPlaces as $stackedPlace) {
+                $stackedId = $stackedPlace['id'];
+                $stackedZ = $stackedPlace['coord_z'];
+                
+                // Determine which direction: if stacked Z is less, current place is UP from it
+                if ($toZ > $stackedZ) {
+                    // toPlace is above stackedPlace
+                    // Check if UP connection already exists
+                    $stmt = $pdo->prepare("
+                        SELECT id FROM ow_place_exits 
+                        WHERE from_place_id = ? AND direction = 'up'
+                    ");
+                    $stmt->execute([$stackedId]);
+                    
+                    if (!$stmt->fetch()) {
+                        // Create up connection from lower to higher
+                        $stmt = $pdo->prepare("
+                            INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                            VALUES (?, ?, 'up', ?)
+                        ");
+                        try {
+                            $stmt->execute([$stackedId, $toPlaceId, $connectionType]);
+                            $autoStackedPlaces[] = $stackedId;
+                        } catch (Exception $e) {
+                            // Ignore if connection_type column doesn't exist
+                        }
+                    }
+                    
+                    // Check if DOWN connection already exists from toPlace
+                    $stmt = $pdo->prepare("
+                        SELECT id FROM ow_place_exits 
+                        WHERE from_place_id = ? AND direction = 'down'
+                    ");
+                    $stmt->execute([$toPlaceId]);
+                    
+                    if (!$stmt->fetch()) {
+                        // Create down connection from higher to lower
+                        $stmt = $pdo->prepare("
+                            INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                            VALUES (?, ?, 'down', ?)
+                        ");
+                        try {
+                            $stmt->execute([$toPlaceId, $stackedId, $connectionType]);
+                        } catch (Exception $e) {
+                            // Ignore if connection_type column doesn't exist
+                        }
+                    }
+                } else if ($toZ < $stackedZ) {
+                    // toPlace is below stackedPlace
+                    // Check if UP connection already exists from toPlace
+                    $stmt = $pdo->prepare("
+                        SELECT id FROM ow_place_exits 
+                        WHERE from_place_id = ? AND direction = 'up'
+                    ");
+                    $stmt->execute([$toPlaceId]);
+                    
+                    if (!$stmt->fetch()) {
+                        // Create up connection from toPlace to stackedPlace
+                        $stmt = $pdo->prepare("
+                            INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                            VALUES (?, ?, 'up', ?)
+                        ");
+                        try {
+                            $stmt->execute([$toPlaceId, $stackedId, $connectionType]);
+                            $autoStackedPlaces[] = $stackedId;
+                        } catch (Exception $e) {
+                            // Ignore if connection_type column doesn't exist
+                        }
+                    }
+                    
+                    // Check if DOWN connection already exists from stackedPlace
+                    $stmt = $pdo->prepare("
+                        SELECT id FROM ow_place_exits 
+                        WHERE from_place_id = ? AND direction = 'down'
+                    ");
+                    $stmt->execute([$stackedId]);
+                    
+                    if (!$stmt->fetch()) {
+                        // Create down connection from stackedPlace to toPlace
+                        $stmt = $pdo->prepare("
+                            INSERT INTO ow_place_exits (from_place_id, to_place_id, direction, connection_type)
+                            VALUES (?, ?, 'down', ?)
+                        ");
+                        try {
+                            $stmt->execute([$stackedId, $toPlaceId, $connectionType]);
+                        } catch (Exception $e) {
+                            // Ignore if connection_type column doesn't exist
+                        }
+                    }
+                }
+            }
+        }
+        
         echo json_encode([
             'success' => true,
             'message' => 'Places linked successfully',
-            'connection_type' => $connectionType
+            'connection_type' => $connectionType,
+            'auto_stacked' => count($autoStackedPlaces) > 0,
+            'auto_stacked_count' => count($autoStackedPlaces)
         ]);
     }
     exit;
