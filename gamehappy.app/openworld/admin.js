@@ -944,11 +944,21 @@ function renderDestinationList(direction) {
     // 3. Places that are already placed (placed = true)
     const assignedPlaceIds = new Set(currentPlaceExits.map(e => e.to_place_id));
     
-    const availablePlaces = places.filter(p => 
-        p.id !== navState.place_id && 
-        !assignedPlaceIds.has(p.id) &&
-        !p.placed // Only show places that haven't been placed yet
-    );
+    console.log("[renderDestinationList] Starting filter. Total places:", places.length);
+    console.log("[renderDestinationList] Current place ID:", navState.place_id);
+    console.log("[renderDestinationList] Assigned place IDs:", Array.from(assignedPlaceIds));
+    
+    const availablePlaces = places.filter(p => {
+        const isSelfPlace = p.id === navState.place_id;
+        const isAssigned = assignedPlaceIds.has(p.id);
+        const isPlaced = p.placed;
+        
+        console.log(`[renderDestinationList] Place ID ${p.id} (${p.name}): placed=${p.placed}, assigned=${isAssigned}, self=${isSelfPlace}`);
+        
+        return !isSelfPlace && !isAssigned && !isPlaced;
+    });
+    
+    console.log("[renderDestinationList] Available places after filter:", availablePlaces.length);
     
     if (availablePlaces.length === 0) {
         container.innerHTML = '<p class="empty-state">No other places available</p>';
@@ -981,6 +991,8 @@ async function createExitLink(direction, toPlaceId) {
         'down': 'up'
     };
     
+    console.log("[createExitLink] Creating exit from place", navState.place_id, "to place", toPlaceId, "direction", direction);
+    
     try {
         // Create the forward exit
         const response = await fetch(API_URL, {
@@ -994,7 +1006,18 @@ async function createExitLink(direction, toPlaceId) {
             })
         });
 
+        console.log("[createExitLink] Response status:", response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("[createExitLink] HTTP Error:", response.status, errorText);
+            showMessage(`Error creating exit: HTTP ${response.status}`, 'error', 'exit-message');
+            return;
+        }
+
         const data = await response.json();
+        console.log("[createExitLink] Response data:", data);
+        
         if (data.success) {
             // Check if this was an auto-stacking operation
             if (data.auto_stacked) {
@@ -1080,10 +1103,12 @@ async function createExitLink(direction, toPlaceId) {
             await loadExitsForPlace(navState.place_id);
             showExitsView();
         } else {
+            console.error("[createExitLink] API returned error:", data.message);
             showMessage('Error: ' + data.message, 'error', 'exit-message');
         }
     } catch (error) {
-        showMessage('Error creating exit', 'error', 'exit-message');
+        console.error("[createExitLink] Exception caught:", error);
+        showMessage('Error creating exit: ' + error.message, 'error', 'exit-message');
     }
 }
 

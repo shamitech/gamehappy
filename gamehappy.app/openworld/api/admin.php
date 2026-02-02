@@ -235,9 +235,12 @@ function getPlaces($pdo) {
         throw new Exception('World ID required');
     }
     
+    // Log the request
+    error_log("[getPlaces] Called for world_id: $worldId");
+    
     try {
         $stmt = $pdo->prepare("
-            SELECT id, name, description, created_at, 
+            SELECT id, name, description, created_at, coord_x, coord_y, coord_z,
                    CASE 
                        WHEN (coord_x != 0 OR coord_y != 0 OR coord_z != 0) THEN 1
                        ELSE COALESCE(placed, 0)
@@ -248,9 +251,10 @@ function getPlaces($pdo) {
         ");
     } catch (Exception $e) {
         // placed column doesn't exist yet, determine placed status from coordinates
+        error_log("[getPlaces] First query failed, trying without placed column: " . $e->getMessage());
         try {
             $stmt = $pdo->prepare("
-                SELECT id, name, description, created_at,
+                SELECT id, name, description, created_at, coord_x, coord_y, coord_z,
                        CASE 
                            WHEN (coord_x != 0 OR coord_y != 0 OR coord_z != 0) THEN 1
                            ELSE 0
@@ -261,9 +265,13 @@ function getPlaces($pdo) {
             ");
         } catch (Exception $e2) {
             // coord columns don't exist either, just return 0 for all
+            error_log("[getPlaces] Second query failed too, using fallback: " . $e2->getMessage());
             $stmt = $pdo->prepare("
                 SELECT id, name, description, created_at,
-                       0 as placed
+                       0 as placed,
+                       0 as coord_x,
+                       0 as coord_y,
+                       0 as coord_z
                 FROM ow_places
                 WHERE world_id = ?
                 ORDER BY created_at ASC
@@ -273,12 +281,20 @@ function getPlaces($pdo) {
     
     $stmt->execute([$worldId]);
     $places = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Log each place's placed status
+    foreach ($places as $p) {
+        error_log("[getPlaces] Place ID {$p['id']}: name={$p['name']}, placed={$p['placed']}, coords=({$p['coord_x']},{$p['coord_y']},{$p['coord_z']})");
+    }
+    
     echo json_encode(['success' => true, 'places' => $places]);
     exit;
 }
 
 function linkPlaces($pdo) {
     $data = json_decode(file_get_contents('php://input'), true);
+    
+    error_log("[linkPlaces] Called with from_place_id=" . ($data['from_place_id'] ?? 'NULL') . ", to_place_id=" . ($data['to_place_id'] ?? 'NULL') . ", direction=" . ($data['direction'] ?? 'NULL'));
     
     if (!$data['from_place_id'] || !$data['to_place_id'] || !$data['direction']) {
         throw new Exception('From place, to place, and direction required');
@@ -571,6 +587,11 @@ function linkPlaces($pdo) {
             'connection_type' => $connectionType,
             'auto_stacked' => count($autoStackedPlaces) > 0,
             'auto_stacked_count' => count($autoStackedPlaces)
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to insert exit'
         ]);
     }
     exit;
