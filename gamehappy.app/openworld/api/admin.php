@@ -1122,15 +1122,14 @@ function createQuestTask($pdo, $username) {
     }
     
     $stmt = $pdo->prepare("
-        INSERT INTO ow_quest_tasks (quest_id, name, description, type, is_required, linked_place_id, linked_object_id, task_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ow_quest_tasks (quest_id, name, description, is_required, linked_place_id, linked_object_id, task_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
     
     $result = $stmt->execute([
         $data['quest_id'],
         $data['name'],
         $data['description'] ?? null,
-        $data['type'] ?? 'side',
         $data['is_required'] ?? 0,
         $data['linked_place_id'] ?? null,
         $data['linked_object_id'] ?? null,
@@ -1160,7 +1159,7 @@ function getQuestTasks($pdo) {
     }
     
     $stmt = $pdo->prepare("
-        SELECT id, quest_id, name, description, type, is_required, linked_place_id, linked_object_id, task_order, created_at
+        SELECT id, quest_id, name, description, is_required, linked_place_id, linked_object_id, task_order, created_at
         FROM ow_quest_tasks
         WHERE quest_id = ?
         ORDER BY task_order ASC, created_at ASC
