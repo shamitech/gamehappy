@@ -1496,9 +1496,13 @@ async function ensureQuestTables() {
 }
 
 async function loadQuests() {
-    if (!navState.world_id) return;
+    if (!navState.world_id) {
+        console.warn('[loadQuests] No world_id set');
+        return;
+    }
     
     try {
+        console.log('[loadQuests] Loading quests for world:', navState.world_id);
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1511,10 +1515,12 @@ async function loadQuests() {
         const data = await response.json();
         if (data.success) {
             quests = data.quests;
-            console.log('[loadQuests] Loaded', quests.length, 'quests');
+            console.log('[loadQuests] Loaded', quests.length, 'quests:', quests);
+        } else {
+            console.error('[loadQuests] API error:', data.message);
         }
     } catch (error) {
-        console.error('Error loading quests:', error);
+        console.error('[loadQuests] Fetch error:', error);
     }
 }
 
@@ -1541,15 +1547,24 @@ async function loadQuestTasks(questId) {
 }
 
 function showQuestManagement() {
+    console.log('[showQuestManagement] Opening quest modal for world:', navState.world_id);
     loadQuests().then(() => {
+        console.log('[showQuestManagement] Quests loaded, rendering...');
         renderQuestsList();
         openModal('modal-quests');
+    }).catch(err => {
+        console.error('[showQuestManagement] Error loading quests:', err);
     });
 }
 
 function renderQuestsList() {
     const container = document.getElementById('quests-list');
-    if (!container) return;
+    if (!container) {
+        console.warn('[renderQuestsList] Container not found');
+        return;
+    }
+    
+    console.log('[renderQuestsList] Rendering', quests.length, 'quests');
     
     if (quests.length === 0) {
         container.innerHTML = '<p class="empty-state">No quests yet</p>';
@@ -1593,6 +1608,7 @@ function renderQuestsList() {
         html += '</div>';
     }
     
+    console.log('[renderQuestsList] HTML:', html ? 'generated' : 'empty');
     container.innerHTML = html;
 }
 
