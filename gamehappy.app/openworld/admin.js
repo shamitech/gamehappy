@@ -1576,58 +1576,38 @@ function renderQuestsList() {
         return;
     }
     
-    console.log('[renderQuestsList] Rendering', quests.length, 'quests, quests array:', JSON.stringify(quests));
+    console.log('[renderQuestsList] START - Rendering', quests.length, 'quests');
+    console.log('[renderQuestsList] Quests data:', JSON.stringify(quests));
     
-    if (quests.length === 0) {
+    if (!quests || quests.length === 0) {
         console.log('[renderQuestsList] No quests, showing empty state');
         container.innerHTML = '<p class="empty-state">No quests yet</p>';
         return;
     }
     
-    const mainQuests = quests.filter(q => q.quest_type === 'main');
-    const sideQuests = quests.filter(q => q.quest_type === 'side');
-    
-    console.log('[renderQuestsList] Main quests:', mainQuests.length, 'Side quests:', sideQuests.length);
-    
     let html = '';
     
-    if (mainQuests.length > 0) {
-        html += '<div class="quest-section"><h4>Main Quest</h4>';
-        mainQuests.forEach(quest => {
-            console.log('[renderQuestsList] Adding main quest:', quest.name, 'type:', quest.quest_type);
-            html += `
-                <div class="list-item">
-                    <div class="list-item-content" onclick="selectQuest(${quest.id}, '${escapeHtml(quest.name)}')">
-                        <div class="list-item-title">${escapeHtml(quest.name)}</div>
-                        <div class="list-item-desc">${escapeHtml(quest.description || '(no description)')}</div>
-                    </div>
-                    <button class="btn-small btn-danger" onclick="deleteQuestConfirm(${quest.id})">Delete</button>
+    quests.forEach((quest, index) => {
+        console.log(`[renderQuestsList] Quest ${index}:`, quest.name, 'quest_type:', quest.quest_type, 'type:', quest.type);
+        
+        // Support both quest_type and type field names
+        const qType = quest.quest_type || quest.type || 'unknown';
+        const typeBadge = qType === 'main' ? '★ Main' : '◇ Side';
+        
+        html += `
+            <div class="list-item">
+                <div class="list-item-content" onclick="selectQuest(${quest.id}, '${escapeHtml(quest.name)}')">
+                    <div class="list-item-title">${escapeHtml(quest.name)} <small style="color: #aaa;">(${typeBadge})</small></div>
+                    <div class="list-item-desc">${escapeHtml(quest.description || '(no description)')}</div>
                 </div>
-            `;
-        });
-        html += '</div>';
-    }
+                <button class="btn-small btn-danger" onclick="deleteQuestConfirm(${quest.id})">Delete</button>
+            </div>
+        `;
+    });
     
-    if (sideQuests.length > 0) {
-        html += '<div class="quest-section"><h4>Side Quests</h4>';
-        sideQuests.forEach(quest => {
-            console.log('[renderQuestsList] Adding side quest:', quest.name, 'type:', quest.quest_type);
-            html += `
-                <div class="list-item">
-                    <div class="list-item-content" onclick="selectQuest(${quest.id}, '${escapeHtml(quest.name)}')">
-                        <div class="list-item-title">${escapeHtml(quest.name)}</div>
-                        <div class="list-item-desc">${escapeHtml(quest.description || '(no description)')}</div>
-                    </div>
-                    <button class="btn-small btn-danger" onclick="deleteQuestConfirm(${quest.id})">Delete</button>
-                </div>
-            `;
-        });
-        html += '</div>';
-    }
-    
-    console.log('[renderQuestsList] Final HTML length:', html.length, 'HTML:', html.substring(0, 200));
+    console.log('[renderQuestsList] Generated HTML length:', html.length);
     container.innerHTML = html;
-    console.log('[renderQuestsList] Container innerHTML set, actual content:', container.innerHTML.substring(0, 200));
+    console.log('[renderQuestsList] DONE - Container now has', container.children.length, 'children');
 }
 
 async function selectQuest(questId, questName) {
