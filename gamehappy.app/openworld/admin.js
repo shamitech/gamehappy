@@ -2727,96 +2727,184 @@ function renderVisualBuilder() {
         return;
     }
     
-    // Calculate positions in a flow layout
-    visualBuilderData.taskPositions = calculateTaskPositions(currentQuestTasks);
+    // Initialize view position if not set
+    if (!visualBuilderData.viewPos) {
+        visualBuilderData.viewPos = { x: 1, y: 1, z: 0 };
+    }
     
-    // Create a two-column layout: left = places/objects, right = task cards
+    // Get places by coordinates
+    const placesByCoord = {};
+    places.forEach(place => {
+        const x = place.x || 1;
+        const y = place.y || 1;
+        const z = place.z || 0;
+        const key = `${x},${y},${z}`;
+        if (!placesByCoord[key]) placesByCoord[key] = [];
+        placesByCoord[key].push(place);
+    });
+    
+    const viewX = visualBuilderData.viewPos.x;
+    const viewY = visualBuilderData.viewPos.y;
+    const viewZ = visualBuilderData.viewPos.z;
+    
+    // Get places to display in carousel (current position + 3 more to the east, + 1 peek)
+    const displayPlaces = [];
+    for (let i = 0; i < 5; i++) {
+        const x = viewX + i;
+        const key = `${x},${viewY},${viewZ}`;
+        const placesAtCoord = placesByCoord[key] || [];
+        displayPlaces.push(...placesAtCoord);
+    }
+    
+    // Check for vertical navigation
+    const hasNorth = Object.keys(placesByCoord).some(key => {
+        const [x, y] = key.split(',').map(Number);
+        return x === viewX && y > viewY && parseInt(key.split(',')[2]) === viewZ;
+    });
+    
+    const hasSouth = Object.keys(placesByCoord).some(key => {
+        const [x, y] = key.split(',').map(Number);
+        return x === viewX && y < viewY && parseInt(key.split(',')[2]) === viewZ;
+    });
+    
+    const hasUp = Object.keys(placesByCoord).some(key => {
+        const [x, y, z] = key.split(',').map(Number);
+        return x === viewX && y === viewY && z > viewZ;
+    });
+    
+    const hasDown = Object.keys(placesByCoord).some(key => {
+        const [x, y, z] = key.split(',').map(Number);
+        return x === viewX && y === viewY && z < viewZ;
+    });
+    
+    const hasWest = viewX > 1;
+    const hasEast = Object.keys(placesByCoord).some(key => {
+        const x = parseInt(key.split(',')[0]);
+        return x > viewX + 4;
+    });
+    
+    // LEFT SIDE: Task Cards
     let html = '<div style="display: flex; gap: 20px; width: 100%; height: 100%;">';
     
-    // LEFT SIDE: Places and Objects Map
-    html += '<div style="flex: 0 0 300px; background: #0f1419; border: 1px solid #444; border-radius: 8px; padding: 15px; overflow-y: auto; max-height: 600px;">';
-    html += '<h3 style="color: #81c784; margin: 0 0 15px 0; font-size: 14px;">📍 PLACES & OBJECTS</h3>';
+    html += '<div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">';
     
-    if (!places || places.length === 0) {
-        html += '<div style="color: #666; font-size: 12px;">No places created yet.</div>';
-    } else {
-        places.forEach(place => {
-            const placeObjects = objects.filter(o => o.place_id === place.id);
-            const tasksInPlace = currentQuestTasks.filter(t => t.linked_place_id === place.id);
-            
-            html += `
-                <div 
-                    style="
-                        margin-bottom: 15px; 
-                        padding: 12px; 
-                        background: #1a2540; 
-                        border: 2px solid #4a7fd9; 
-                        border-radius: 6px;
-                        min-height: 80px;
-                    "
-                    ondrop="dropTaskOnPlace(event, ${place.id})"
-                    ondragover="allowDrop(event)"
-                    ondragleave="event.target.style.opacity = '1'"
-                    onmouseenter="this.style.opacity = '0.9'"
-                    onmouseleave="this.style.opacity = '1'"
-                >
-                    <div style="font-weight: bold; color: #81c784; font-size: 12px; margin-bottom: 8px;">
-                        🏠 ${escapeHtml(place.name)}
+    // RIGHT SIDE: Map Carousel Area
+    html += '<div style="flex: 1; background: #0f1419; border: 1px solid #444; border-radius: 8px; padding: 20px; display: flex; flex-direction: column;">';
+    
+    // Navigation Row (Up/Down/Vertical)
+    html += '<div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center;">';
+    if (hasNorth) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, 1, 0)" style="flex: 1; padding: 8px;">⬆️ North</button>`;
+    }
+    if (hasSouth) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, -1, 0)" style="flex: 1; padding: 8px;">⬇️ South</button>`;
+    }
+    if (hasUp) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, 0, 1)" style="flex: 1; padding: 8px;">⬆ Up</button>`;
+    }
+    if (hasDown) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, 0, -1)" style="flex: 1; padding: 8px;">⬇ Down</button>`;
+    }
+    html += '</div>';
+    
+    // Carousel Area
+    html += '<div style="display: flex; gap: 10px; align-items: stretch; flex: 1;">';
+    
+    // Left scroll button
+    if (hasWest) {
+        html += `<button class="btn-primary" onclick="moveMapView(-1, 0, 0)" style="padding: 10px 15px; align-self: center;">◀️</button>`;
+    }
+    
+    // Places carousel (4 full + 1 peek)
+    html += '<div style="display: flex; gap: 15px; flex: 1; overflow: hidden;">';
+    
+    for (let i = 0; i < Math.min(5, displayPlaces.length); i++) {
+        const place = displayPlaces[i];
+        const placeObjects = objects.filter(o => o.place_id === place.id);
+        const tasksInPlace = currentQuestTasks.filter(t => t.linked_place_id === place.id);
+        const isPeek = i === 4;
+        const opacity = isPeek ? 0.6 : 1;
+        
+        html += `
+            <div 
+                style="
+                    flex: 0 0 calc(20% - 12px);
+                    ${isPeek ? 'margin-right: auto;' : ''}
+                    padding: 15px;
+                    background: #1a2540;
+                    border: 2px solid #4a7fd9;
+                    border-radius: 8px;
+                    opacity: ${opacity};
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
+                "
+                ondrop="dropTaskOnPlace(event, ${place.id})"
+                ondragover="allowDrop(event)"
+                ondragleave="event.target.style.opacity = '1'"
+                onmouseenter="this.style.opacity = ${isPeek ? '0.8' : '0.95'}"
+                onmouseleave="this.style.opacity = ${opacity}"
+            >
+                <div style="font-weight: bold; color: #81c784; font-size: 13px;">🏠 ${escapeHtml(place.name)}</div>
+                <div style="font-size: 10px; color: #aaa;">(${place.x || 1}, ${place.y || 1}, ${place.z || 0})</div>
+                
+                ${tasksInPlace.length > 0 ? `
+                    <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
+                        <div style="color: #81c784; font-size: 10px; margin-bottom: 4px;">📋 Tasks (${tasksInPlace.length}):</div>
+                        ${tasksInPlace.map(t => `<div style="font-size: 9px; color: #aaa;">• ${escapeHtml(t.name)}</div>`).join('')}
                     </div>
-                    
-                    ${tasksInPlace.length > 0 ? `
-                        <div style="margin-bottom: 8px; padding: 6px; background: #0f1419; border-radius: 3px;">
-                            <div style="color: #81c784; font-size: 10px; margin-bottom: 4px;">📋 Tasks:</div>
-                            ${tasksInPlace.map(t => `
-                                <div style="font-size: 10px; color: #aaa; padding: 2px 0;">• ${escapeHtml(t.name)}</div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    
-                    ${placeObjects.length > 0 ? `
-                        <div style="padding-top: 8px; border-top: 1px solid #333;">
-                            <div style="color: #4a9d6f; font-size: 10px; margin: 6px 0 4px 0;">🔧 Objects:</div>
-                            ${placeObjects.map(obj => {
-                                const objTasks = currentQuestTasks.filter(t => t.linked_object_id === obj.id);
-                                return `
-                                    <div 
-                                        style="
-                                            margin: 4px 0;
-                                            padding: 6px;
-                                            background: #0f1419;
-                                            border-left: 2px solid #4a9d6f;
-                                            border-radius: 2px;
-                                            font-size: 10px;
-                                            color: #aaa;
-                                        "
-                                        ondrop="dropTaskOnObject(event, ${obj.id})"
-                                        ondragover="allowDrop(event)"
-                                        onmouseenter="this.style.opacity = '0.8'"
-                                        onmouseleave="this.style.opacity = '1'"
-                                    >
-                                        🔧 ${escapeHtml(obj.name)}
-                                        ${objTasks.length > 0 ? ` (${objTasks.length})` : ''}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    ` : '<div style="color: #666; font-size: 10px; padding-top: 6px;">No objects in this place</div>'}
-                </div>
-            `;
-        });
+                ` : ''}
+                
+                ${placeObjects.length > 0 ? `
+                    <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
+                        <div style="color: #4a9d6f; font-size: 10px; margin-bottom: 4px;">🔧 Objects (${placeObjects.length}):</div>
+                        ${placeObjects.map(obj => {
+                            const objTasks = currentQuestTasks.filter(t => t.linked_object_id === obj.id);
+                            return `
+                                <div 
+                                    style="
+                                        margin: 4px 0;
+                                        padding: 4px;
+                                        background: #0a0d1a;
+                                        border-left: 2px solid #4a9d6f;
+                                        border-radius: 2px;
+                                        font-size: 9px;
+                                        color: #aaa;
+                                    "
+                                    ondrop="dropTaskOnObject(event, ${obj.id})"
+                                    ondragover="allowDrop(event)"
+                                    onmouseenter="this.style.opacity = '0.8'"
+                                    onmouseleave="this.style.opacity = '1'"
+                                >
+                                    🔧 ${escapeHtml(obj.name)} ${objTasks.length > 0 ? `(${objTasks.length})` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
     }
     
     html += '</div>';
     
-    // RIGHT SIDE: Task Cards
-    html += '<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 20px; align-content: flex-start; overflow-y: auto; max-height: 600px;">';
+    // Right scroll button
+    if (hasEast) {
+        html += `<button class="btn-primary" onclick="moveMapView(1, 0, 0)" style="padding: 10px 15px; align-self: center;">▶️</button>`;
+    }
     
-    currentQuestTasks.forEach((task, index) => {
-        const pos = visualBuilderData.taskPositions[task.id];
+    html += '</div>';
+    
+    html += '</div>';
+    html += '</div>';
+    
+    // LEFT SIDE: Task Cards
+    html += '<div style="flex: 0 0 400px; display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; overflow-y: auto; padding: 15px; background: #0a0d1a; border-left: 1px solid #444;">';
+    
+    currentQuestTasks.forEach((task) => {
         const assignment = getTaskAssignmentLabel(task);
         const hasLinkedTasks = task.linked_tasks && task.linked_tasks.length > 0;
         
-        // Determine color based on assignment
         let cardColor = '#333';
         let dotColor = '#999';
         let borderColor = '#444';
@@ -2840,14 +2928,66 @@ function renderVisualBuilder() {
                 ondragend="endTaskDrag(event)"
                 onclick="selectVisualTask(${task.id})"
                 style="
-                    position: relative;
-                    flex: 0 0 200px;
-                    padding: 15px;
+                    flex: 0 0 calc(100% - 0px);
+                    padding: 12px;
                     background: ${cardColor};
                     border: 2px solid ${visualBuilderData.selectedTask === task.id ? '#81c784' : borderColor};
-                    border-radius: 8px;
+                    border-radius: 6px;
                     cursor: move;
                     transition: all 0.2s;
+                    user-select: none;
+                "
+            >
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 16px; color: ${dotColor};">●</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: #fff; word-break: break-word; font-size: 12px;">${escapeHtml(task.name)}</div>
+                        <div style="font-size: 10px; color: #aaa; margin-top: 3px;">${assignment}</div>
+                    </div>
+                </div>
+                
+                ${task.is_required ? '<span style="display: inline-block; padding: 2px 4px; background: #d32f2f; color: #fff; border-radius: 2px; font-size: 9px; margin-bottom: 8px;">Required</span>' : ''}
+                
+                <div style="font-size: 10px; color: #bbb; line-height: 1.3; margin-bottom: 8px;">
+                    ${escapeHtml(task.description || '(no description)').substring(0, 60)}${task.description && task.description.length > 60 ? '...' : ''}
+                </div>
+                
+                ${hasLinkedTasks ? `
+                    <div style="border-top: 1px solid #555; padding-top: 6px; margin-top: 6px;">
+                        <div style="font-size: 9px; color: #81c784; margin-bottom: 3px;">→ Links:</div>
+                        ${task.linked_tasks.map(linkedId => {
+                            const linkedTask = currentQuestTasks.find(t => t.id === linkedId);
+                            return linkedTask ? `<div style="font-size: 9px; color: #666;">${escapeHtml(linkedTask.name)}</div>` : '';
+                        }).join('')}
+                    </div>
+                ` : ''}
+                
+                <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 10px;">
+                    <button class="btn-tiny" onclick="event.stopPropagation(); openTaskAssignmentModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="width: 100%;">📍 Assign</button>
+                    <button class="btn-tiny" onclick="event.stopPropagation(); openTaskLinkingModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="width: 100%;">🔗 Link</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    html += '</div>';
+    
+    container.innerHTML = html;
+    
+    // Draw connections
+    drawTaskConnections();
+}
+
+function moveMapView(dx, dy, dz) {
+    if (!visualBuilderData.viewPos) {
+        visualBuilderData.viewPos = { x: 1, y: 1, z: 0 };
+    }
+    visualBuilderData.viewPos.x += dx;
+    visualBuilderData.viewPos.y += dy;
+    visualBuilderData.viewPos.z += dz;
+    renderVisualBuilder();
+}
                     user-select: none;
                 "
             >
