@@ -48,6 +48,9 @@ try {
         case 'move_player':
             movePlayer($pdo, $input);
             break;
+        case 'execute_mechanic':
+            executeMechanic($pdo, $input);
+            break;
         default:
             echo json_encode(['success' => false, 'message' => 'Unknown action']);
     }
@@ -336,6 +339,150 @@ function movePlayer($pdo, $input) {
         ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Failed to move player']);
+    }
+    exit;
+}
+
+function executeMechanic($pdo, $input) {
+    $playerId = $input['player_id'] ?? null;
+    $mechanicId = $input['mechanic_id'] ?? null;
+    $objectId = $input['object_id'] ?? null;
+    $placeId = $input['place_id'] ?? null;
+
+    if (!$playerId || !$mechanicId || !$objectId) {
+        echo json_encode(['success' => false, 'message' => 'Player ID, Mechanic ID, and Object ID required']);
+        return;
+    }
+
+    try {
+        // Get mechanic details
+        $stmt = $pdo->prepare('
+            SELECT m.id, m.type, m.name, m.description, m.action_value
+            FROM ow_mechanics m
+            WHERE m.id = ?
+        ');
+        $stmt->execute([$mechanicId]);
+        $mechanic = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$mechanic) {
+            echo json_encode(['success' => false, 'message' => 'Mechanic not found']);
+            return;
+        }
+
+        // Parse action_value JSON
+        $actionValue = $mechanic['action_value'] ? json_decode($mechanic['action_value'], true) : [];
+
+        // Log the mechanic execution (could be useful for quest tracking)
+        error_log("[executeMechanic] Player $playerId executed mechanic $mechanicId ({$mechanic['type']}) on object $objectId");
+
+        // Step 1: Check if this mechanic completes any tasks assigned to this place
+        $completedTasks = [];
+        if ($placeId) {
+            $stmt = $pdo->prepare('
+                SELECT DISTINCT qt.id, qt.name, q.id as quest_id, q.name as quest_name
+                FROM ow_quest_tasks qt
+                JOIN ow_quests q ON qt.quest_id = q.id
+                JOIN ow_task_mechanics tm ON qt.id = tm.task_id
+                WHERE tm.mechanic_id = ? 
+                  AND qt.linked_place_id = ?
+                  AND qt.id NOT IN (
+                    SELECT task_id FROM ow_completed_tasks 
+                    WHERE player_id = ?
+                  )
+            ');
+            $stmt->execute([$mechanicId, $placeId, $playerId]);
+            $completedTasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        // Step 2: Mark tasks as completed for this player
+        $markedTasks = [];
+        if (count($completedTasks) > 0) {
+            foreach ($completedTasks as $task) {
+                try {
+                    // Check if table exists, create if not
+                    try {
+                        $pdo->query("SELECT 1 FROM ow_completed_tasks LIMIT 1");
+                    } catch (PDOException $e) {
+                        $pdo->exec("
+                            CREATE TABLE IF NOT EXISTS ow_completed_tasks (
+                                id INT PRIMARY KEY AUTO_INCREMENT,
+                                player_id INT NOT NULL,
+                                task_id INT NOT NULL,
+                                completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                FOREIGN KEY (player_id) REFERENCES ow_players(id) ON DELETE CASCADE,
+                                FOREIGN KEY (task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE,
+                                UNIQUE KEY unique_player_task (player_id, task_id)
+                            )
+                        ");
+                    }
+
+                    $stmt = $pdo->prepare("
+                        INSERT INTO ow_completed_tasks (player_id, task_id)
+                        VALUES (?, ?)
+                        ON DUPLICATE KEY UPDATE completed_at = NOW()
+                    ");
+                    $stmt->execute([$playerId, $task['id']]);
+                    $markedTasks[] = $task;
+                    
+                    error_log("[executeMechanic] Task {$task['id']} ({$task['name']}) marked complete for player $playerId");
+                } catch (PDOException $e) {
+                    error_log("[executeMechanic] Error marking task complete: " . $e->getMessage());
+                }
+            }
+        }
+
+        // Step 3: Check for kickback tasks that should be triggered
+        $kickbackTasks = [];
+        if (count($markedTasks) > 0) {
+            foreach ($markedTasks as $completedTask) {
+                $stmt = $pdo->prepare('
+                    SELECT 
+                        tk.id,
+                        tk.kickback_task_id,
+                        kt.id as task_id,
+                        kt.name,
+                        kt.description,
+                        q.id as quest_id,
+                        q.name as quest_name,
+                        tk.priority
+                    FROM ow_task_kickbacks tk
+                    JOIN ow_quest_tasks kt ON tk.kickback_task_id = kt.id
+                    JOIN ow_quests q ON kt.quest_id = q.id
+                    WHERE tk.original_task_id = ? AND tk.is_enabled = 1
+                    ORDER BY tk.priority DESC
+                ');
+                $stmt->execute([$completedTask['id']]);
+                $possibleKickbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (count($possibleKickbacks) > 0) {
+                    // Randomly select one kickback (priority weighted if multiple)
+                    $selectedKickback = $possibleKickbacks[0];
+                    
+                    // Add to player's active tasks (if tracking system exists)
+                    // For now, just return the kickback info
+                    $kickbackTasks[] = $selectedKickback;
+                    
+                    error_log("[executeMechanic] Kickback task triggered: {$selectedKickback['name']} (quest: {$selectedKickback['quest_name']})");
+                }
+            }
+        }
+
+        // Return success with completed tasks and any triggered kickbacks
+        echo json_encode([
+            'success' => true,
+            'message' => $mechanic['description'] ?? 'Action completed',
+            'mechanic' => [
+                'id' => $mechanic['id'],
+                'type' => $mechanic['type'],
+                'name' => $mechanic['name']
+            ],
+            'completed_tasks' => $markedTasks,
+            'kickback_tasks' => $kickbackTasks
+        ]);
+
+    } catch (PDOException $e) {
+        error_log("[executeMechanic] Database error: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Failed to execute mechanic']);
     }
     exit;
 }

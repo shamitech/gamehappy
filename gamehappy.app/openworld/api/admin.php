@@ -1093,6 +1093,18 @@ function ensureQuestTables($pdo) {
                 )
             ");
             
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS ow_completed_tasks (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    player_id INT NOT NULL,
+                    task_id INT NOT NULL,
+                    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (player_id) REFERENCES ow_players(id) ON DELETE CASCADE,
+                    FOREIGN KEY (task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_player_task (player_id, task_id)
+                )
+            ");
+            
             error_log("[ensureQuestTables] Quest tables created successfully");
             echo json_encode(['success' => true, 'message' => 'Quest tables created successfully']);
             exit;
