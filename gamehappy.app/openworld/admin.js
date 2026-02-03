@@ -2708,8 +2708,86 @@ function renderVisualBuilder() {
     // Calculate positions in a flow layout
     visualBuilderData.taskPositions = calculateTaskPositions(currentQuestTasks);
     
-    // Create task cards
-    let html = '<div style="display: flex; flex-wrap: wrap; gap: 20px; min-width: 100%; align-content: flex-start;">';
+    // Create a two-column layout: left = places/objects, right = task cards
+    let html = '<div style="display: flex; gap: 20px; width: 100%; height: 100%;">';
+    
+    // LEFT SIDE: Places and Objects Map
+    html += '<div style="flex: 0 0 300px; background: #0f1419; border: 1px solid #444; border-radius: 8px; padding: 15px; overflow-y: auto; max-height: 600px;">';
+    html += '<h3 style="color: #81c784; margin: 0 0 15px 0; font-size: 14px;">📍 PLACES & OBJECTS</h3>';
+    
+    if (!places || places.length === 0) {
+        html += '<div style="color: #666; font-size: 12px;">No places created yet.</div>';
+    } else {
+        places.forEach(place => {
+            const placeObjects = objects.filter(o => o.place_id === place.id);
+            const tasksInPlace = currentQuestTasks.filter(t => t.linked_place_id === place.id);
+            
+            html += `
+                <div 
+                    style="
+                        margin-bottom: 15px; 
+                        padding: 12px; 
+                        background: #1a2540; 
+                        border: 2px solid #4a7fd9; 
+                        border-radius: 6px;
+                        min-height: 80px;
+                    "
+                    ondrop="dropTaskOnPlace(event, ${place.id})"
+                    ondragover="allowDrop(event)"
+                    ondragleave="event.target.style.opacity = '1'"
+                    onmouseenter="this.style.opacity = '0.9'"
+                    onmouseleave="this.style.opacity = '1'"
+                >
+                    <div style="font-weight: bold; color: #81c784; font-size: 12px; margin-bottom: 8px;">
+                        🏠 ${escapeHtml(place.name)}
+                    </div>
+                    
+                    ${tasksInPlace.length > 0 ? `
+                        <div style="margin-bottom: 8px; padding: 6px; background: #0f1419; border-radius: 3px;">
+                            <div style="color: #81c784; font-size: 10px; margin-bottom: 4px;">📋 Tasks:</div>
+                            ${tasksInPlace.map(t => `
+                                <div style="font-size: 10px; color: #aaa; padding: 2px 0;">• ${escapeHtml(t.name)}</div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${placeObjects.length > 0 ? `
+                        <div style="padding-top: 8px; border-top: 1px solid #333;">
+                            <div style="color: #4a9d6f; font-size: 10px; margin: 6px 0 4px 0;">🔧 Objects:</div>
+                            ${placeObjects.map(obj => {
+                                const objTasks = currentQuestTasks.filter(t => t.linked_object_id === obj.id);
+                                return `
+                                    <div 
+                                        style="
+                                            margin: 4px 0;
+                                            padding: 6px;
+                                            background: #0f1419;
+                                            border-left: 2px solid #4a9d6f;
+                                            border-radius: 2px;
+                                            font-size: 10px;
+                                            color: #aaa;
+                                        "
+                                        ondrop="dropTaskOnObject(event, ${obj.id})"
+                                        ondragover="allowDrop(event)"
+                                        onmouseenter="this.style.opacity = '0.8'"
+                                        onmouseleave="this.style.opacity = '1'"
+                                    >
+                                        🔧 ${escapeHtml(obj.name)}
+                                        ${objTasks.length > 0 ? ` (${objTasks.length})` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : '<div style="color: #666; font-size: 10px; padding-top: 6px;">No objects in this place</div>'}
+                </div>
+            `;
+        });
+    }
+    
+    html += '</div>';
+    
+    // RIGHT SIDE: Task Cards
+    html += '<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 20px; align-content: flex-start; overflow-y: auto; max-height: 600px;">';
     
     currentQuestTasks.forEach((task, index) => {
         const pos = visualBuilderData.taskPositions[task.id];
@@ -2719,12 +2797,16 @@ function renderVisualBuilder() {
         // Determine color based on assignment
         let cardColor = '#333';
         let dotColor = '#999';
+        let borderColor = '#444';
+        
         if (task.linked_place_id && task.linked_object_id) {
             cardColor = '#1a3a1a';
             dotColor = '#4a9d6f';
+            borderColor = '#4a9d6f';
         } else if (task.linked_place_id || task.linked_object_id) {
             cardColor = '#1a2540';
             dotColor = '#4a7fd9';
+            borderColor = '#4a7fd9';
         }
         
         html += `
@@ -2740,7 +2822,7 @@ function renderVisualBuilder() {
                     flex: 0 0 200px;
                     padding: 15px;
                     background: ${cardColor};
-                    border: 2px solid ${visualBuilderData.selectedTask === task.id ? '#81c784' : '#444'};
+                    border: 2px solid ${visualBuilderData.selectedTask === task.id ? '#81c784' : borderColor};
                     border-radius: 8px;
                     cursor: move;
                     transition: all 0.2s;
@@ -2779,7 +2861,7 @@ function renderVisualBuilder() {
         `;
     });
     
-    html += '</div>';
+    html += '</div></div>';
     container.innerHTML = html;
     
     // Draw connections between linked tasks
@@ -2867,6 +2949,91 @@ function startTaskDrag(event, taskId) {
 
 function endTaskDrag(event) {
     event.target.style.opacity = '1';
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    event.target.style.opacity = '0.8';
+}
+
+async function dropTaskOnPlace(event, placeId) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.target.style.opacity = '1';
+    
+    const taskId = parseInt(event.dataTransfer.getData('taskId'));
+    if (!taskId) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'assign_task_to_place',
+                task_id: taskId,
+                place_id: placeId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Update local task data
+            const task = currentQuestTasks.find(t => t.id === taskId);
+            if (task) {
+                task.linked_place_id = placeId;
+                // Keep existing object assignment if any
+            }
+            renderVisualBuilder();
+        } else {
+            alert('Error assigning task: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[dropTaskOnPlace] Error:', error);
+        alert('Error assigning task');
+    }
+}
+
+async function dropTaskOnObject(event, objectId) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.target.style.opacity = '1';
+    
+    const taskId = parseInt(event.dataTransfer.getData('taskId'));
+    if (!taskId) return;
+    
+    // Find the object to get its place_id
+    const object = objects.find(o => o.id === objectId);
+    if (!object) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'assign_task_to_object',
+                task_id: taskId,
+                object_id: objectId,
+                place_id: object.place_id
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Update local task data
+            const task = currentQuestTasks.find(t => t.id === taskId);
+            if (task) {
+                task.linked_object_id = objectId;
+                task.linked_place_id = object.place_id;
+            }
+            renderVisualBuilder();
+        } else {
+            alert('Error assigning task: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[dropTaskOnObject] Error:', error);
+        alert('Error assigning task');
+    }
 }
 
 function drawTaskConnections() {
