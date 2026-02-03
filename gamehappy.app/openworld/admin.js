@@ -1984,7 +1984,7 @@ function renderPlaceQuestTasks() {
     
     let html = '<ul>';
     currentPlaceQuestTasks.forEach(task => {
-        const type = task.type === 'main' ? '<span class="badge badge-required">Main</span>' : '<span class="badge badge-optional">Side</span>';
+        const type = task.quest_type === 'main' ? '<span class="badge badge-required">Main</span>' : '<span class="badge badge-optional">Side</span>';
         html += `<li>
             <strong>${escapeHtml(task.name)}</strong> ${type}
             <br><em>Quest: ${escapeHtml(task.quest_name)}</em>

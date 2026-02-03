@@ -1367,10 +1367,9 @@ function getPlaceQuestTasks($pdo) {
             qt.id,
             qt.name,
             qt.description,
-            qt.type,
             q.id as quest_id,
             q.name as quest_name,
-            q.type as quest_type
+            q.quest_type
         FROM ow_quest_tasks qt
         JOIN ow_quests q ON qt.quest_id = q.id
         WHERE qt.linked_place_id = ?
