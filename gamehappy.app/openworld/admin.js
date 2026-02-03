@@ -109,18 +109,19 @@ function navigateToPlaces(worldId, worldName) {
     loadPlacesForWorld(worldId);
 }
 
-function navigateToQuests(worldId, worldName) {
+async function navigateToQuests(worldId, worldName) {
     navState.world_id = worldId;
     navState.world_name = worldName;
     updateBreadcrumb();
     showView('view-quests');
     document.getElementById('quest-details-section').style.display = 'none';
-    loadQuests();
+    await loadQuests();
     renderQuestsPageList();
 }
 
-function goBackToQuestsList() {
+async function goBackToQuestsList() {
     document.getElementById('quest-details-section').style.display = 'none';
+    await loadQuests();
     renderQuestsPageList();
 }
 
