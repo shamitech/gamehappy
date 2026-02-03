@@ -1311,7 +1311,7 @@ function assignTaskToPlace($pdo) {
     // Update the task to link it to the place
     $stmt = $pdo->prepare("
         UPDATE ow_quest_tasks 
-        SET linked_place_id = ?, placed = 1
+        SET linked_place_id = ?
         WHERE id = ?
     ");
     
@@ -1335,10 +1335,10 @@ function unassignTaskFromPlace($pdo) {
     
     $task_id = (int)$data['task_id'];
     
-    // Clear the place link and mark as not placed
+    // Clear the place link
     $stmt = $pdo->prepare("
         UPDATE ow_quest_tasks 
-        SET linked_place_id = NULL, placed = 0
+        SET linked_place_id = NULL
         WHERE id = ?
     ");
     
