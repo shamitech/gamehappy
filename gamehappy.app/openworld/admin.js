@@ -2963,5 +2963,145 @@ function moveMapView(dx, dy, dz) {
     renderVisualBuilder();
 }
 
+function getTaskAssignmentLabel(task) {
+    if (task.linked_place_id && task.linked_object_id) {
+        const place = places.find(p => p.id === task.linked_place_id);
+        const object = objects.find(o => o.id === task.linked_object_id);
+        return `📍 ${place ? escapeHtml(place.name) : 'Room'} • 🔧 ${object ? escapeHtml(object.name) : 'Object'}`;
+    } else if (task.linked_place_id) {
+        const place = places.find(p => p.id === task.linked_place_id);
+        return `📍 ${place ? escapeHtml(place.name) : 'Room'}`;
+    } else if (task.linked_object_id) {
+        const object = objects.find(o => o.id === task.linked_object_id);
+        return `🔧 ${object ? escapeHtml(object.name) : 'Object'}`;
+    }
+    return 'Unassigned';
+}
+
+function selectVisualTask(taskId) {
+    visualBuilderData.selectedTask = visualBuilderData.selectedTask === taskId ? null : taskId;
+    renderVisualBuilder();
+}
+
+function startTaskDrag(event, taskId) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('taskId', taskId);
+    event.target.style.opacity = '0.7';
+}
+
+function endTaskDrag(event) {
+    event.target.style.opacity = '1';
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+}
+
+async function dropTaskOnPlace(event, placeId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const taskId = parseInt(event.dataTransfer.getData('taskId'));
+    if (!taskId) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'assign_task_to_place',
+                task_id: taskId,
+                place_id: placeId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            const task = currentQuestTasks.find(t => t.id === taskId);
+            if (task) {
+                task.linked_place_id = placeId;
+            }
+            renderVisualBuilder();
+        } else {
+            alert('Error assigning task: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[dropTaskOnPlace] Error:', error);
+        alert('Error assigning task');
+    }
+}
+
+async function dropTaskOnObject(event, objectId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const taskId = parseInt(event.dataTransfer.getData('taskId'));
+    if (!taskId) return;
+    
+    const object = objects.find(o => o.id === objectId);
+    if (!object) return;
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'assign_task_to_object',
+                task_id: taskId,
+                object_id: objectId,
+                place_id: object.place_id
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            const task = currentQuestTasks.find(t => t.id === taskId);
+            if (task) {
+                task.linked_object_id = objectId;
+                task.linked_place_id = object.place_id;
+            }
+            renderVisualBuilder();
+        } else {
+            alert('Error assigning task: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[dropTaskOnObject] Error:', error);
+        alert('Error assigning task');
+    }
+}
+
+function drawTaskConnections() {
+    // Draw visual connections between linked tasks
+    const container = document.getElementById('visual-builder-content');
+    if (!container) return;
+    
+    currentQuestTasks.forEach(task => {
+        if (task.linked_tasks && task.linked_tasks.length > 0) {
+            task.linked_tasks.forEach(linkedId => {
+                const fromCard = document.getElementById(`task-card-${task.id}`);
+                const toCard = document.getElementById(`task-card-${linkedId}`);
+                
+                if (fromCard && toCard) {
+                    // Visual indication that tasks are linked
+                    fromCard.style.opacity = '1';
+                }
+            });
+        }
+    });
+}
+
+function openTaskAssignmentModal(taskId, taskName) {
+    console.log('[openTaskAssignmentModal] Opening for task', taskId, taskName);
+    // TODO: Implement modal for assigning task to place/object
+    alert(`Assign task: ${taskName}`);
+}
+
+function openTaskLinkingModal(taskId, taskName) {
+    console.log('[openTaskLinkingModal] Opening for task', taskId, taskName);
+    // TODO: Implement modal for linking tasks
+    alert(`Link task: ${taskName}`);
+}
+
 
 
