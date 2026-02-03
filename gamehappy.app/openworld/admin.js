@@ -115,7 +115,9 @@ function navigateToObjects(placeId, placeName) {
     navState.object_name = null;
     updateBreadcrumb();
     showView('view-objects');
+    currentPlaceId = placeId;
     loadObjectsForPlace(placeId);
+    loadPlaceQuestTasks(placeId);
 }
 
 function navigateToObjectDetails(objectId, objectName) {
@@ -1539,8 +1541,10 @@ async function loadQuestTasks(questId) {
 }
 
 function showQuestManagement() {
-    loadQuests();
-    openModal('modal-quests');
+    loadQuests().then(() => {
+        renderQuestsList();
+        openModal('modal-quests');
+    });
 }
 
 function renderQuestsList() {
@@ -1925,7 +1929,6 @@ async function showPlaceDetailsView(placeId) {
     
     // Load and display place quest tasks
     await loadPlaceQuestTasks(placeId);
-    renderPlaceQuestTasks();
 }
 
 async function loadPlaceQuestTasks(placeId) {
@@ -1943,13 +1946,16 @@ async function loadPlaceQuestTasks(placeId) {
         if (data.success) {
             currentPlaceQuestTasks = data.tasks || [];
             console.log('[loadPlaceQuestTasks] Loaded', currentPlaceQuestTasks.length, 'tasks for place', placeId);
+            renderPlaceQuestTasks();
         } else {
             console.error('[loadPlaceQuestTasks] Error:', data.message);
             currentPlaceQuestTasks = [];
+            renderPlaceQuestTasks();
         }
     } catch (error) {
         console.error('[loadPlaceQuestTasks] Error:', error);
         currentPlaceQuestTasks = [];
+        renderPlaceQuestTasks();
     }
 }
 
