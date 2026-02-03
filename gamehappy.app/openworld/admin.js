@@ -216,6 +216,7 @@ function renderWorldsList() {
                 <div class="list-item-desc">${escapeHtml(world.description || '(no description)')}</div>
             </div>
             <button class="btn-small" onclick="setCurrentWorldAndShowQuests(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="margin-left: 10px;">Quests</button>
+            <button class="btn-small btn-danger" onclick="deleteWorldConfirm(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="margin-left: 5px;">Delete</button>
         </div>
     `).join('');
 }
@@ -224,6 +225,36 @@ function setCurrentWorldAndShowQuests(worldId, worldName) {
     navState.world_id = worldId;
     navState.world_name = worldName;
     showQuestManagement();
+}
+
+async function deleteWorldConfirm(worldId, worldName) {
+    if (!confirm(`Are you sure you want to delete "${worldName}" and all its contents (places, objects, quests, tasks)? This cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_world',
+                world_id: worldId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[deleteWorldConfirm] World deleted:', worldId);
+            await loadWorlds();
+            renderWorldsList();
+            showMessage('World deleted successfully', 'success', 'world-message');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[deleteWorldConfirm] Error:', error);
+        alert('Error deleting world');
+    }
 }
 
 // ===== PLACES =====

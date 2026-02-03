@@ -56,6 +56,9 @@ try {
         case 'get_worlds':
             getWorlds($pdo);
             break;
+        case 'delete_world':
+            deleteWorld($pdo);
+            break;
         case 'create_place':
             createPlace($pdo, $username);
             break;
@@ -231,6 +234,32 @@ function getWorlds($pdo) {
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+function deleteWorld($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['world_id']) {
+        throw new Exception('World ID required');
+    }
+    
+    $worldId = (int)$data['world_id'];
+    
+    try {
+        // Delete will cascade through all related tables via foreign keys:
+        // ow_places -> ow_objects -> ow_mechanics
+        // ow_quests -> ow_quest_tasks -> ow_task_mechanics, ow_task_kickbacks
+        // ow_plot_assignments, ow_permissions
+        $stmt = $pdo->prepare("DELETE FROM ow_worlds WHERE id = ?");
+        $stmt->execute([$worldId]);
+        
+        error_log("[deleteWorld] World $worldId deleted successfully");
+        echo json_encode(['success' => true, 'message' => 'World deleted successfully']);
+    } catch (PDOException $e) {
+        error_log("[deleteWorld] Error deleting world: " . $e->getMessage());
+        throw new Exception('Failed to delete world: ' . $e->getMessage());
     }
     exit;
 }
