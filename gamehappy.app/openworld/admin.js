@@ -1555,14 +1555,18 @@ async function loadQuestTasks(questId) {
 }
 
 function showQuestManagement() {
-    console.log('[showQuestManagement] Opening quest modal for world:', navState.world_id);
-    loadQuests().then(() => {
-        console.log('[showQuestManagement] Quests loaded, rendering...');
+    console.log('[showQuestManagement] Called - opening quest modal for world:', navState.world_id);
+    console.log('[showQuestManagement] Current quests array before load:', JSON.stringify(quests));
+    
+    // Load quests
+    loadQuests();
+    
+    // Give it a moment then render
+    setTimeout(() => {
+        console.log('[showQuestManagement] After timeout, quests array:', JSON.stringify(quests));
         renderQuestsList();
         openModal('modal-quests');
-    }).catch(err => {
-        console.error('[showQuestManagement] Error loading quests:', err);
-    });
+    }, 100);
 }
 
 function renderQuestsList() {
