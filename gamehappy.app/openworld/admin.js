@@ -2669,6 +2669,272 @@ async function createNewQuestTaskEnhanced() {
     }
 }
 
+// ===== VISUAL QUEST BUILDER =====
+
+let visualBuilderData = {
+    taskPositions: {},
+    selectedTask: null,
+    connectingFromTask: null
+};
+
+function showQuestView(viewType) {
+    const listView = document.getElementById('quest-view-list');
+    const visualView = document.getElementById('quest-view-visual');
+    const btnList = document.getElementById('btn-quest-list-view');
+    const btnVisual = document.getElementById('btn-quest-visual-view');
+    
+    if (viewType === 'list') {
+        listView.style.display = 'block';
+        visualView.style.display = 'none';
+        btnList.style.background = '#81c784';
+        btnVisual.style.background = '';
+    } else {
+        listView.style.display = 'none';
+        visualView.style.display = 'block';
+        btnList.style.background = '';
+        btnVisual.style.background = '#81c784';
+        renderVisualBuilder();
+    }
+}
+
+function renderVisualBuilder() {
+    const container = document.getElementById('visual-builder-content');
+    if (!currentQuestTasks || currentQuestTasks.length === 0) {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #666;">No tasks yet. Add one to start building!</div>';
+        return;
+    }
+    
+    // Calculate positions in a flow layout
+    visualBuilderData.taskPositions = calculateTaskPositions(currentQuestTasks);
+    
+    // Create task cards
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 20px; min-width: 100%; align-content: flex-start;">';
+    
+    currentQuestTasks.forEach((task, index) => {
+        const pos = visualBuilderData.taskPositions[task.id];
+        const assignment = getTaskAssignmentLabel(task);
+        const hasLinkedTasks = task.linked_tasks && task.linked_tasks.length > 0;
+        
+        // Determine color based on assignment
+        let cardColor = '#333';
+        let dotColor = '#999';
+        if (task.linked_place_id && task.linked_object_id) {
+            cardColor = '#1a3a1a';
+            dotColor = '#4a9d6f';
+        } else if (task.linked_place_id || task.linked_object_id) {
+            cardColor = '#1a2540';
+            dotColor = '#4a7fd9';
+        }
+        
+        html += `
+            <div 
+                class="task-card-visual" 
+                id="task-card-${task.id}"
+                draggable="true"
+                ondragstart="startTaskDrag(event, ${task.id})"
+                ondragend="endTaskDrag(event)"
+                onclick="selectVisualTask(${task.id})"
+                style="
+                    position: relative;
+                    flex: 0 0 200px;
+                    padding: 15px;
+                    background: ${cardColor};
+                    border: 2px solid ${visualBuilderData.selectedTask === task.id ? '#81c784' : '#444'};
+                    border-radius: 8px;
+                    cursor: move;
+                    transition: all 0.2s;
+                    user-select: none;
+                "
+            >
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <span style="font-size: 20px; color: ${dotColor};">●</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: #fff; word-break: break-word;">${escapeHtml(task.name)}</div>
+                        <div style="font-size: 11px; color: #aaa; margin-top: 4px;">${assignment}</div>
+                    </div>
+                </div>
+                
+                ${task.is_required ? '<span style="display: inline-block; padding: 2px 6px; background: #d32f2f; color: #fff; border-radius: 2px; font-size: 10px; margin-bottom: 10px;">Required</span>' : ''}
+                
+                <div style="font-size: 11px; color: #bbb; line-height: 1.4; margin-bottom: 10px;">
+                    ${escapeHtml(task.description || '(no description)').substring(0, 80)}${task.description && task.description.length > 80 ? '...' : ''}
+                </div>
+                
+                ${hasLinkedTasks ? `
+                    <div style="border-top: 1px solid #555; padding-top: 8px; margin-top: 8px;">
+                        <div style="font-size: 10px; color: #81c784; margin-bottom: 4px;">→ Links to:</div>
+                        ${task.linked_tasks.map(linkedId => {
+                            const linkedTask = currentQuestTasks.find(t => t.id === linkedId);
+                            return linkedTask ? `<div style="font-size: 10px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(linkedTask.name)}</div>` : '';
+                        }).join('')}
+                    </div>
+                ` : ''}
+                
+                <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px;">
+                    <button class="btn-tiny" onclick="event.stopPropagation(); openTaskAssignmentModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="flex: 1;">📍 Assign</button>
+                    <button class="btn-tiny" onclick="event.stopPropagation(); openTaskLinkingModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="flex: 1;">🔗 Link</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+    
+    // Draw connections between linked tasks
+    drawTaskConnections();
+}
+
+function calculateTaskPositions(tasks) {
+    const positions = {};
+    
+    // Group tasks by depth (how many tasks must come before them)
+    const taskDepth = {};
+    const visited = new Set();
+    
+    function getDepth(taskId) {
+        if (taskDepth[taskId] !== undefined) return taskDepth[taskId];
+        if (visited.has(taskId)) return 0; // Circular reference, reset
+        
+        visited.add(taskId);
+        const task = currentQuestTasks.find(t => t.id === taskId);
+        
+        if (!task || !task.linked_tasks || task.linked_tasks.length === 0) {
+            taskDepth[taskId] = 0;
+            visited.delete(taskId);
+            return 0;
+        }
+        
+        let maxDepth = 0;
+        task.linked_tasks.forEach(linkedId => {
+            maxDepth = Math.max(maxDepth, getDepth(linkedId) + 1);
+        });
+        
+        taskDepth[taskId] = maxDepth;
+        visited.delete(taskId);
+        return maxDepth;
+    }
+    
+    tasks.forEach(task => getDepth(task.id));
+    
+    // Position tasks based on depth
+    const depthGroups = {};
+    Object.keys(taskDepth).forEach(taskId => {
+        const depth = taskDepth[taskId];
+        if (!depthGroups[depth]) depthGroups[depth] = [];
+        depthGroups[depth].push(parseInt(taskId));
+    });
+    
+    Object.keys(depthGroups).forEach(depth => {
+        const group = depthGroups[depth];
+        group.forEach((taskId, index) => {
+            positions[taskId] = {
+                x: 20 + index * 230,
+                y: 20 + parseInt(depth) * 150
+            };
+        });
+    });
+    
+    return positions;
+}
+
+function getTaskAssignmentLabel(task) {
+    if (task.linked_place_id && task.linked_object_id) {
+        const place = places.find(p => p.id === task.linked_place_id);
+        const object = objects.find(o => o.id === task.linked_object_id);
+        return `📍 ${place ? escapeHtml(place.name) : 'Room'} • 🔧 ${object ? escapeHtml(object.name) : 'Object'}`;
+    } else if (task.linked_place_id) {
+        const place = places.find(p => p.id === task.linked_place_id);
+        return `📍 ${place ? escapeHtml(place.name) : 'Room'}`;
+    } else if (task.linked_object_id) {
+        const object = objects.find(o => o.id === task.linked_object_id);
+        return `🔧 ${object ? escapeHtml(object.name) : 'Object'}`;
+    }
+    return 'Unassigned';
+}
+
+function selectVisualTask(taskId) {
+    visualBuilderData.selectedTask = visualBuilderData.selectedTask === taskId ? null : taskId;
+    renderVisualBuilder();
+}
+
+function startTaskDrag(event, taskId) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('taskId', taskId);
+    event.target.style.opacity = '0.7';
+}
+
+function endTaskDrag(event) {
+    event.target.style.opacity = '1';
+}
+
+function drawTaskConnections() {
+    const svg = document.getElementById('task-connections-svg');
+    if (!svg) return;
+    
+    svg.innerHTML = '';
+    const canvas = document.getElementById('visual-builder-canvas');
+    const viewport = document.getElementById('visual-builder-content');
+    
+    // Set SVG size to match content
+    svg.setAttribute('width', viewport.offsetWidth);
+    svg.setAttribute('height', viewport.offsetHeight);
+    
+    // Draw connections
+    currentQuestTasks.forEach(task => {
+        if (task.linked_tasks && task.linked_tasks.length > 0) {
+            task.linked_tasks.forEach(linkedId => {
+                const fromCard = document.getElementById(`task-card-${task.id}`);
+                const toCard = document.getElementById(`task-card-${linkedId}`);
+                
+                if (fromCard && toCard) {
+                    const fromRect = fromCard.getBoundingClientRect();
+                    const toRect = toCard.getBoundingClientRect();
+                    const svgRect = svg.getBoundingClientRect();
+                    
+                    const x1 = fromRect.right - svgRect.left;
+                    const y1 = fromRect.top - svgRect.top + fromRect.height / 2;
+                    const x2 = toRect.left - svgRect.left;
+                    const y2 = toRect.top - svgRect.top + toRect.height / 2;
+                    
+                    // Draw curved arrow
+                    const controlX = (x1 + x2) / 2;
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${x1} ${y1} Q ${controlX} ${(y1 + y2) / 2} ${x2} ${y2}`);
+                    path.setAttribute('stroke', '#81c784');
+                    path.setAttribute('stroke-width', '2');
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('marker-end', 'url(#arrowhead)');
+                    
+                    svg.appendChild(path);
+                }
+            });
+        }
+    });
+    
+    // Add arrow marker if it doesn't exist
+    let defs = svg.querySelector('defs');
+    if (!defs) {
+        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', 'arrowhead');
+        marker.setAttribute('markerWidth', '10');
+        marker.setAttribute('markerHeight', '10');
+        marker.setAttribute('refX', '9');
+        marker.setAttribute('refY', '3');
+        marker.setAttribute('orient', 'auto');
+        marker.innerHTML = '<polygon points="0 0, 10 3, 0 6" fill="#81c784" />';
+        defs.appendChild(marker);
+        svg.appendChild(defs);
+    }
+}
+
+function resetVisualBuilder() {
+    visualBuilderData.selectedTask = null;
+    visualBuilderData.connectingFromTask = null;
+    renderVisualBuilder();
+}
+
 // ===== SIMPLIFIED MODALS FOR QUESTS PAGE =====
 
 function openTaskLinkingModal(taskId, taskName) {
