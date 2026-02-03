@@ -336,7 +336,7 @@
                 <!-- Tasks Section -->
                 <div id="quest-tasks-section" style="display: none;">
                     <h3 id="current-quest-name"></h3>
-                    <button class="btn-add" onclick="openCreateTaskModal()" style="margin-bottom: 10px;">+ Add Task</button>
+                    <button class="btn-add" onclick="openCreateTaskModalEnhanced()" style="margin-bottom: 10px;">+ Add Task</button>
                     <div id="quest-tasks-list" class="modal-list"></div>
                 </div>
             </div>
@@ -475,6 +475,90 @@
             <div class="modal-buttons">
                 <button type="button" class="btn-primary" onclick="confirmAssignTaskToRoom()">Assign Task</button>
                 <button type="button" class="btn-secondary" onclick="closeModal('modal-assign-task-to-room')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENHANCED CREATE TASK MODAL (with mechanics & kickbacks) -->
+    <div id="modal-create-task-enhanced" class="modal">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <button class="modal-close" onclick="closeModal('modal-create-task-enhanced')">×</button>
+            <h2>Create Quest Task</h2>
+            
+            <!-- Basic Task Info -->
+            <div style="border-bottom: 1px solid #444; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>Task Details</h3>
+                
+                <div class="form-group">
+                    <label for="task-enh-name-input">Task Name:</label>
+                    <input type="text" id="task-enh-name-input" placeholder="e.g., Find the golden key" style="width: 100%; box-sizing: border-box;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-enh-desc-input">Description:</label>
+                    <textarea id="task-enh-desc-input" placeholder="What should the player do?" style="width: 100%; box-sizing: border-box; min-height: 80px;"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-enh-required-input">
+                        <input type="checkbox" id="task-enh-required-input"> Required to progress
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Location Assignment -->
+            <div style="border-bottom: 1px solid #444; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>Location</h3>
+                
+                <div class="form-group">
+                    <label for="task-enh-place-select">Assign to Room (optional):</label>
+                    <select id="task-enh-place-select" style="width: 100%; box-sizing: border-box;" onchange="updateTaskEnhancedObjects()">
+                        <option value="">-- None --</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-enh-object-select">Assign to Object (optional):</label>
+                    <select id="task-enh-object-select" style="width: 100%; box-sizing: border-box;" onchange="updateTaskEnhancedMechanics()">
+                        <option value="">-- None --</option>
+                    </select>
+                    <small style="color: #aaa;">Select an object to see available mechanics</small>
+                </div>
+            </div>
+            
+            <!-- Task Completion Actions -->
+            <div style="border-bottom: 1px solid #444; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>Task Completion Actions</h3>
+                <p style="color: #aaa; font-size: 12px; margin-bottom: 10px;">Select which mechanics/actions complete this task</p>
+                
+                <div id="task-enh-mechanics-list" style="background: #0f1419; padding: 15px; border-radius: 4px; min-height: 50px;">
+                    <p style="color: #666; text-align: center;">Select an object above to see available mechanics</p>
+                </div>
+            </div>
+            
+            <!-- Kickback Tasks (side quests) -->
+            <div style="border-bottom: 1px solid #444; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>Kickback Tasks (Hidden Side Quests)</h3>
+                <p style="color: #aaa; font-size: 12px; margin-bottom: 10px;">Add optional side tasks that appear if the player encounters obstacles</p>
+                
+                <div style="margin-bottom: 15px;">
+                    <label for="task-enh-kickback-select">Add Existing Task as Kickback:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="task-enh-kickback-select" style="flex: 1; box-sizing: border-box;">
+                            <option value="">-- Select Task --</option>
+                        </select>
+                        <button class="btn-small" onclick="addTaskKickbackToList()">+ Add</button>
+                    </div>
+                </div>
+                
+                <div id="task-enh-kickbacks-list" style="background: #0f1419; padding: 10px; border-radius: 4px; min-height: 40px;">
+                    <p style="color: #666; text-align: center;">No kickback tasks added yet</p>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="btn-primary" onclick="createNewQuestTaskEnhanced()">Create Task</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-create-task-enhanced')">Cancel</button>
             </div>
         </div>
     </div>

@@ -1649,6 +1649,8 @@ function renderQuestTasks() {
                         </ul>
                     </div>
                 ` : ''}
+                <div id="task-mechanics-${task.id}" style="margin-top: 10px;"></div>
+                <div id="task-kickbacks-${task.id}" style="margin-top: 10px;"></div>
             </div>
             <div class="task-actions">
                 <button class="btn-small" onclick="openLinkTaskModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" title="Link this task to another">Link</button>
@@ -1657,7 +1659,74 @@ function renderQuestTasks() {
             </div>
         </div>
     `).join('');
+    
+    // Load and display mechanics and kickbacks for each task
+    currentQuestTasks.forEach(task => {
+        loadTaskMechanicsDisplay(task.id);
+        loadTaskKickbacksDisplay(task.id);
+    });
+}
 
+async function loadTaskMechanicsDisplay(taskId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_task_mechanics',
+                task_id: taskId
+            })
+        });
+        
+        const data = await response.json();
+        const container = document.getElementById(`task-mechanics-${taskId}`);
+        
+        if (!container) return;
+        
+        if (data.success && data.mechanics.length > 0) {
+            container.innerHTML = `
+                <div style="border-top: 1px solid #333; padding-top: 8px; margin-top: 8px;">
+                    <strong style="color: #81c784;">✓ Completes on:</strong>
+                    <div style="font-size: 11px; color: #aaa;">
+                        ${data.mechanics.map(m => `${escapeHtml(m.type)}: ${escapeHtml(m.name)}`).join(', ')}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('[loadTaskMechanicsDisplay] Error:', error);
+    }
+}
+
+async function loadTaskKickbacksDisplay(taskId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_task_kickbacks',
+                task_id: taskId
+            })
+        });
+        
+        const data = await response.json();
+        const container = document.getElementById(`task-kickbacks-${taskId}`);
+        
+        if (!container) return;
+        
+        if (data.success && data.kickbacks.length > 0) {
+            container.innerHTML = `
+                <div style="border-top: 1px solid #333; padding-top: 8px; margin-top: 8px;">
+                    <strong style="color: #ffd54f;">⚡ Kickback Tasks:</strong>
+                    <div style="font-size: 11px; color: #aaa;">
+                        ${data.kickbacks.map(k => `${escapeHtml(k.kickback_name)}`).join(' or ')}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('[loadTaskKickbacksDisplay] Error:', error);
+    }
 }
 
 function openCreateQuestModal() {
@@ -2129,6 +2198,275 @@ async function removeTaskFromPlace(taskId) {
     } catch (error) {
         console.error('[removeTaskFromPlace] Error:', error);
         alert('Error removing task');
+    }
+}
+
+// ===== ENHANCED TASK CREATION WORKFLOW =====
+
+let taskEnhancedData = {
+    selectedMechanics: [],
+    selectedKickbacks: []
+};
+
+function openCreateTaskModalEnhanced() {
+    console.log('[openCreateTaskModalEnhanced] Opening');
+    
+    // Reset form
+    document.getElementById('task-enh-name-input').value = '';
+    document.getElementById('task-enh-desc-input').value = '';
+    document.getElementById('task-enh-required-input').checked = false;
+    document.getElementById('task-enh-place-select').value = '';
+    document.getElementById('task-enh-object-select').value = '';
+    
+    taskEnhancedData = { selectedMechanics: [], selectedKickbacks: [] };
+    
+    // Populate places
+    const placeSelect = document.getElementById('task-enh-place-select');
+    placeSelect.innerHTML = '<option value="">-- None --</option>';
+    places.forEach(place => {
+        if (place.world_id === navState.world_id) {
+            placeSelect.innerHTML += `<option value="${place.id}">${escapeHtml(place.name)}</option>`;
+        }
+    });
+    
+    // Populate kickback task options
+    updateKickbackTaskOptions();
+    
+    renderTaskEnhancedMechanics();
+    renderTaskEnhancedKickbacks();
+    
+    openModal('modal-create-task-enhanced');
+}
+
+function updateTaskEnhancedObjects() {
+    const placeId = parseInt(document.getElementById('task-enh-place-select').value);
+    const objectSelect = document.getElementById('task-enh-object-select');
+    
+    objectSelect.innerHTML = '<option value="">-- None --</option>';
+    
+    if (!placeId) {
+        objectSelect.disabled = true;
+        return;
+    }
+    
+    objectSelect.disabled = false;
+    const roomObjects = objects.filter(o => o.place_id === placeId);
+    roomObjects.forEach(obj => {
+        objectSelect.innerHTML += `<option value="${obj.id}">${escapeHtml(obj.name)}</option>`;
+    });
+    
+    // Reset mechanics when place changes
+    document.getElementById('task-enh-object-select').value = '';
+    renderTaskEnhancedMechanics();
+}
+
+async function updateTaskEnhancedMechanics() {
+    const objectId = parseInt(document.getElementById('task-enh-object-select').value);
+    const mechanicsContainer = document.getElementById('task-enh-mechanics-list');
+    
+    if (!objectId) {
+        mechanicsContainer.innerHTML = '<p style="color: #666; text-align: center;">Select an object above to see available mechanics</p>';
+        taskEnhancedData.selectedMechanics = [];
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_compatible_mechanics',
+                object_id: objectId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success && data.mechanics.length > 0) {
+            mechanicsContainer.innerHTML = data.mechanics.map(m => `
+                <div style="display: flex; align-items: center; padding: 8px; background: #1a1a1a; margin: 5px 0; border-radius: 3px; border: 1px solid #333;">
+                    <input type="checkbox" id="mechanic-${m.id}" onchange="toggleTaskMechanic(${m.id})" style="margin-right: 10px;">
+                    <div style="flex: 1;">
+                        <strong>${escapeHtml(m.type)}</strong> - ${escapeHtml(m.name)}
+                        <div style="color: #aaa; font-size: 11px;">${escapeHtml(m.description || '(no description)')}</div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            mechanicsContainer.innerHTML = '<p style="color: #666; text-align: center;">No mechanics available for this object</p>';
+            taskEnhancedData.selectedMechanics = [];
+        }
+    } catch (error) {
+        console.error('[updateTaskEnhancedMechanics] Error:', error);
+        mechanicsContainer.innerHTML = '<p style="color: #c44;">Error loading mechanics</p>';
+    }
+}
+
+function toggleTaskMechanic(mechanicId) {
+    const checkbox = document.getElementById(`mechanic-${mechanicId}`);
+    if (checkbox.checked) {
+        if (!taskEnhancedData.selectedMechanics.includes(mechanicId)) {
+            taskEnhancedData.selectedMechanics.push(mechanicId);
+        }
+    } else {
+        taskEnhancedData.selectedMechanics = taskEnhancedData.selectedMechanics.filter(id => id !== mechanicId);
+    }
+    console.log('[toggleTaskMechanic] Selected mechanics:', taskEnhancedData.selectedMechanics);
+}
+
+function updateKickbackTaskOptions() {
+    const kickbackSelect = document.getElementById('task-enh-kickback-select');
+    kickbackSelect.innerHTML = '<option value="">-- Select Task --</option>';
+    
+    // Show all tasks from current quest except the one being created
+    if (currentQuestId && currentQuestTasks) {
+        currentQuestTasks.forEach(task => {
+            kickbackSelect.innerHTML += `<option value="${task.id}">${escapeHtml(task.name)}</option>`;
+        });
+    }
+}
+
+function addTaskKickbackToList() {
+    const kickbackSelect = document.getElementById('task-enh-kickback-select');
+    const taskId = parseInt(kickbackSelect.value);
+    
+    if (!taskId) {
+        alert('Please select a task');
+        return;
+    }
+    
+    if (taskEnhancedData.selectedKickbacks.includes(taskId)) {
+        alert('This task is already added');
+        return;
+    }
+    
+    const task = currentQuestTasks.find(t => t.id === taskId);
+    if (task) {
+        taskEnhancedData.selectedKickbacks.push(taskId);
+        kickbackSelect.value = '';
+        renderTaskEnhancedKickbacks();
+    }
+}
+
+function removeTaskKickbackFromList(taskId) {
+    taskEnhancedData.selectedKickbacks = taskEnhancedData.selectedKickbacks.filter(id => id !== taskId);
+    renderTaskEnhancedKickbacks();
+}
+
+function renderTaskEnhancedMechanics() {
+    const container = document.getElementById('task-enh-mechanics-list');
+    if (taskEnhancedData.selectedMechanics.length === 0) {
+        container.innerHTML = '<p style="color: #666; text-align: center;">Select an object above to see available mechanics</p>';
+    }
+}
+
+function renderTaskEnhancedKickbacks() {
+    const container = document.getElementById('task-enh-kickbacks-list');
+    
+    if (taskEnhancedData.selectedKickbacks.length === 0) {
+        container.innerHTML = '<p style="color: #666; text-align: center;">No kickback tasks added yet</p>';
+        return;
+    }
+    
+    container.innerHTML = taskEnhancedData.selectedKickbacks.map(kickbackId => {
+        const task = currentQuestTasks.find(t => t.id === kickbackId);
+        return task ? `
+            <div style="display: flex; align-items: center; padding: 8px; background: #1a1a1a; margin: 5px 0; border-radius: 3px; border-left: 3px solid #81c784;">
+                <div style="flex: 1;">
+                    <strong>${escapeHtml(task.name)}</strong>
+                    <div style="color: #aaa; font-size: 11px;">${escapeHtml(task.description || '')}</div>
+                </div>
+                <button class="btn-tiny" onclick="removeTaskKickbackFromList(${kickbackId})">✕ Remove</button>
+            </div>
+        ` : '';
+    }).join('');
+}
+
+async function createNewQuestTaskEnhanced() {
+    const name = document.getElementById('task-enh-name-input').value.trim();
+    const description = document.getElementById('task-enh-desc-input').value.trim();
+    const isRequired = document.getElementById('task-enh-required-input').checked;
+    const placeId = parseInt(document.getElementById('task-enh-place-select').value) || null;
+    const objectId = parseInt(document.getElementById('task-enh-object-select').value) || null;
+    
+    if (!name) {
+        alert('Task name required');
+        return;
+    }
+    
+    if (!currentQuestId) {
+        alert('No quest selected');
+        return;
+    }
+    
+    try {
+        // Step 1: Create the task
+        const createResponse = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create_quest_task',
+                quest_id: currentQuestId,
+                name: name,
+                description: description,
+                is_required: isRequired ? 1 : 0,
+                linked_place_id: placeId,
+                linked_object_id: objectId
+            })
+        });
+        
+        const createData = await createResponse.json();
+        if (!createData.success) {
+            throw new Error(createData.message || 'Failed to create task');
+        }
+        
+        const newTaskId = createData.task_id;
+        console.log('[createNewQuestTaskEnhanced] Task created:', newTaskId);
+        
+        // Step 2: Link mechanics to task
+        for (const mechanicId of taskEnhancedData.selectedMechanics) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'link_task_mechanic',
+                        task_id: newTaskId,
+                        mechanic_id: mechanicId
+                    })
+                });
+            } catch (error) {
+                console.error('[createNewQuestTaskEnhanced] Error linking mechanic:', error);
+            }
+        }
+        
+        // Step 3: Add kickback tasks
+        for (const kickbackId of taskEnhancedData.selectedKickbacks) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add_task_kickback',
+                        original_task_id: newTaskId,
+                        kickback_task_id: kickbackId,
+                        priority: 0
+                    })
+                });
+            } catch (error) {
+                console.error('[createNewQuestTaskEnhanced] Error adding kickback:', error);
+            }
+        }
+        
+        console.log('[createNewQuestTaskEnhanced] Task fully configured');
+        closeModal('modal-create-task-enhanced');
+        
+        // Reload and re-render
+        await loadQuestTasks(currentQuestId);
+        renderQuestTasks();
+        
+    } catch (error) {
+        console.error('[createNewQuestTaskEnhanced] Error:', error);
+        alert('Error creating task: ' + error.message);
     }
 }
 

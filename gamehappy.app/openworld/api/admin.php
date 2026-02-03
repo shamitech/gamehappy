@@ -137,6 +137,27 @@ try {
         case 'get_place_quest_tasks':
             getPlaceQuestTasks($pdo);
             break;
+        case 'link_task_mechanic':
+            linkTaskMechanic($pdo);
+            break;
+        case 'unlink_task_mechanic':
+            unlinkTaskMechanic($pdo);
+            break;
+        case 'get_task_mechanics':
+            getTaskMechanics($pdo);
+            break;
+        case 'add_task_kickback':
+            addTaskKickback($pdo);
+            break;
+        case 'remove_task_kickback':
+            removeTaskKickback($pdo);
+            break;
+        case 'get_task_kickbacks':
+            getTaskKickbacks($pdo);
+            break;
+        case 'get_compatible_mechanics':
+            getCompatibleMechanics($pdo);
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action: ' . $action]);
@@ -1045,6 +1066,33 @@ function ensureQuestTables($pdo) {
                 )
             ");
             
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS ow_task_mechanics (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    task_id INT NOT NULL,
+                    mechanic_id INT NOT NULL,
+                    required_action VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE,
+                    FOREIGN KEY (mechanic_id) REFERENCES ow_mechanics(id) ON DELETE CASCADE,
+                    UNIQUE KEY unique_task_mechanic (task_id, mechanic_id)
+                )
+            ");
+            
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS ow_task_kickbacks (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    original_task_id INT NOT NULL,
+                    kickback_task_id INT NOT NULL,
+                    trigger_condition LONGTEXT,
+                    priority INT DEFAULT 0,
+                    is_enabled TINYINT DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (original_task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE,
+                    FOREIGN KEY (kickback_task_id) REFERENCES ow_quest_tasks(id) ON DELETE CASCADE
+                )
+            ");
+            
             error_log("[ensureQuestTables] Quest tables created successfully");
             echo json_encode(['success' => true, 'message' => 'Quest tables created successfully']);
             exit;
@@ -1381,5 +1429,228 @@ function getPlaceQuestTasks($pdo) {
     
     error_log("[getPlaceQuestTasks] Found " . count($tasks) . " tasks for place $place_id");
     echo json_encode(['success' => true, 'tasks' => $tasks]);
+    exit;
+}
+
+// ===== NEW TASK MECHANICS & KICKBACK FUNCTIONS =====
+
+function linkTaskMechanic($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id'] || !$data['mechanic_id']) {
+        throw new Exception('Task ID and Mechanic ID required');
+    }
+    
+    $task_id = (int)$data['task_id'];
+    $mechanic_id = (int)$data['mechanic_id'];
+    $required_action = $data['required_action'] ?? null;
+    
+    // Get mechanic type for logging
+    $stmt = $pdo->prepare("SELECT type FROM ow_mechanics WHERE id = ?");
+    $stmt->execute([$mechanic_id]);
+    $mechanic = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$mechanic) {
+        throw new Exception('Mechanic not found');
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO ow_task_mechanics (task_id, mechanic_id, required_action)
+        VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE required_action = ?
+    ");
+    
+    $stmt->execute([$task_id, $mechanic_id, $required_action ?? $mechanic['type'], $required_action ?? $mechanic['type']]);
+    
+    error_log("[linkTaskMechanic] Task $task_id linked to mechanic $mechanic_id ({$mechanic['type']})");
+    echo json_encode(['success' => true, 'message' => 'Mechanic linked to task']);
+    exit;
+}
+
+function unlinkTaskMechanic($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id'] || !$data['mechanic_id']) {
+        throw new Exception('Task ID and Mechanic ID required');
+    }
+    
+    $task_id = (int)$data['task_id'];
+    $mechanic_id = (int)$data['mechanic_id'];
+    
+    $stmt = $pdo->prepare("DELETE FROM ow_task_mechanics WHERE task_id = ? AND mechanic_id = ?");
+    $stmt->execute([$task_id, $mechanic_id]);
+    
+    error_log("[unlinkTaskMechanic] Task $task_id unlinked from mechanic $mechanic_id");
+    echo json_encode(['success' => true, 'message' => 'Mechanic unlinked from task']);
+    exit;
+}
+
+function getTaskMechanics($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id']) {
+        throw new Exception('Task ID required');
+    }
+    
+    $task_id = (int)$data['task_id'];
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            tm.id,
+            tm.mechanic_id,
+            tm.required_action,
+            m.type,
+            m.name,
+            m.description,
+            o.id as object_id,
+            o.name as object_name,
+            p.id as place_id,
+            p.name as place_name
+        FROM ow_task_mechanics tm
+        JOIN ow_mechanics m ON tm.mechanic_id = m.id
+        JOIN ow_objects o ON m.object_id = o.id
+        JOIN ow_places p ON o.place_id = p.id
+        WHERE tm.task_id = ?
+        ORDER BY m.name
+    ");
+    
+    $stmt->execute([$task_id]);
+    $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    error_log("[getTaskMechanics] Found " . count($mechanics) . " mechanics for task $task_id");
+    echo json_encode(['success' => true, 'mechanics' => $mechanics]);
+    exit;
+}
+
+function getCompatibleMechanics($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['object_id']) {
+        throw new Exception('Object ID required');
+    }
+    
+    $object_id = (int)$data['object_id'];
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            m.id,
+            m.type,
+            m.name,
+            m.description,
+            o.name as object_name,
+            p.name as place_name
+        FROM ow_mechanics m
+        JOIN ow_objects o ON m.object_id = o.id
+        JOIN ow_places p ON o.place_id = p.id
+        WHERE m.object_id = ?
+        ORDER BY m.type, m.name
+    ");
+    
+    $stmt->execute([$object_id]);
+    $mechanics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    error_log("[getCompatibleMechanics] Found " . count($mechanics) . " mechanics for object $object_id");
+    echo json_encode(['success' => true, 'mechanics' => $mechanics]);
+    exit;
+}
+
+function addTaskKickback($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['original_task_id'] || !$data['kickback_task_id']) {
+        throw new Exception('Original Task ID and Kickback Task ID required');
+    }
+    
+    $original_task_id = (int)$data['original_task_id'];
+    $kickback_task_id = (int)$data['kickback_task_id'];
+    $trigger_condition = isset($data['trigger_condition']) ? json_encode($data['trigger_condition']) : null;
+    $priority = (int)($data['priority'] ?? 0);
+    
+    // Verify both tasks exist
+    $stmt = $pdo->prepare("SELECT id FROM ow_quest_tasks WHERE id = ?");
+    $stmt->execute([$original_task_id]);
+    if (!$stmt->fetch()) {
+        throw new Exception('Original task not found');
+    }
+    
+    $stmt = $pdo->prepare("SELECT id FROM ow_quest_tasks WHERE id = ?");
+    $stmt->execute([$kickback_task_id]);
+    if (!$stmt->fetch()) {
+        throw new Exception('Kickback task not found');
+    }
+    
+    $stmt = $pdo->prepare("
+        INSERT INTO ow_task_kickbacks (original_task_id, kickback_task_id, trigger_condition, priority)
+        VALUES (?, ?, ?, ?)
+    ");
+    
+    $stmt->execute([$original_task_id, $kickback_task_id, $trigger_condition, $priority]);
+    
+    error_log("[addTaskKickback] Kickback task $kickback_task_id added to original task $original_task_id");
+    echo json_encode(['success' => true, 'message' => 'Kickback task added']);
+    exit;
+}
+
+function removeTaskKickback($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['original_task_id'] || !$data['kickback_task_id']) {
+        throw new Exception('Original Task ID and Kickback Task ID required');
+    }
+    
+    $original_task_id = (int)$data['original_task_id'];
+    $kickback_task_id = (int)$data['kickback_task_id'];
+    
+    $stmt = $pdo->prepare("
+        DELETE FROM ow_task_kickbacks 
+        WHERE original_task_id = ? AND kickback_task_id = ?
+    ");
+    
+    $stmt->execute([$original_task_id, $kickback_task_id]);
+    
+    error_log("[removeTaskKickback] Kickback task $kickback_task_id removed from original task $original_task_id");
+    echo json_encode(['success' => true, 'message' => 'Kickback task removed']);
+    exit;
+}
+
+function getTaskKickbacks($pdo) {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data['task_id']) {
+        throw new Exception('Task ID required');
+    }
+    
+    $task_id = (int)$data['task_id'];
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            tk.id,
+            tk.original_task_id,
+            tk.kickback_task_id,
+            tk.trigger_condition,
+            tk.priority,
+            tk.is_enabled,
+            kt.name as kickback_name,
+            kt.description as kickback_description,
+            q.name as quest_name
+        FROM ow_task_kickbacks tk
+        JOIN ow_quest_tasks kt ON tk.kickback_task_id = kt.id
+        JOIN ow_quests q ON kt.quest_id = q.id
+        WHERE tk.original_task_id = ?
+        ORDER BY tk.priority DESC, tk.id
+    ");
+    
+    $stmt->execute([$task_id]);
+    $kickbacks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Parse trigger_condition JSON
+    foreach ($kickbacks as &$kickback) {
+        if ($kickback['trigger_condition']) {
+            $kickback['trigger_condition'] = json_decode($kickback['trigger_condition'], true);
+        }
+    }
+    
+    error_log("[getTaskKickbacks] Found " . count($kickbacks) . " kickback tasks for task $task_id");
+    echo json_encode(['success' => true, 'kickbacks' => $kickbacks]);
     exit;
 }
