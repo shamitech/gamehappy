@@ -2090,7 +2090,7 @@ async function confirmAssignTaskToRoom() {
         const data = await response.json();
         if (data.success) {
             console.log('[confirmAssignTaskToRoom] Task assigned successfully');
-            hideModal('modal-assign-task-to-room');
+            closeModal('modal-assign-task-to-room');
             await loadPlaceQuestTasks(currentPlaceId);
             renderPlaceQuestTasks();
         } else {
