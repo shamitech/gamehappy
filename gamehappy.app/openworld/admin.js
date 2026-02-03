@@ -115,6 +115,8 @@ async function navigateToQuests(worldId, worldName) {
     updateBreadcrumb();
     showView('view-quests');
     document.getElementById('quest-details-section').style.display = 'none';
+    await loadPlacesForWorld(worldId);
+    await loadObjectsForWorld(worldId);
     await loadQuests();
     renderQuestsPageList();
 }
@@ -291,6 +293,26 @@ async function loadPlacesForWorld(worldId) {
         }
     } catch (error) {
         showMessage('Error loading places', 'error', 'place-message');
+    }
+}
+
+async function loadObjectsForWorld(worldId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_all_objects',
+                world_id: worldId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            objects = data.objects || [];
+        }
+    } catch (error) {
+        console.error('Error loading objects for world:', error);
     }
 }
 

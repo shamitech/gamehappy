@@ -80,6 +80,9 @@ try {
         case 'get_objects':
             getObjects($pdo);
             break;
+        case 'get_all_objects':
+            getAllObjects($pdo);
+            break;
         case 'get_object_mechanics':
             getObjectMechanics($pdo);
             break;
@@ -776,6 +779,29 @@ function getObjects($pdo) {
     echo json_encode(['success' => true, 'objects' => $objects]);
     exit;
 }
+
+function getAllObjects($pdo) {
+    $json_data = json_decode(file_get_contents('php://input'), true);
+    $worldId = $json_data['world_id'] ?? null;
+    
+    if (!$worldId) {
+        throw new Exception('World ID required');
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT o.id, o.name, o.description, o.place_id, o.created_at
+        FROM ow_objects o
+        JOIN ow_places p ON o.place_id = p.id
+        WHERE p.world_id = ?
+        ORDER BY p.id ASC, o.created_at ASC
+    ");
+    
+    $stmt->execute([$worldId]);
+    $objects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode(['success' => true, 'objects' => $objects]);
+    exit;
+}
+
 
 function getObjectMechanics($pdo) {
     $json_data = json_decode(file_get_contents('php://input'), true);
