@@ -119,6 +119,36 @@
                         <div id="place-quest-tasks-list" class="list-container"></div>
                     </div>
                 </section>
+
+                <!-- QUESTS VIEW -->
+                <section id="view-quests" class="view">
+                    <div class="panel">
+                        <div class="section-header">
+                            <h2>Quests & Tasks</h2>
+                            <button class="btn-add" onclick="openCreateQuestModal()">+ Create Quest</button>
+                        </div>
+                        <div id="quests-page-list" class="list-container"></div>
+                    </div>
+
+                    <!-- Quest Details Section -->
+                    <div id="quest-details-section" style="display: none;">
+                        <div class="panel">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h2 id="quest-details-title" style="margin: 0;"></h2>
+                                <button class="btn-secondary" onclick="goBackToQuestsList()">← Back to Quests</button>
+                            </div>
+                            <div id="quest-details-content"></div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="section-header">
+                                <h2>Tasks</h2>
+                                <button class="btn-add" onclick="openCreateTaskModalEnhanced()">+ Add Task</button>
+                            </div>
+                            <div id="quest-tasks-page-list" class="list-container"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -475,6 +505,63 @@
             <div class="modal-buttons">
                 <button type="button" class="btn-primary" onclick="confirmAssignTaskToRoom()">Assign Task</button>
                 <button type="button" class="btn-secondary" onclick="closeModal('modal-assign-task-to-room')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMPLE TASK LINKING MODAL -->
+    <div id="modal-simple-task-linking" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="modal-close" onclick="closeModal('modal-simple-task-linking')">×</button>
+            <h2 id="modal-linking-title">Link Task</h2>
+            
+            <p style="color: #aaa; margin-bottom: 20px;" id="modal-linking-desc">Select a task to link to:</p>
+            
+            <div class="form-group">
+                <select id="task-link-to-select" style="width: 100%; box-sizing: border-box; padding: 10px; font-size: 14px;">
+                    <option value="">-- Select Task --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label style="display: flex; align-items: center; margin-top: 15px;">
+                    <input type="checkbox" id="task-link-required-checkbox" style="margin-right: 10px;">
+                    <span>This is a required dependency (next task only shows if this one is complete)</span>
+                </label>
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button type="button" class="btn-primary" onclick="confirmSimpleTaskLink()">Create Link</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-simple-task-linking')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIMPLE TASK ASSIGNMENT MODAL -->
+    <div id="modal-simple-task-assignment" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="modal-close" onclick="closeModal('modal-simple-task-assignment')">×</button>
+            <h2 id="modal-assignment-title">Assign Task</h2>
+            
+            <p style="color: #aaa; margin-bottom: 20px;">Assign this task to a room or object:</p>
+            
+            <div class="form-group">
+                <label>Select Room:</label>
+                <select id="task-assign-place-select" style="width: 100%; box-sizing: border-box; padding: 10px;" onchange="updateAssignmentObjects()">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Select Object (optional):</label>
+                <select id="task-assign-object-select" style="width: 100%; box-sizing: border-box; padding: 10px;">
+                    <option value="">-- None --</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button type="button" class="btn-primary" onclick="confirmSimpleTaskAssignment()">Assign</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('modal-simple-task-assignment')">Cancel</button>
             </div>
         </div>
     </div>

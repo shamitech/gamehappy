@@ -109,6 +109,21 @@ function navigateToPlaces(worldId, worldName) {
     loadPlacesForWorld(worldId);
 }
 
+function navigateToQuests(worldId, worldName) {
+    navState.world_id = worldId;
+    navState.world_name = worldName;
+    updateBreadcrumb();
+    showView('view-quests');
+    document.getElementById('quest-details-section').style.display = 'none';
+    loadQuests();
+    renderQuestsPageList();
+}
+
+function goBackToQuestsList() {
+    document.getElementById('quest-details-section').style.display = 'none';
+    renderQuestsPageList();
+}
+
 function navigateToObjects(placeId, placeName) {
     navState.place_id = placeId;
     navState.place_name = placeName;
@@ -215,16 +230,15 @@ function renderWorldsList() {
                 <div class="list-item-title">${escapeHtml(world.name)}</div>
                 <div class="list-item-desc">${escapeHtml(world.description || '(no description)')}</div>
             </div>
-            <button class="btn-small" onclick="setCurrentWorldAndShowQuests(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="margin-left: 10px;">Quests</button>
+            <button class="btn-small" onclick="navigateToQuests(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="margin-left: 10px;">Quests</button>
             <button class="btn-small btn-danger" onclick="deleteWorldConfirm(${world.id}, '${escapeHtml(world.name).replace(/'/g, "\\'")}')" style="margin-left: 5px;">Delete</button>
         </div>
     `).join('');
 }
 
 function setCurrentWorldAndShowQuests(worldId, worldName) {
-    navState.world_id = worldId;
-    navState.world_name = worldName;
-    showQuestManagement();
+    // Kept for backward compatibility, redirects to new quests page
+    navigateToQuests(worldId, worldName);
 }
 
 async function deleteWorldConfirm(worldId, worldName) {
@@ -1891,7 +1905,9 @@ async function deleteQuestConfirm(questId) {
             if (data.success) {
                 await loadQuests();
                 renderQuestsList();
+                renderQuestsPageList();
                 document.getElementById('quest-tasks-section').style.display = 'none';
+                document.getElementById('quest-details-section').style.display = 'none';
             } else {
                 alert('Error: ' + data.message);
             }
@@ -1899,6 +1915,157 @@ async function deleteQuestConfirm(questId) {
             console.error('Error deleting quest:', error);
             alert('Error deleting quest');
         }
+    }
+}
+
+function renderQuestsPageList() {
+    const container = document.getElementById('quests-page-list');
+    if (!container) return;
+    
+    if (!quests || quests.length === 0) {
+        container.innerHTML = '<p class="empty-state">No quests yet. Create one to get started!</p>';
+        return;
+    }
+    
+    container.innerHTML = quests.map(quest => {
+        const qType = quest.quest_type || quest.type || 'unknown';
+        const typeBadge = qType === 'main' ? '★ Main' : '◇ Side';
+        
+        return `
+            <div class="list-item clickable" onclick="selectQuestForPage(${quest.id}, '${escapeHtml(quest.name).replace(/'/g, "\\'")}')" style="cursor: pointer;">
+                <div class="list-item-content" style="flex: 1;">
+                    <div class="list-item-title">${escapeHtml(quest.name)} <small style="color: #aaa;">(${typeBadge})</small></div>
+                    <div class="list-item-desc">${escapeHtml(quest.description || '(no description)')}</div>
+                </div>
+                <button class="btn-small" onclick="event.stopPropagation(); deleteQuestConfirm(${quest.id})" style="margin-left: 10px;">Delete</button>
+            </div>
+        `;
+    }).join('');
+}
+
+async function selectQuestForPage(questId, questName) {
+    currentQuestId = questId;
+    await loadQuestTasks(questId);
+    
+    // Show quest details
+    document.getElementById('quest-details-section').style.display = 'block';
+    document.getElementById('quest-details-title').textContent = escapeHtml(questName);
+    
+    // Render tasks in page view
+    renderQuestsPageTasks();
+}
+
+function renderQuestsPageTasks() {
+    const container = document.getElementById('quest-tasks-page-list');
+    if (!container) return;
+    
+    if (currentQuestTasks.length === 0) {
+        container.innerHTML = '<p class="empty-state">No tasks yet. Add one to get started.</p>';
+        return;
+    }
+    
+    container.innerHTML = currentQuestTasks.map(task => `
+        <div class="task-item" style="margin-bottom: 15px;">
+            <div class="task-content">
+                <div class="task-title">${escapeHtml(task.name)}</div>
+                <div class="task-meta">
+                    ${task.is_required ? '<span class="badge badge-required">Required</span>' : '<span class="badge badge-optional">Optional</span>'}
+                    ${task.linked_place_id ? `<span class="badge">📍 Room</span>` : ''}
+                    ${task.linked_object_id ? `<span class="badge">🔧 Object</span>` : ''}
+                </div>
+                <div class="task-desc" style="margin-top: 8px;">${escapeHtml(task.description || '(no description)')}</div>
+                
+                ${task.linked_tasks && task.linked_tasks.length > 0 ? `
+                    <div style="margin-top: 10px; padding: 8px; background: #1a1a1a; border-radius: 3px;">
+                        <strong style="color: #aaa;">Links to:</strong>
+                        <div style="font-size: 12px; color: #81c784; margin-top: 5px;">
+                            ${task.linked_tasks.map(linkedId => {
+                                const linkedTask = currentQuestTasks.find(t => t.id === linkedId);
+                                return linkedTask ? `<div>→ ${escapeHtml(linkedTask.name)}</div>` : '';
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div id="task-mechanics-page-${task.id}" style="margin-top: 10px;"></div>
+                <div id="task-kickbacks-page-${task.id}" style="margin-top: 10px;"></div>
+            </div>
+            
+            <div class="task-actions" style="flex-wrap: wrap;">
+                <button class="btn-small" onclick="openTaskLinkingModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" title="Link this task to another">🔗 Link Task</button>
+                <button class="btn-small" onclick="openTaskAssignmentModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" title="Assign to room or object">📍 Assign</button>
+                <button class="btn-small" onclick="editQuestTask(${task.id})">Edit</button>
+                <button class="btn-small btn-danger" onclick="deleteQuestTaskConfirm(${task.id})">Delete</button>
+            </div>
+        </div>
+    `).join('');
+    
+    // Load and display mechanics and kickbacks
+    currentQuestTasks.forEach(task => {
+        loadTaskMechanicsDisplayPage(task.id);
+        loadTaskKickbacksDisplayPage(task.id);
+    });
+}
+
+async function loadTaskMechanicsDisplayPage(taskId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_task_mechanics',
+                task_id: taskId
+            })
+        });
+        
+        const data = await response.json();
+        const container = document.getElementById(`task-mechanics-page-${taskId}`);
+        
+        if (!container) return;
+        
+        if (data.success && data.mechanics.length > 0) {
+            container.innerHTML = `
+                <div style="border-top: 1px solid #333; padding-top: 8px; margin-top: 8px;">
+                    <strong style="color: #81c784;">✓ Completes on:</strong>
+                    <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                        ${data.mechanics.map(m => `${escapeHtml(m.type)}: ${escapeHtml(m.name)}`).join(', ')}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('[loadTaskMechanicsDisplayPage] Error:', error);
+    }
+}
+
+async function loadTaskKickbacksDisplayPage(taskId) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_task_kickbacks',
+                task_id: taskId
+            })
+        });
+        
+        const data = await response.json();
+        const container = document.getElementById(`task-kickbacks-page-${taskId}`);
+        
+        if (!container) return;
+        
+        if (data.success && data.kickbacks.length > 0) {
+            container.innerHTML = `
+                <div style="border-top: 1px solid #333; padding-top: 8px; margin-top: 8px;">
+                    <strong style="color: #ffd54f;">⚡ Kickback Tasks:</strong>
+                    <div style="font-size: 11px; color: #aaa; margin-top: 5px;">
+                        ${data.kickbacks.map(k => `${escapeHtml(k.kickback_name)}`).join(' or ')}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('[loadTaskKickbacksDisplayPage] Error:', error);
     }
 }
 
@@ -2494,10 +2661,147 @@ async function createNewQuestTaskEnhanced() {
         // Reload and re-render
         await loadQuestTasks(currentQuestId);
         renderQuestTasks();
+        renderQuestsPageTasks();
         
     } catch (error) {
         console.error('[createNewQuestTaskEnhanced] Error:', error);
         alert('Error creating task: ' + error.message);
+    }
+}
+
+// ===== SIMPLIFIED MODALS FOR QUESTS PAGE =====
+
+function openTaskLinkingModal(taskId, taskName) {
+    const task = currentQuestTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    document.getElementById('modal-linking-title').textContent = `Link "${taskName}" to another task`;
+    document.getElementById('modal-linking-desc').textContent = `When this task is complete, which task should come next?`;
+    
+    // Populate select with other tasks
+    const select = document.getElementById('task-link-to-select');
+    select.innerHTML = '<option value="">-- Select Task --</option>';
+    
+    currentQuestTasks.filter(t => t.id !== taskId).forEach(t => {
+        select.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
+    });
+    
+    // Check if already required
+    document.getElementById('task-link-required-checkbox').checked = task.is_required;
+    
+    // Store current task ID for confirmation
+    window.currentLinkingTaskId = taskId;
+    
+    openModal('modal-simple-task-linking');
+}
+
+async function confirmSimpleTaskLink() {
+    const toTaskId = parseInt(document.getElementById('task-link-to-select').value);
+    const fromTaskId = window.currentLinkingTaskId;
+    
+    if (!toTaskId) {
+        alert('Please select a task to link to');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'link_quest_tasks',
+                from_task_id: fromTaskId,
+                to_task_id: toTaskId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[confirmSimpleTaskLink] Tasks linked');
+            await loadQuestTasks(currentQuestId);
+            renderQuestsPageTasks();
+            closeModal('modal-simple-task-linking');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[confirmSimpleTaskLink] Error:', error);
+        alert('Error linking tasks');
+    }
+}
+
+function openTaskAssignmentModal(taskId, taskName) {
+    document.getElementById('modal-assignment-title').textContent = `Assign "${taskName}"`;
+    
+    // Populate places
+    const placeSelect = document.getElementById('task-assign-place-select');
+    placeSelect.innerHTML = '<option value="">-- None --</option>';
+    places.filter(p => p.world_id === navState.world_id).forEach(p => {
+        placeSelect.innerHTML += `<option value="${p.id}">${escapeHtml(p.name)}</option>`;
+    });
+    
+    // Clear objects
+    document.getElementById('task-assign-object-select').innerHTML = '<option value="">-- None --</option>';
+    document.getElementById('task-assign-object-select').disabled = true;
+    
+    // Store task ID
+    window.currentAssignmentTaskId = taskId;
+    
+    openModal('modal-simple-task-assignment');
+}
+
+function updateAssignmentObjects() {
+    const placeId = parseInt(document.getElementById('task-assign-place-select').value);
+    const objectSelect = document.getElementById('task-assign-object-select');
+    
+    if (!placeId) {
+        objectSelect.innerHTML = '<option value="">-- None --</option>';
+        objectSelect.disabled = true;
+        return;
+    }
+    
+    objectSelect.disabled = false;
+    objectSelect.innerHTML = '<option value="">-- None --</option>';
+    
+    const roomObjects = objects.filter(o => o.place_id === placeId);
+    roomObjects.forEach(obj => {
+        objectSelect.innerHTML += `<option value="${obj.id}">${escapeHtml(obj.name)}</option>`;
+    });
+}
+
+async function confirmSimpleTaskAssignment() {
+    const placeId = parseInt(document.getElementById('task-assign-place-select').value) || null;
+    const objectId = parseInt(document.getElementById('task-assign-object-select').value) || null;
+    const taskId = window.currentAssignmentTaskId;
+    
+    if (!placeId && !objectId) {
+        alert('Please select at least a room or object');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'assign_task_to_place',
+                task_id: taskId,
+                place_id: placeId || currentPlaceId
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log('[confirmSimpleTaskAssignment] Task assigned');
+            await loadQuestTasks(currentQuestId);
+            renderQuestsPageTasks();
+            closeModal('modal-simple-task-assignment');
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (error) {
+        console.error('[confirmSimpleTaskAssignment] Error:', error);
+        alert('Error assigning task');
     }
 }
 
