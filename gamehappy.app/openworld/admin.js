@@ -2747,7 +2747,7 @@ function renderVisualBuilder() {
     const viewY = visualBuilderData.viewPos.y;
     const viewZ = visualBuilderData.viewPos.z;
     
-    // Get places to display in carousel (only at current Y,Z - horizontal scrolling)
+    // Get places to display in carousel (only at current Y,Z - horizontal scrolling west to east)
     const displayPlaces = [];
     for (let i = 0; i < 5; i++) {
         const x = viewX + i;
@@ -2756,7 +2756,7 @@ function renderVisualBuilder() {
         displayPlaces.push(...placesAtCoord);
     }
     
-    // Check for navigation - only places at viewX, viewY, viewZ
+    // Check for vertical navigation (up/down/north/south at viewX position)
     const hasNorth = Object.keys(placesByCoord).some(key => {
         const [x, y, z] = key.split(',').map(Number);
         return x === viewX && y > viewY && z === viewZ;
@@ -2787,77 +2787,65 @@ function renderVisualBuilder() {
         return x > viewX + 4 && y === viewY && z === viewZ;
     });
     
-    // LAYOUT: Tasks on left, carousel below
-    let html = '<div style="display: flex; width: 100%; height: 100%; flex-direction: column;">';
+    // LAYOUT: Tasks on LEFT, Map carousel on RIGHT
+    let html = '<div class="visual-builder-container">';
     
-    // TOP: Task Cards on left side + Map Carousel on right side
-    html += '<div style="display: flex; gap: 20px; flex: 1; overflow: hidden;">';
-    
-    // LEFT SIDE: Task Cards
-    html += '<div style="flex: 0 0 400px; display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; overflow-y: auto; padding: 15px; background: #0a0d1a; border-right: 1px solid #444;">';
+    // LEFT: Tasks Panel 
+    html += '<div class="visual-builder-tasks">';
     
     currentQuestTasks.forEach((task) => {
         const assignment = getTaskAssignmentLabel(task);
         const hasLinkedTasks = task.linked_tasks && task.linked_tasks.length > 0;
         
-        let cardColor = '#333';
+        let cardClass = 'task-card';
         let dotColor = '#999';
-        let borderColor = '#444';
         
         if (task.linked_place_id && task.linked_object_id) {
-            cardColor = '#1a3a1a';
+            cardClass += ' linked-both';
             dotColor = '#4a9d6f';
-            borderColor = '#4a9d6f';
         } else if (task.linked_place_id || task.linked_object_id) {
-            cardColor = '#1a2540';
+            cardClass += ' linked-place';
             dotColor = '#4a7fd9';
-            borderColor = '#4a7fd9';
+        }
+        
+        if (visualBuilderData.selectedTask === task.id) {
+            cardClass += ' selected';
         }
         
         html += `
             <div 
-                class="task-card-visual" 
+                class="${cardClass}"
                 id="task-card-${task.id}"
                 draggable="true"
                 ondragstart="startTaskDrag(event, ${task.id})"
                 ondragend="endTaskDrag(event)"
                 onclick="selectVisualTask(${task.id})"
-                style="
-                    flex: 0 0 calc(100% - 0px);
-                    padding: 12px;
-                    background: ${cardColor};
-                    border: 2px solid ${visualBuilderData.selectedTask === task.id ? '#81c784' : borderColor};
-                    border-radius: 6px;
-                    cursor: move;
-                    transition: all 0.2s;
-                    user-select: none;
-                "
             >
-                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                    <span style="font-size: 16px; color: ${dotColor};">●</span>
-                    <div style="flex: 1;">
-                        <div style="font-weight: bold; color: #fff; word-break: break-word; font-size: 12px;">${escapeHtml(task.name)}</div>
-                        <div style="font-size: 10px; color: #aaa; margin-top: 3px;">${assignment}</div>
+                <div class="task-card-header">
+                    <span class="task-card-dot" style="color: ${dotColor};">●</span>
+                    <div class="task-card-info">
+                        <div class="task-card-name">${escapeHtml(task.name)}</div>
+                        <div class="task-card-assignment">${assignment}</div>
                     </div>
                 </div>
                 
-                ${task.is_required ? '<span style="display: inline-block; padding: 2px 4px; background: #d32f2f; color: #fff; border-radius: 2px; font-size: 9px; margin-bottom: 8px;">Required</span>' : ''}
+                ${task.is_required ? '<span class="task-card-required">Required</span>' : ''}
                 
-                <div style="font-size: 10px; color: #bbb; line-height: 1.3; margin-bottom: 8px;">
+                <div class="task-card-description">
                     ${escapeHtml(task.description || '(no description)').substring(0, 60)}${task.description && task.description.length > 60 ? '...' : ''}
                 </div>
                 
                 ${hasLinkedTasks ? `
-                    <div style="border-top: 1px solid #555; padding-top: 6px; margin-top: 6px;">
-                        <div style="font-size: 9px; color: #81c784; margin-bottom: 3px;">→ Links:</div>
+                    <div class="task-card-links">
+                        <div class="task-card-links-title">→ Links:</div>
                         ${task.linked_tasks.map(linkedId => {
                             const linkedTask = currentQuestTasks.find(t => t.id === linkedId);
-                            return linkedTask ? `<div style="font-size: 9px; color: #666;">${escapeHtml(linkedTask.name)}</div>` : '';
+                            return linkedTask ? `<div>${escapeHtml(linkedTask.name)}</div>` : '';
                         }).join('')}
                     </div>
                 ` : ''}
                 
-                <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 10px;">
+                <div class="task-card-actions">
                     <button class="btn-tiny" onclick="event.stopPropagation(); openTaskAssignmentModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="width: 100%;">📍 Assign</button>
                     <button class="btn-tiny" onclick="event.stopPropagation(); openTaskLinkingModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="width: 100%;">🔗 Link</button>
                 </div>
@@ -2867,98 +2855,79 @@ function renderVisualBuilder() {
     
     html += '</div>';
     
-    // RIGHT SIDE: Map Carousel Area
-    html += '<div style="flex: 1; background: #0f1419; border: 1px solid #444; border-radius: 8px; padding: 20px; display: flex; flex-direction: column;">';
+    // RIGHT: Map Carousel (fixed width, showing places vertically with navigation)
+    html += '<div class="visual-builder-map">';
     
-    // Navigation Buttons (Up/Down/Vertical)
-    html += '<div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap;">';
+    // Navigation Buttons (north/south and up/down)
+    html += '<div class="visual-builder-nav">';
     if (hasNorth) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, 1, 0)" style="padding: 8px 12px;">⬆️ North</button>`;
+        html += `<button class="btn-primary" onclick="moveMapView(0, 1, 0)">⬆️ North</button>`;
     }
     if (hasSouth) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, -1, 0)" style="padding: 8px 12px;">⬇️ South</button>`;
+        html += `<button class="btn-primary" onclick="moveMapView(0, -1, 0)">⬇️ South</button>`;
     }
     if (hasUp) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, 0, 1)" style="padding: 8px 12px;">⬆ Up</button>`;
+        html += `<button class="btn-primary" onclick="moveMapView(0, 0, 1)">⬆ Up</button>`;
     }
     if (hasDown) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, 0, -1)" style="padding: 8px 12px;">⬇ Down</button>`;
+        html += `<button class="btn-primary" onclick="moveMapView(0, 0, -1)">⬇ Down</button>`;
     }
     html += '</div>';
     
-    // Carousel Area
-    html += '<div style="display: flex; gap: 10px; align-items: stretch; flex: 1;">';
+    // Carousel Row (west to east)
+    html += '<div class="visual-builder-carousel">';
     
     // Left scroll button
     if (hasWest) {
-        html += `<button class="btn-primary" onclick="moveMapView(-1, 0, 0)" style="padding: 10px 15px; align-self: center;">◀️</button>`;
+        html += `<button class="btn-primary carousel-scroll-btn" onclick="moveMapView(-1, 0, 0)">◀️</button>`;
     }
     
     // Places carousel (4 full + 1 peek)
-    html += '<div style="display: flex; gap: 15px; flex: 1; overflow: hidden;">';
+    html += '<div class="visual-builder-carousel-inner">';
     
     if (displayPlaces.length === 0) {
-        html += '<div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #666;">No places at this location</div>';
+        html += '<div class="place-card-empty">No places at this location</div>';
     } else {
         for (let i = 0; i < Math.min(5, displayPlaces.length); i++) {
             const place = displayPlaces[i];
             const placeObjects = objects.filter(o => o.place_id === place.id);
             const tasksInPlace = currentQuestTasks.filter(t => t.linked_place_id === place.id);
             const isPeek = i === 4;
-            const opacity = isPeek ? 0.6 : 1;
+            
+            let cardClass = 'place-card';
+            if (isPeek) {
+                cardClass += ' peek';
+            }
             
             html += `
                 <div 
-                    style="
-                        flex: 0 0 calc(20% - 12px);
-                        ${isPeek ? 'margin-right: auto;' : ''}
-                        padding: 15px;
-                        background: #1a2540;
-                        border: 2px solid #4a7fd9;
-                        border-radius: 8px;
-                        opacity: ${opacity};
-                        display: flex;
-                        flex-direction: column;
-                        gap: 10px;
-                    "
+                    class="${cardClass}"
                     ondrop="dropTaskOnPlace(event, ${place.id})"
                     ondragover="allowDrop(event)"
                     ondragleave="event.target.style.opacity = '1'"
-                    onmouseenter="this.style.opacity = ${isPeek ? '0.8' : '0.95'}"
-                    onmouseleave="this.style.opacity = ${opacity}"
                 >
-                    <div style="font-weight: bold; color: #81c784; font-size: 13px;">🏠 ${escapeHtml(place.name)}</div>
-                    <div style="font-size: 10px; color: #aaa;">(${place.x || 1}, ${place.y || 1}, ${place.z || 0})</div>
+                    <div class="place-card-name">🏠 ${escapeHtml(place.name)}</div>
+                    <div class="place-card-coords">(${place.x || 1}, ${place.y || 1}, ${place.z || 0})</div>
                     
                     ${tasksInPlace.length > 0 ? `
-                        <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
-                            <div style="color: #81c784; font-size: 10px; margin-bottom: 4px;">📋 Tasks (${tasksInPlace.length}):</div>
-                            ${tasksInPlace.map(t => `<div style="font-size: 9px; color: #aaa;">• ${escapeHtml(t.name)}</div>`).join('')}
+                        <div class="place-card-section">
+                            <div class="place-card-section-title">📋 (${tasksInPlace.length})</div>
+                            ${tasksInPlace.map(t => `<div>• ${escapeHtml(t.name).substring(0, 15)}</div>`).join('')}
                         </div>
                     ` : ''}
                     
                     ${placeObjects.length > 0 ? `
-                        <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
-                            <div style="color: #4a9d6f; font-size: 10px; margin-bottom: 4px;">🔧 Objects (${placeObjects.length}):</div>
+                        <div class="place-card-section">
+                            <div class="place-card-section-title objects">🔧 (${placeObjects.length})</div>
                             ${placeObjects.map(obj => {
                                 const objTasks = currentQuestTasks.filter(t => t.linked_object_id === obj.id);
                                 return `
                                     <div 
-                                        style="
-                                            margin: 4px 0;
-                                            padding: 4px;
-                                            background: #0a0d1a;
-                                            border-left: 2px solid #4a9d6f;
-                                            border-radius: 2px;
-                                            font-size: 9px;
-                                            color: #aaa;
-                                        "
+                                        class="object-item"
                                         ondrop="dropTaskOnObject(event, ${obj.id})"
                                         ondragover="allowDrop(event)"
-                                        onmouseenter="this.style.opacity = '0.8'"
-                                        onmouseleave="this.style.opacity = '1'"
                                     >
-                                        🔧 ${escapeHtml(obj.name)} ${objTasks.length > 0 ? `(${objTasks.length})` : ''}
+                                        🔧 ${escapeHtml(obj.name).substring(0, 12)}
                                     </div>
                                 `;
                             }).join('')}
@@ -2973,7 +2942,7 @@ function renderVisualBuilder() {
     
     // Right scroll button
     if (hasEast) {
-        html += `<button class="btn-primary" onclick="moveMapView(1, 0, 0)" style="padding: 10px 15px; align-self: center;">▶️</button>`;
+        html += `<button class="btn-primary carousel-scroll-btn" onclick="moveMapView(1, 0, 0)">▶️</button>`;
     }
     
     html += '</div></div></div>';
@@ -2994,374 +2963,5 @@ function moveMapView(dx, dy, dz) {
     renderVisualBuilder();
 }
 
-function calculateTaskPositions(tasks) {
-    const positions = {};
-    
-    // Group tasks by depth (how many tasks must come before them)
-    const taskDepth = {};
-    const visited = new Set();
-    
-    function getDepth(taskId) {
-        if (taskDepth[taskId] !== undefined) return taskDepth[taskId];
-        if (visited.has(taskId)) return 0; // Circular reference, reset
-        
-        visited.add(taskId);
-        const task = currentQuestTasks.find(t => t.id === taskId);
-        
-        if (!task || !task.linked_tasks || task.linked_tasks.length === 0) {
-            taskDepth[taskId] = 0;
-            visited.delete(taskId);
-            return 0;
-        }
-        
-        let maxDepth = 0;
-        task.linked_tasks.forEach(linkedId => {
-            maxDepth = Math.max(maxDepth, getDepth(linkedId) + 1);
-        });
-        
-        taskDepth[taskId] = maxDepth;
-        visited.delete(taskId);
-        return maxDepth;
-    }
-    
-    tasks.forEach(task => getDepth(task.id));
-    
-    // Position tasks based on depth
-    const depthGroups = {};
-    Object.keys(taskDepth).forEach(taskId => {
-        const depth = taskDepth[taskId];
-        if (!depthGroups[depth]) depthGroups[depth] = [];
-        depthGroups[depth].push(parseInt(taskId));
-    });
-    
-    Object.keys(depthGroups).forEach(depth => {
-        const group = depthGroups[depth];
-        group.forEach((taskId, index) => {
-            positions[taskId] = {
-                x: 20 + index * 230,
-                y: 20 + parseInt(depth) * 150
-            };
-        });
-    });
-    
-    return positions;
-}
 
-function getTaskAssignmentLabel(task) {
-    if (task.linked_place_id && task.linked_object_id) {
-        const place = places.find(p => p.id === task.linked_place_id);
-        const object = objects.find(o => o.id === task.linked_object_id);
-        return `📍 ${place ? escapeHtml(place.name) : 'Room'} • 🔧 ${object ? escapeHtml(object.name) : 'Object'}`;
-    } else if (task.linked_place_id) {
-        const place = places.find(p => p.id === task.linked_place_id);
-        return `📍 ${place ? escapeHtml(place.name) : 'Room'}`;
-    } else if (task.linked_object_id) {
-        const object = objects.find(o => o.id === task.linked_object_id);
-        return `🔧 ${object ? escapeHtml(object.name) : 'Object'}`;
-    }
-    return 'Unassigned';
-}
-
-function selectVisualTask(taskId) {
-    visualBuilderData.selectedTask = visualBuilderData.selectedTask === taskId ? null : taskId;
-    renderVisualBuilder();
-}
-
-function startTaskDrag(event, taskId) {
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('taskId', taskId);
-    event.target.style.opacity = '0.7';
-}
-
-function endTaskDrag(event) {
-    event.target.style.opacity = '1';
-}
-
-function allowDrop(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    event.target.style.opacity = '0.8';
-}
-
-async function dropTaskOnPlace(event, placeId) {
-    event.preventDefault();
-    event.stopPropagation();
-    event.target.style.opacity = '1';
-    
-    const taskId = parseInt(event.dataTransfer.getData('taskId'));
-    if (!taskId) return;
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'assign_task_to_place',
-                task_id: taskId,
-                place_id: placeId
-            })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            // Update local task data
-            const task = currentQuestTasks.find(t => t.id === taskId);
-            if (task) {
-                task.linked_place_id = placeId;
-                // Keep existing object assignment if any
-            }
-            renderVisualBuilder();
-        } else {
-            alert('Error assigning task: ' + data.message);
-        }
-    } catch (error) {
-        console.error('[dropTaskOnPlace] Error:', error);
-        alert('Error assigning task');
-    }
-}
-
-async function dropTaskOnObject(event, objectId) {
-    event.preventDefault();
-    event.stopPropagation();
-    event.target.style.opacity = '1';
-    
-    const taskId = parseInt(event.dataTransfer.getData('taskId'));
-    if (!taskId) return;
-    
-    // Find the object to get its place_id
-    const object = objects.find(o => o.id === objectId);
-    if (!object) return;
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'assign_task_to_object',
-                task_id: taskId,
-                object_id: objectId,
-                place_id: object.place_id
-            })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            // Update local task data
-            const task = currentQuestTasks.find(t => t.id === taskId);
-            if (task) {
-                task.linked_object_id = objectId;
-                task.linked_place_id = object.place_id;
-            }
-            renderVisualBuilder();
-        } else {
-            alert('Error assigning task: ' + data.message);
-        }
-    } catch (error) {
-        console.error('[dropTaskOnObject] Error:', error);
-        alert('Error assigning task');
-    }
-}
-
-function drawTaskConnections() {
-    const svg = document.getElementById('task-connections-svg');
-    if (!svg) return;
-    
-    svg.innerHTML = '';
-    const canvas = document.getElementById('visual-builder-canvas');
-    const viewport = document.getElementById('visual-builder-content');
-    
-    // Set SVG size to match content
-    svg.setAttribute('width', viewport.offsetWidth);
-    svg.setAttribute('height', viewport.offsetHeight);
-    
-    // Draw connections
-    currentQuestTasks.forEach(task => {
-        if (task.linked_tasks && task.linked_tasks.length > 0) {
-            task.linked_tasks.forEach(linkedId => {
-                const fromCard = document.getElementById(`task-card-${task.id}`);
-                const toCard = document.getElementById(`task-card-${linkedId}`);
-                
-                if (fromCard && toCard) {
-                    const fromRect = fromCard.getBoundingClientRect();
-                    const toRect = toCard.getBoundingClientRect();
-                    const svgRect = svg.getBoundingClientRect();
-                    
-                    const x1 = fromRect.right - svgRect.left;
-                    const y1 = fromRect.top - svgRect.top + fromRect.height / 2;
-                    const x2 = toRect.left - svgRect.left;
-                    const y2 = toRect.top - svgRect.top + toRect.height / 2;
-                    
-                    // Draw curved arrow
-                    const controlX = (x1 + x2) / 2;
-                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    path.setAttribute('d', `M ${x1} ${y1} Q ${controlX} ${(y1 + y2) / 2} ${x2} ${y2}`);
-                    path.setAttribute('stroke', '#81c784');
-                    path.setAttribute('stroke-width', '2');
-                    path.setAttribute('fill', 'none');
-                    path.setAttribute('marker-end', 'url(#arrowhead)');
-                    
-                    svg.appendChild(path);
-                }
-            });
-        }
-    });
-    
-    // Add arrow marker if it doesn't exist
-    let defs = svg.querySelector('defs');
-    if (!defs) {
-        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', 'arrowhead');
-        marker.setAttribute('markerWidth', '10');
-        marker.setAttribute('markerHeight', '10');
-        marker.setAttribute('refX', '9');
-        marker.setAttribute('refY', '3');
-        marker.setAttribute('orient', 'auto');
-        marker.innerHTML = '<polygon points="0 0, 10 3, 0 6" fill="#81c784" />';
-        defs.appendChild(marker);
-        svg.appendChild(defs);
-    }
-}
-
-function resetVisualBuilder() {
-    visualBuilderData.selectedTask = null;
-    visualBuilderData.connectingFromTask = null;
-    renderVisualBuilder();
-}
-
-// ===== SIMPLIFIED MODALS FOR QUESTS PAGE =====
-
-function openTaskLinkingModal(taskId, taskName) {
-    const task = currentQuestTasks.find(t => t.id === taskId);
-    if (!task) return;
-    
-    document.getElementById('modal-linking-title').textContent = `Link "${taskName}" to another task`;
-    document.getElementById('modal-linking-desc').textContent = `When this task is complete, which task should come next?`;
-    
-    // Populate select with other tasks
-    const select = document.getElementById('task-link-to-select');
-    select.innerHTML = '<option value="">-- Select Task --</option>';
-    
-    currentQuestTasks.filter(t => t.id !== taskId).forEach(t => {
-        select.innerHTML += `<option value="${t.id}">${escapeHtml(t.name)}</option>`;
-    });
-    
-    // Check if already required
-    document.getElementById('task-link-required-checkbox').checked = task.is_required;
-    
-    // Store current task ID for confirmation
-    window.currentLinkingTaskId = taskId;
-    
-    openModal('modal-simple-task-linking');
-}
-
-async function confirmSimpleTaskLink() {
-    const toTaskId = parseInt(document.getElementById('task-link-to-select').value);
-    const fromTaskId = window.currentLinkingTaskId;
-    
-    if (!toTaskId) {
-        alert('Please select a task to link to');
-        return;
-    }
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'link_quest_tasks',
-                from_task_id: fromTaskId,
-                to_task_id: toTaskId
-            })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            console.log('[confirmSimpleTaskLink] Tasks linked');
-            await loadQuestTasks(currentQuestId);
-            renderQuestsPageTasks();
-            closeModal('modal-simple-task-linking');
-        } else {
-            alert('Error: ' + data.message);
-        }
-    } catch (error) {
-        console.error('[confirmSimpleTaskLink] Error:', error);
-        alert('Error linking tasks');
-    }
-}
-
-function openTaskAssignmentModal(taskId, taskName) {
-    document.getElementById('modal-assignment-title').textContent = `Assign "${taskName}"`;
-    
-    // Populate places
-    const placeSelect = document.getElementById('task-assign-place-select');
-    placeSelect.innerHTML = '<option value="">-- None --</option>';
-    places.filter(p => p.world_id === navState.world_id).forEach(p => {
-        placeSelect.innerHTML += `<option value="${p.id}">${escapeHtml(p.name)}</option>`;
-    });
-    
-    // Clear objects
-    document.getElementById('task-assign-object-select').innerHTML = '<option value="">-- None --</option>';
-    document.getElementById('task-assign-object-select').disabled = true;
-    
-    // Store task ID
-    window.currentAssignmentTaskId = taskId;
-    
-    openModal('modal-simple-task-assignment');
-}
-
-function updateAssignmentObjects() {
-    const placeId = parseInt(document.getElementById('task-assign-place-select').value);
-    const objectSelect = document.getElementById('task-assign-object-select');
-    
-    if (!placeId) {
-        objectSelect.innerHTML = '<option value="">-- None --</option>';
-        objectSelect.disabled = true;
-        return;
-    }
-    
-    objectSelect.disabled = false;
-    objectSelect.innerHTML = '<option value="">-- None --</option>';
-    
-    const roomObjects = objects.filter(o => o.place_id === placeId);
-    roomObjects.forEach(obj => {
-        objectSelect.innerHTML += `<option value="${obj.id}">${escapeHtml(obj.name)}</option>`;
-    });
-}
-
-async function confirmSimpleTaskAssignment() {
-    const placeId = parseInt(document.getElementById('task-assign-place-select').value) || null;
-    const objectId = parseInt(document.getElementById('task-assign-object-select').value) || null;
-    const taskId = window.currentAssignmentTaskId;
-    
-    if (!placeId && !objectId) {
-        alert('Please select at least a room or object');
-        return;
-    }
-    
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'assign_task_to_place',
-                task_id: taskId,
-                place_id: placeId || currentPlaceId
-            })
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            console.log('[confirmSimpleTaskAssignment] Task assigned');
-            await loadQuestTasks(currentQuestId);
-            renderQuestsPageTasks();
-            closeModal('modal-simple-task-assignment');
-        } else {
-            alert('Error: ' + data.message);
-        }
-    } catch (error) {
-        console.error('[confirmSimpleTaskAssignment] Error:', error);
-        alert('Error assigning task');
-    }
-}
 
