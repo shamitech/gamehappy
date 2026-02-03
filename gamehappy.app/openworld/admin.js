@@ -2988,47 +2988,6 @@ function moveMapView(dx, dy, dz) {
     visualBuilderData.viewPos.z += dz;
     renderVisualBuilder();
 }
-                    user-select: none;
-                "
-            >
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <span style="font-size: 20px; color: ${dotColor};">●</span>
-                    <div style="flex: 1;">
-                        <div style="font-weight: bold; color: #fff; word-break: break-word;">${escapeHtml(task.name)}</div>
-                        <div style="font-size: 11px; color: #aaa; margin-top: 4px;">${assignment}</div>
-                    </div>
-                </div>
-                
-                ${task.is_required ? '<span style="display: inline-block; padding: 2px 6px; background: #d32f2f; color: #fff; border-radius: 2px; font-size: 10px; margin-bottom: 10px;">Required</span>' : ''}
-                
-                <div style="font-size: 11px; color: #bbb; line-height: 1.4; margin-bottom: 10px;">
-                    ${escapeHtml(task.description || '(no description)').substring(0, 80)}${task.description && task.description.length > 80 ? '...' : ''}
-                </div>
-                
-                ${hasLinkedTasks ? `
-                    <div style="border-top: 1px solid #555; padding-top: 8px; margin-top: 8px;">
-                        <div style="font-size: 10px; color: #81c784; margin-bottom: 4px;">→ Links to:</div>
-                        ${task.linked_tasks.map(linkedId => {
-                            const linkedTask = currentQuestTasks.find(t => t.id === linkedId);
-                            return linkedTask ? `<div style="font-size: 10px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(linkedTask.name)}</div>` : '';
-                        }).join('')}
-                    </div>
-                ` : ''}
-                
-                <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px;">
-                    <button class="btn-tiny" onclick="event.stopPropagation(); openTaskAssignmentModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="flex: 1;">📍 Assign</button>
-                    <button class="btn-tiny" onclick="event.stopPropagation(); openTaskLinkingModal(${task.id}, '${escapeHtml(task.name).replace(/'/g, "\\'")}')" style="flex: 1;">🔗 Link</button>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div></div>';
-    container.innerHTML = html;
-    
-    // Draw connections between linked tasks
-    drawTaskConnections();
-}
 
 function calculateTaskPositions(tasks) {
     const positions = {};
