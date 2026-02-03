@@ -15,6 +15,7 @@ let navState = {
 let worlds = [];
 let places = [];
 let objects = [];
+let quests = [];
 let currentObjectMechanics = [];
 let currentPlaceExits = [];
 
@@ -1477,7 +1478,6 @@ async function updateConnectionType(newType) {
 
 // ===== QUEST SYSTEM =====
 
-let quests = [];
 let currentQuestTasks = [];
 let currentQuestId = null;
 
