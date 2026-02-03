@@ -1503,24 +1503,32 @@ async function loadQuests() {
     
     try {
         console.log('[loadQuests] Loading quests for world:', navState.world_id);
+        const requestBody = {
+            action: 'get_quests',
+            world_id: navState.world_id
+        };
+        console.log('[loadQuests] Request body:', requestBody);
+        
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'get_quests',
-                world_id: navState.world_id
-            })
+            body: JSON.stringify(requestBody)
         });
         
+        console.log('[loadQuests] Response status:', response.status);
         const data = await response.json();
+        console.log('[loadQuests] Response data:', data);
+        
         if (data.success) {
-            quests = data.quests;
-            console.log('[loadQuests] Loaded', quests.length, 'quests:', quests);
+            quests = data.quests || [];
+            console.log('[loadQuests] Loaded', quests.length, 'quests:', JSON.stringify(quests));
         } else {
             console.error('[loadQuests] API error:', data.message);
+            quests = [];
         }
     } catch (error) {
         console.error('[loadQuests] Fetch error:', error);
+        quests = [];
     }
 }
 
