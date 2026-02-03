@@ -2005,7 +2005,7 @@ async function openAssignTasksModal() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             action: 'get_quests',
-            world_id: currentWorldId
+            world_id: navState.world_id
         })
     });
     
