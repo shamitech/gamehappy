@@ -2747,7 +2747,7 @@ function renderVisualBuilder() {
     const viewY = visualBuilderData.viewPos.y;
     const viewZ = visualBuilderData.viewPos.z;
     
-    // Get places to display in carousel (current position + 3 more to the east, + 1 peek)
+    // Get places to display in carousel (only at current Y,Z - horizontal scrolling)
     const displayPlaces = [];
     for (let i = 0; i < 5; i++) {
         const x = viewX + i;
@@ -2756,15 +2756,15 @@ function renderVisualBuilder() {
         displayPlaces.push(...placesAtCoord);
     }
     
-    // Check for vertical navigation
+    // Check for navigation - only places at viewX, viewY, viewZ
     const hasNorth = Object.keys(placesByCoord).some(key => {
-        const [x, y] = key.split(',').map(Number);
-        return x === viewX && y > viewY && parseInt(key.split(',')[2]) === viewZ;
+        const [x, y, z] = key.split(',').map(Number);
+        return x === viewX && y > viewY && z === viewZ;
     });
     
     const hasSouth = Object.keys(placesByCoord).some(key => {
-        const [x, y] = key.split(',').map(Number);
-        return x === viewX && y < viewY && parseInt(key.split(',')[2]) === viewZ;
+        const [x, y, z] = key.split(',').map(Number);
+        return x === viewX && y < viewY && z === viewZ;
     });
     
     const hasUp = Object.keys(placesByCoord).some(key => {
@@ -2777,129 +2777,24 @@ function renderVisualBuilder() {
         return x === viewX && y === viewY && z < viewZ;
     });
     
-    const hasWest = viewX > 1;
-    const hasEast = Object.keys(placesByCoord).some(key => {
-        const x = parseInt(key.split(',')[0]);
-        return x > viewX + 4;
+    const hasWest = Object.keys(placesByCoord).some(key => {
+        const [x, y, z] = key.split(',').map(Number);
+        return x < viewX && y === viewY && z === viewZ;
     });
     
-    // LEFT SIDE: Task Cards
-    let html = '<div style="display: flex; gap: 20px; width: 100%; height: 100%;">';
+    const hasEast = Object.keys(placesByCoord).some(key => {
+        const [x, y, z] = key.split(',').map(Number);
+        return x > viewX + 4 && y === viewY && z === viewZ;
+    });
     
-    html += '<div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">';
+    // LAYOUT: Tasks on left, carousel below
+    let html = '<div style="display: flex; width: 100%; height: 100%; flex-direction: column;">';
     
-    // RIGHT SIDE: Map Carousel Area
-    html += '<div style="flex: 1; background: #0f1419; border: 1px solid #444; border-radius: 8px; padding: 20px; display: flex; flex-direction: column;">';
-    
-    // Navigation Row (Up/Down/Vertical)
-    html += '<div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center;">';
-    if (hasNorth) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, 1, 0)" style="flex: 1; padding: 8px;">⬆️ North</button>`;
-    }
-    if (hasSouth) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, -1, 0)" style="flex: 1; padding: 8px;">⬇️ South</button>`;
-    }
-    if (hasUp) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, 0, 1)" style="flex: 1; padding: 8px;">⬆ Up</button>`;
-    }
-    if (hasDown) {
-        html += `<button class="btn-primary" onclick="moveMapView(0, 0, -1)" style="flex: 1; padding: 8px;">⬇ Down</button>`;
-    }
-    html += '</div>';
-    
-    // Carousel Area
-    html += '<div style="display: flex; gap: 10px; align-items: stretch; flex: 1;">';
-    
-    // Left scroll button
-    if (hasWest) {
-        html += `<button class="btn-primary" onclick="moveMapView(-1, 0, 0)" style="padding: 10px 15px; align-self: center;">◀️</button>`;
-    }
-    
-    // Places carousel (4 full + 1 peek)
-    html += '<div style="display: flex; gap: 15px; flex: 1; overflow: hidden;">';
-    
-    for (let i = 0; i < Math.min(5, displayPlaces.length); i++) {
-        const place = displayPlaces[i];
-        const placeObjects = objects.filter(o => o.place_id === place.id);
-        const tasksInPlace = currentQuestTasks.filter(t => t.linked_place_id === place.id);
-        const isPeek = i === 4;
-        const opacity = isPeek ? 0.6 : 1;
-        
-        html += `
-            <div 
-                style="
-                    flex: 0 0 calc(20% - 12px);
-                    ${isPeek ? 'margin-right: auto;' : ''}
-                    padding: 15px;
-                    background: #1a2540;
-                    border: 2px solid #4a7fd9;
-                    border-radius: 8px;
-                    opacity: ${opacity};
-                    display: flex;
-                    flex-direction: column;
-                    gap: 10px;
-                "
-                ondrop="dropTaskOnPlace(event, ${place.id})"
-                ondragover="allowDrop(event)"
-                ondragleave="event.target.style.opacity = '1'"
-                onmouseenter="this.style.opacity = ${isPeek ? '0.8' : '0.95'}"
-                onmouseleave="this.style.opacity = ${opacity}"
-            >
-                <div style="font-weight: bold; color: #81c784; font-size: 13px;">🏠 ${escapeHtml(place.name)}</div>
-                <div style="font-size: 10px; color: #aaa;">(${place.x || 1}, ${place.y || 1}, ${place.z || 0})</div>
-                
-                ${tasksInPlace.length > 0 ? `
-                    <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
-                        <div style="color: #81c784; font-size: 10px; margin-bottom: 4px;">📋 Tasks (${tasksInPlace.length}):</div>
-                        ${tasksInPlace.map(t => `<div style="font-size: 9px; color: #aaa;">• ${escapeHtml(t.name)}</div>`).join('')}
-                    </div>
-                ` : ''}
-                
-                ${placeObjects.length > 0 ? `
-                    <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
-                        <div style="color: #4a9d6f; font-size: 10px; margin-bottom: 4px;">🔧 Objects (${placeObjects.length}):</div>
-                        ${placeObjects.map(obj => {
-                            const objTasks = currentQuestTasks.filter(t => t.linked_object_id === obj.id);
-                            return `
-                                <div 
-                                    style="
-                                        margin: 4px 0;
-                                        padding: 4px;
-                                        background: #0a0d1a;
-                                        border-left: 2px solid #4a9d6f;
-                                        border-radius: 2px;
-                                        font-size: 9px;
-                                        color: #aaa;
-                                    "
-                                    ondrop="dropTaskOnObject(event, ${obj.id})"
-                                    ondragover="allowDrop(event)"
-                                    onmouseenter="this.style.opacity = '0.8'"
-                                    onmouseleave="this.style.opacity = '1'"
-                                >
-                                    🔧 ${escapeHtml(obj.name)} ${objTasks.length > 0 ? `(${objTasks.length})` : ''}
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
-    
-    html += '</div>';
-    
-    // Right scroll button
-    if (hasEast) {
-        html += `<button class="btn-primary" onclick="moveMapView(1, 0, 0)" style="padding: 10px 15px; align-self: center;">▶️</button>`;
-    }
-    
-    html += '</div>';
-    
-    html += '</div>';
-    html += '</div>';
+    // TOP: Task Cards on left side + Map Carousel on right side
+    html += '<div style="display: flex; gap: 20px; flex: 1; overflow: hidden;">';
     
     // LEFT SIDE: Task Cards
-    html += '<div style="flex: 0 0 400px; display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; overflow-y: auto; padding: 15px; background: #0a0d1a; border-left: 1px solid #444;">';
+    html += '<div style="flex: 0 0 400px; display: flex; flex-wrap: wrap; gap: 15px; align-content: flex-start; overflow-y: auto; padding: 15px; background: #0a0d1a; border-right: 1px solid #444;">';
     
     currentQuestTasks.forEach((task) => {
         const assignment = getTaskAssignmentLabel(task);
@@ -2971,7 +2866,117 @@ function renderVisualBuilder() {
     });
     
     html += '</div>';
+    
+    // RIGHT SIDE: Map Carousel Area
+    html += '<div style="flex: 1; background: #0f1419; border: 1px solid #444; border-radius: 8px; padding: 20px; display: flex; flex-direction: column;">';
+    
+    // Navigation Buttons (Up/Down/Vertical)
+    html += '<div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; flex-wrap: wrap;">';
+    if (hasNorth) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, 1, 0)" style="padding: 8px 12px;">⬆️ North</button>`;
+    }
+    if (hasSouth) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, -1, 0)" style="padding: 8px 12px;">⬇️ South</button>`;
+    }
+    if (hasUp) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, 0, 1)" style="padding: 8px 12px;">⬆ Up</button>`;
+    }
+    if (hasDown) {
+        html += `<button class="btn-primary" onclick="moveMapView(0, 0, -1)" style="padding: 8px 12px;">⬇ Down</button>`;
+    }
     html += '</div>';
+    
+    // Carousel Area
+    html += '<div style="display: flex; gap: 10px; align-items: stretch; flex: 1;">';
+    
+    // Left scroll button
+    if (hasWest) {
+        html += `<button class="btn-primary" onclick="moveMapView(-1, 0, 0)" style="padding: 10px 15px; align-self: center;">◀️</button>`;
+    }
+    
+    // Places carousel (4 full + 1 peek)
+    html += '<div style="display: flex; gap: 15px; flex: 1; overflow: hidden;">';
+    
+    if (displayPlaces.length === 0) {
+        html += '<div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #666;">No places at this location</div>';
+    } else {
+        for (let i = 0; i < Math.min(5, displayPlaces.length); i++) {
+            const place = displayPlaces[i];
+            const placeObjects = objects.filter(o => o.place_id === place.id);
+            const tasksInPlace = currentQuestTasks.filter(t => t.linked_place_id === place.id);
+            const isPeek = i === 4;
+            const opacity = isPeek ? 0.6 : 1;
+            
+            html += `
+                <div 
+                    style="
+                        flex: 0 0 calc(20% - 12px);
+                        ${isPeek ? 'margin-right: auto;' : ''}
+                        padding: 15px;
+                        background: #1a2540;
+                        border: 2px solid #4a7fd9;
+                        border-radius: 8px;
+                        opacity: ${opacity};
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    "
+                    ondrop="dropTaskOnPlace(event, ${place.id})"
+                    ondragover="allowDrop(event)"
+                    ondragleave="event.target.style.opacity = '1'"
+                    onmouseenter="this.style.opacity = ${isPeek ? '0.8' : '0.95'}"
+                    onmouseleave="this.style.opacity = ${opacity}"
+                >
+                    <div style="font-weight: bold; color: #81c784; font-size: 13px;">🏠 ${escapeHtml(place.name)}</div>
+                    <div style="font-size: 10px; color: #aaa;">(${place.x || 1}, ${place.y || 1}, ${place.z || 0})</div>
+                    
+                    ${tasksInPlace.length > 0 ? `
+                        <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
+                            <div style="color: #81c784; font-size: 10px; margin-bottom: 4px;">📋 Tasks (${tasksInPlace.length}):</div>
+                            ${tasksInPlace.map(t => `<div style="font-size: 9px; color: #aaa;">• ${escapeHtml(t.name)}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${placeObjects.length > 0 ? `
+                        <div style="padding: 8px; background: #0f1419; border-radius: 3px;">
+                            <div style="color: #4a9d6f; font-size: 10px; margin-bottom: 4px;">🔧 Objects (${placeObjects.length}):</div>
+                            ${placeObjects.map(obj => {
+                                const objTasks = currentQuestTasks.filter(t => t.linked_object_id === obj.id);
+                                return `
+                                    <div 
+                                        style="
+                                            margin: 4px 0;
+                                            padding: 4px;
+                                            background: #0a0d1a;
+                                            border-left: 2px solid #4a9d6f;
+                                            border-radius: 2px;
+                                            font-size: 9px;
+                                            color: #aaa;
+                                        "
+                                        ondrop="dropTaskOnObject(event, ${obj.id})"
+                                        ondragover="allowDrop(event)"
+                                        onmouseenter="this.style.opacity = '0.8'"
+                                        onmouseleave="this.style.opacity = '1'"
+                                    >
+                                        🔧 ${escapeHtml(obj.name)} ${objTasks.length > 0 ? `(${objTasks.length})` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    }
+    
+    html += '</div>';
+    
+    // Right scroll button
+    if (hasEast) {
+        html += `<button class="btn-primary" onclick="moveMapView(1, 0, 0)" style="padding: 10px 15px; align-self: center;">▶️</button>`;
+    }
+    
+    html += '</div></div></div>';
     
     container.innerHTML = html;
     
