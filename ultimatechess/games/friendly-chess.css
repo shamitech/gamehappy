@@ -1,0 +1,365 @@
+/* Friendly Chess Mobile-First Styles */
+
+* {
+    box-sizing: border-box;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+#game-screen {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.game-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Game Header */
+.game-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 8px;
+    margin: 0;
+    width: 100%;
+}
+
+.player-section {
+    background: #f0f0f0;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.player-name {
+    font-weight: bold;
+    margin: 0;
+}
+
+.player-rating {
+    margin: 0;
+    font-size: 0.7rem;
+}
+
+.game-info {
+    display: none;
+}
+
+/* Board Container */
+.board-container {
+    width: 100%;
+    padding: 4px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+/* Chessboard */
+#chessboard {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 1;
+    background: #666;
+    border: 2px solid #333;
+    padding: 0;
+    margin: 0;
+}
+
+.square {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    border: none;
+}
+
+.square.light {
+    background: #e8d5b7;
+}
+
+.square.dark {
+    background: #7a6e55;
+}
+
+.square.selected {
+    background: #7fc97f !important;
+}
+
+.square.valid-move::after {
+    content: '';
+    width: 30%;
+    height: 30%;
+    background: #90ee90;
+    border-radius: 50%;
+    opacity: 0.8;
+}
+
+/* Piece */
+.piece {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.piece.white {
+    color: #ffffff;
+    filter: drop-shadow(-1px -1px 1px rgba(0,0,0,0.4))
+            drop-shadow(1px -1px 1px rgba(0,0,0,0.4))
+            drop-shadow(-1px 1px 1px rgba(0,0,0,0.4))
+            drop-shadow(1px 1px 1px rgba(0,0,0,0.4));
+}
+
+.piece.black {
+    color: #000000;
+    filter: drop-shadow(-1px -1px 1px rgba(255,255,255,0.3))
+            drop-shadow(1px -1px 1px rgba(255,255,255,0.3))
+            drop-shadow(-1px 1px 1px rgba(255,255,255,0.3))
+            drop-shadow(1px 1px 1px rgba(255,255,255,0.3));
+}
+
+.piece svg {
+    width: 85%;
+    height: 85%;
+}
+
+/* Game Controls */
+.game-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px;
+    margin: 0;
+}
+
+.btn {
+    padding: 8px;
+    font-size: 0.8rem;
+    border: 1px solid #ccc;
+    background: #e0e0e0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-back {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+/* Nudge Alert */
+.nudge-alert.hidden {
+    display: none;
+}
+
+.nudge-alert {
+    position: fixed;
+    top: 20px;
+    left: 10px;
+    right: 10px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+/* End Game */
+.end-game-container {
+    padding: 20px;
+    text-align: center;
+}
+
+.game-result {
+    margin-bottom: 20px;
+}
+
+.end-game-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* Tablet - 768px and below */
+@media (max-width: 768px) {
+    .piece {
+        font-size: 2.5vw;
+    }
+}
+
+/* Mobile - 579px and below */
+@media (max-width: 579px) {
+    html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .screen {
+        width: 100%;
+    }
+
+    .game-container {
+        width: 100%;
+        padding: 0;
+    }
+
+    .game-header {
+        padding: 6px;
+        gap: 6px;
+    }
+
+    .player-section {
+        padding: 6px;
+        font-size: 0.75rem;
+    }
+
+    .board-container {
+        padding: 0;
+        width: 100%;
+    }
+
+    #chessboard {
+        width: 100%;
+        max-width: 100%;
+        border: 1px solid #333;
+    }
+
+    .piece {
+        font-size: 6vw;
+    }
+
+    .game-controls {
+        gap: 4px;
+        padding: 6px;
+    }
+
+    .btn {
+        padding: 6px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Lobby */
+.lobby-content {
+    padding: 20px;
+}
+
+.lobby-option {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.lobby-option h2 {
+    margin: 0 0 10px 0;
+}
+
+.lobby-option p {
+    margin: 0 0 15px 0;
+}
+
+.friend-option {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.friend-option h3 {
+    margin: 0 0 5px 0;
+}
+
+.friend-option p {
+    margin: 0 0 10px 0;
+}
+
+#game-code {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#search-status.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.hidden {
+    display: none !important;
+}
+
+header {
+    padding: 15px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+header p {
+    margin: 5px 0 0 0;
+    font-size: 0.9rem;
+}
+
+.btn-back {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 2px solid white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}

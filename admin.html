@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameHappy Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-badge {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        .view-toggle {
+            padding: 10px 18px;
+            background: #f0f0f0;
+            border: 2px solid #ccc;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .view-toggle:hover {
+            background: #e0e0e0;
+            border-color: #667eea;
+        }
+
+        .view-toggle.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .status-online {
+            color: #10b981;
+        }
+
+        .status-offline {
+            color: #ef4444;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-inactive {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .messages-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .message-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .message-item:hover {
+            background: #f0f0f0;
+        }
+
+        .message-from {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .message-email {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .message-subject {
+            font-weight: 500;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .message-body {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: pre-wrap;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px 4px 0 0;
+            min-height: 30px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding-top: 5px;
+        }
+
+        .chart-label {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.tertiary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .stat-card h4 {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-card .change {
+            font-size: 12px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .game-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .game-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .game-players {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .player-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .player-stat-label {
+            color: #666;
+        }
+
+        .player-stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #764ba2;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #7f1d1d;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ef4444;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #10b981;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            background: #f0f0f0;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #666;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 90%;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .game-selector {
+            transition: all 0.3s ease;
+        }
+
+        .game-selector:hover {
+            background: #e8ecff !important;
+            border-color: #667eea !important;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .game-selector.active {
+            border-color: #667eea !important;
+            background: #e8ecff !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>🎮 GameHappy Admin Dashboard</h1>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">Welcome, <strong id="adminUsername">Admin</strong></div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <div class="stat-value" id="activeUsers">0</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-value" id="activeGames">0</div>
+                    <div class="stat-label">Active Games</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-value" id="totalMessages">0</div>
+                    <div class="stat-label">Messages</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+            <button class="tab-btn" onclick="switchTab('messages')">Contact Messages</button>
+            <button class="tab-btn" onclick="switchTab('games')">Games</button>
+            <button class="tab-btn" onclick="switchTab('secretsyndicates')">Secret Syndicates</button>
+            <button class="tab-btn" onclick="switchTab('analytics')">Analytics</button>
+            <button class="tab-btn" onclick="switchTab('tools')">Tools</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Current Players</h4>
+                    <div class="value" id="overviewActiveUsers">0</div>
+                    <div class="change" id="usersChange">loading...</div>
+                </div>
+                <div class="stat-card secondary">
+                    <h4>Active Games</h4>
+                    <div class="value" id="overviewActiveGames">0</div>
+                    <div class="change" id="gamesChange">loading...</div>
+                </div>
+                <div class="stat-card tertiary">
+                    <h4>Total Messages</h4>
+                    <div class="value" id="overviewMessages">0</div>
+                    <div class="change" id="messagesChange">loading...</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3><span class="live-indicator"></span>Live Game Status</h3>
+                    <div id="liveGames">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Recent Messages</h3>
+                    <div id="recentMessages">
+                        <p class="loading">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Tab -->
+        <div id="messages" class="tab-content">
+            <div class="card">
+                <h3>Contact Messages <button class="refresh-btn" onclick="loadMessages()">Refresh</button></h3>
+                <div id="messagesList" class="messages-list">
+                    <p class="loading">Loading messages...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Games Tab -->
+        <div id="games" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>All Active Games</h3>
+                    <div id="allGames">
+                        <p class="loading">Loading games...</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Game Statistics</h3>
+                    <div id="gameStats">
+                        <div class="metric">
+                            <span class="metric-label">Total Games Started</span>
+                            <span class="metric-value" id="totalGamesStarted">0</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Currently Active</span>
+                            <span class="metric-value" id="currentlyActive">0</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Average Players/Game</span>
+                            <span class="metric-value" id="avgPlayersPerGame">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secret Syndicates Tab -->
+        <div id="secretsyndicates" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>Secret Syndicates Overview</h3>
+                    <div class="metric">
+                        <span class="metric-label">Total Games Played</span>
+                        <span class="metric-value" id="ssTotal">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Currently Active Games</span>
+                        <span class="metric-value" id="ssActive">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Total Rounds Played</span>
+                        <span class="metric-value" id="ssTotalRounds">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Active Players</span>
+                        <span class="metric-value" id="ssActivePlayers">0</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Game Distribution</h3>
+                    <div id="ssDistribution" class="chart-container">
+                        <p class="no-data">No data available</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Active Secret Syndicates Games</h3>
+                <div id="ssGamesList">
+                    <p class="no-data">No active games</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <!-- Current Users Summary -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Active Players Right Now</h4>
+                    <div class="value" id="analyticsCurrentUsers">0</div>
+                    <div class="change">on gamehappy</div>
+                </div>
+                <div class="stat-card secondary">
+                    <h4>Total Active Games</h4>
+                    <div class="value" id="analyticsCurrentGames">0</div>
+                    <div class="change">in progress</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- User Activity Timeline -->
+                <div class="card" style="grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>User Activity Timeline</h3>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="view-toggle" onclick="switchTimelineView('minute')" id="btn-minute">Minute</button>
+                            <button class="view-toggle" onclick="switchTimelineView('hour')" id="btn-hour">Hour</button>
+                            <button class="view-toggle" onclick="switchTimelineView('day')" id="btn-day">Day</button>
+                            <button class="view-toggle" onclick="switchTimelineView('week')" id="btn-week">Week</button>
+                            <button class="view-toggle" onclick="switchTimelineView('month')" id="btn-month">Month</button>
+                            <button class="view-toggle" onclick="switchTimelineView('year')" id="btn-year">Year</button>
+                            <button class="view-toggle" onclick="switchTimelineView('all')" id="btn-all">Historical</button>
+                        </div>
+                    </div>
+                    <div id="userActivityChart" class="chart-container" style="height: 350px; display: flex; align-items: flex-end; gap: 5px; padding: 20px; background: #f9f9f9; border-radius: 8px; overflow-x: auto;">
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                        <span id="timelineLabel">Today's Activity</span>
+                    </div>
+                </div>
+
+                <!-- Game Distribution -->
+                <div class="card" onclick="openDetailedChart('usersPerGame')" style="cursor: pointer; transition: all 0.3s;">
+                    <h3>Players Per Game</h3>
+                    <div id="gameDistributionChart" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Secret Syndicates</span>
+                                <span id="analyticsSSCount" style="font-weight: bold;">0</span>
+                            </div>
+                            <div style="background: #e0e0e0; height: 20px; border-radius: 4px; overflow: hidden;">
+                                <div id="analyticsSSBar" style="background: linear-gradient(to right, #667eea, #764ba2); height: 100%; width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Flag Guardians</span>
+                                <span id="analyticsFGCount" style="font-weight: bold;">0</span>
+                            </div>
+                            <div style="background: #e0e0e0; height: 20px; border-radius: 4px; overflow: hidden;">
+                                <div id="analyticsFGBar" style="background: linear-gradient(to right, #667eea, #764ba2); height: 100%; width: 0%;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>Are We There Yet</span>
+                                <span id="analyticsAWTCount" style="font-weight: bold;">0</span>
+                            </div>
+                            <div style="background: #e0e0e0; height: 20px; border-radius: 4px; overflow: hidden;">
+                                <div id="analyticsAWTBar" style="background: linear-gradient(to right, #667eea, #764ba2); height: 100%; width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Per Game Breakdown -->
+                <div class="card">
+                    <h3>Users Per Game</h3>
+                    <div id="usersPerGameChart" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="game-selector" onclick="showGameHistory('home')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">GameHappy Home</span>
+                            <span id="analyticsHomeCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
+                        </div>
+                        <div class="game-selector" onclick="showGameHistory('secretSyndicates')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">Secret Syndicates</span>
+                            <span id="analyticsSSUserCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
+                        </div>
+                        <div class="game-selector" onclick="showGameHistory('flagGuardians')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">Flag Guardians</span>
+                            <span id="analyticsFGUserCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
+                        </div>
+                        <div class="game-selector" onclick="showGameHistory('areWeThereYet')" style="padding: 12px; background: #f0f4ff; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">Are We There Yet</span>
+                            <span id="analyticsAWTUserCount" style="font-weight: bold; font-size: 16px; color: #667eea;">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Performance Metrics</h3>
+                    <div id="performanceMetrics" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div class="metric">
+                            <span class="metric-label">Server Uptime</span>
+                            <span class="metric-value" id="serverUptime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Websocket Connections</span>
+                            <span class="metric-value" id="websocketConnections">0</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Games Played</span>
+                            <span class="metric-value" id="totalGamesPlayed">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Distribution Table -->
+            <div class="card" style="grid-column: 1 / -1; margin-top: 20px;">
+                <h3>Game Statistics</h3>
+                <div id="gameTypeChart">
+                    <table>
+                        <tr>
+                            <th>Game</th>
+                            <th>Active Games</th>
+                            <th>Total Played</th>
+                            <th>Players in Progress</th>
+                        </tr>
+                        <tr>
+                            <td>Secret Syndicates</td>
+                            <td id="analyticsSSActiveGames">0</td>
+                            <td id="analyticsSTotal">0</td>
+                            <td id="analyticsSPlayers">0</td>
+                        </tr>
+                        <tr>
+                            <td>Flag Guardians</td>
+                            <td id="analyticsFGActiveGames">0</td>
+                            <td id="analyticsFGTotal">0</td>
+                            <td id="analyticsFGPlayers">0</td>
+                        </tr>
+                        <tr>
+                            <td>Are We There Yet</td>
+                            <td id="analyticsAWTActiveGames">0</td>
+                            <td id="analyticsAWTTotal">0</td>
+                            <td id="analyticsAWTPlayers">0</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Chart Modal -->
+        <div id="detailedChartModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto;">
+            <div style="background: white; margin: 20px auto; border-radius: 8px; max-width: 1000px; padding: 30px; position: relative;">
+                <button onclick="closeDetailedChart()" style="position: absolute; top: 15px; right: 15px; background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Close</button>
+                <h2 id="detailedChartTitle">Chart Details</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="view-toggle" onclick="switchDetailedView('minute')" id="detail-btn-minute">Minute</button>
+                    <button class="view-toggle" onclick="switchDetailedView('hour')" id="detail-btn-hour">Hour</button>
+                    <button class="view-toggle" onclick="switchDetailedView('day')" id="detail-btn-day">Day</button>
+                    <button class="view-toggle" onclick="switchDetailedView('week')" id="detail-btn-week">Week</button>
+                    <button class="view-toggle" onclick="switchDetailedView('month')" id="detail-btn-month">Month</button>
+                    <button class="view-toggle" onclick="switchDetailedView('year')" id="detail-btn-year">Year</button>
+                    <button class="view-toggle" onclick="switchDetailedView('all')" id="detail-btn-all">Historical</button>
+                </div>
+                <div id="detailedChart" style="height: 400px; display: flex; align-items: flex-end; gap: 5px; padding: 20px; background: #f9f9f9; border-radius: 8px; overflow-x: auto;"></div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                    <span id="detailedChartLabel">Chart Details</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Tab -->
+        <div id="tools" class="tab-content">
+            <div class="grid">
+                <div class="card">
+                    <h3>System Tools</h3>
+                    <button class="refresh-btn" onclick="clearOldGames()" style="width: 100%; margin-bottom: 10px;">Clear Old Games (>24h)</button>
+                    <button class="refresh-btn" onclick="exportData()" style="width: 100%; margin-bottom: 10px;">Export All Data</button>
+                    <button class="refresh-btn" onclick="resetStats()" style="width: 100%;">Reset Statistics</button>
+                </div>
+                <div class="card">
+                    <h3>Quick Stats</h3>
+                    <div class="metric">
+                        <span class="metric-label">Last Data Refresh</span>
+                        <span class="metric-value" id="lastRefresh">Never</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Auto-refresh Interval</span>
+                        <span class="metric-value">5 seconds</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Dashboard Version</span>
+                        <span class="metric-value">1.0.0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Detail Modal -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h2>Message Details</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        let updateInterval;
+        let socket;
+        let data = {
+            activeUsers: 0,
+            activeGames: 0,
+            messages: [],
+            games: {},
+            stats: {},
+            liveGames: [],
+            userHistory: [],
+            playersPerGameHistory: [],
+            usersPerGameHistory: []
+        };
+
+        // Connect to websocket server for real-time updates
+        function connectWebsocket() {
+            socket = io('https://gamehappy.app:8443', {
+                path: '/websocket',
+                reconnection: true,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                reconnectionAttempts: Infinity
+            });
+
+            socket.on('connect', () => {
+                console.log('Connected to websocket server');
+                // Identify this connection as admin so active user count excludes admins
+                socket.emit('admin:connect', {
+                    timestamp: new Date(),
+                    page: 'admin-dashboard'
+                });
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from websocket server');
+            });
+
+            socket.on('gameUpdated', (gameData) => {
+                console.log('Game updated:', gameData);
+                updateLiveGamesDisplay();
+                loadData();
+            });
+
+            socket.on('gameCreated', (gameData) => {
+                console.log('Game created:', gameData);
+                updateLiveGamesDisplay();
+                loadData();
+            });
+
+            socket.on('gameEnded', (gameData) => {
+                console.log('Game ended:', gameData);
+                updateLiveGamesDisplay();
+                loadData();
+            });
+
+            socket.on('playerJoined', (data) => {
+                console.log('Player joined:', data);
+                loadData();
+            });
+
+            socket.on('activeGames', (games) => {
+                console.log('Active games received:', games);
+                console.log('Number of games:', games?.length || 0);
+                if (games && games.length > 0) {
+                    games.forEach((g, i) => {
+                        console.log(`Game ${i}:`, {
+                            gameId: g.gameId,
+                            playerCount: g.playerCount,
+                            playersArray: g.players,
+                            playerArrayLength: g.players?.length || 0
+                        });
+                    });
+                }
+                data.liveGames = games;
+                updateLiveGamesDisplay();
+                updateUI();  // Update stats with new player counts
+            });
+
+            socket.on('activeStats', (stats) => {
+                console.log('Active stats received:', stats);
+                console.log('Stats includes userHistory:', !!stats.userHistory, 'length:', stats.userHistory?.length || 0);
+                console.log('Users per game from server:', stats.usersPerGame);
+                
+                // Properly update data.stats with all received fields
+                data.stats = {
+                    activeUsers: stats.activeUsers,
+                    activeGames: stats.activeGames,
+                    usersPerGame: stats.usersPerGame,
+                    timestamp: stats.timestamp
+                };
+                
+                // Store user history from server
+                if (stats.userHistory && stats.userHistory.length > 0) {
+                    console.log('[WebSocket] Received user history with', stats.userHistory.length, 'points');
+                    data.userHistory = stats.userHistory;
+                }
+                
+                // Store game metrics history from server
+                if (stats.playersPerGameHistory && stats.playersPerGameHistory.length > 0) {
+                    data.playersPerGameHistory = stats.playersPerGameHistory;
+                }
+                if (stats.usersPerGameHistory && stats.usersPerGameHistory.length > 0) {
+                    data.usersPerGameHistory = stats.usersPerGameHistory;
+                }
+                
+                console.log('[WebSocket] Updated data.stats:', data.stats);
+                updateUI();  // Update UI with new active user count and users per game
+            });
+        }
+
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('./auth/check-session.php');
+                const result = await response.json();
+                if (!result.authenticated) {
+                    window.location.href = './login.html';
+                } else {
+                    document.getElementById('adminUsername').textContent = result.username || 'Admin';
+                }
+            } catch (error) {
+                window.location.href = './login.html';
+            }
+        }
+
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            try {
+                const response = await fetch('./auth/logout.php');
+                const result = await response.json();
+                if (result.success) {
+                    window.location.href = './login.html';
+                }
+            } catch (error) {
+                alert('Error logging out');
+            }
+        }
+
+        function updateLiveGamesDisplay() {
+            const container = document.getElementById('liveGames');
+            if (!data.liveGames || data.liveGames.length === 0) {
+                container.innerHTML = '<p class="no-data">No active games</p>';
+                return;
+            }
+
+            container.innerHTML = data.liveGames
+                .map((game, idx) => `
+                    <div class="game-item">
+                        <div class="game-header">
+                            <span class="game-title">${game.gameType || 'Unknown'} - Game #${game.gameId}</span>
+                            <span class="status-badge badge-active">In Progress</span>
+                        </div>
+                        <div class="game-players">
+                            <div class="player-stat">
+                                <span class="player-stat-label">Players:</span>
+                                <span class="player-stat-value">${game.playerCount || game.players?.length || 0}</span>
+                            </div>
+                            <div class="player-stat">
+                                <span class="player-stat-label">Round:</span>
+                                <span class="player-stat-value">${game.currentRound || 1}</span>
+                            </div>
+                            <div class="player-stat">
+                                <span class="player-stat-label">Duration:</span>
+                                <span class="player-stat-value">${formatDuration(new Date(game.createdAt))}</span>
+                            </div>
+                        </div>
+                        ${game.players ? '<div style="font-size: 12px; color: #666; margin-top: 8px;">Players: ' + (game.players.join(', ') || 'N/A') + '</div>' : ''}
+                    </div>
+                `)
+                .join('');
+        }
+
+        function formatDuration(startTime) {
+            const now = new Date();
+            const diff = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+            return `${minutes}m ${seconds}s`;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch('./api/admin/stats.php');
+                if (!response.ok) throw new Error('Failed to load stats');
+                const json = await response.json();
+                
+                // Preserve activeUsers and activeGames from websocket - don't overwrite with API
+                const preservedActiveUsers = data.stats?.activeUsers;
+                const preservedActiveGames = data.stats?.activeGames;
+                
+                data.stats = json;
+                
+                // Restore websocket values if they exist
+                if (preservedActiveUsers !== undefined) data.stats.activeUsers = preservedActiveUsers;
+                if (preservedActiveGames !== undefined) data.stats.activeGames = preservedActiveGames;
+                
+                updateUI();
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const response = await fetch('./api/admin/messages.php');
+                if (!response.ok) throw new Error('Failed to load messages');
+                const json = await response.json();
+                data.messages = json.messages || [];
+                document.getElementById('totalMessages').textContent = data.messages.length;
+                document.getElementById('overviewMessages').textContent = data.messages.length;
+                renderMessages();
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                document.getElementById('messagesList').innerHTML = '<div class="error-message">Failed to load messages</div>';
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesList');
+            if (data.messages.length === 0) {
+                container.innerHTML = '<p class="no-data">No messages yet</p>';
+                return;
+            }
+
+            container.innerHTML = data.messages
+                .sort((a, b) => new Date(b.received_at) - new Date(a.received_at))
+                .map((msg, idx) => `
+                    <div class="message-item" onclick="showMessageDetail('${idx}')">
+                        <div class="message-from">${msg.name || 'Unknown'}</div>
+                        <div class="message-email">${msg.email || ''}</div>
+                        <div class="message-subject">${msg.subject || 'No Subject'}</div>
+                        <div class="message-body">${(msg.message || '').substring(0, 150)}</div>
+                        <div class="message-time">${new Date(msg.received_at).toLocaleString()}</div>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function showMessageDetail(idx) {
+            const msg = data.messages[idx];
+            const modal = document.getElementById('messageModal');
+            const body = document.getElementById('modalBody');
+            body.innerHTML = `
+                <p><strong>Name:</strong> ${msg.name || 'Unknown'}</p>
+                <p><strong>Email:</strong> ${msg.email || ''}</p>
+                <p><strong>Subject:</strong> ${msg.subject || 'No Subject'}</p>
+                <p><strong>Message:</strong></p>
+                <p style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 8px;">${msg.message || ''}</p>
+                <p><strong>Received:</strong> ${new Date(msg.received_at).toLocaleString()}</p>
+                <p><strong>IP Address:</strong> ${msg.ip_address || 'Unknown'}</p>
+            `;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('messageModal').classList.remove('active');
+        }
+
+        function updateUI() {
+            const stats = data.stats;
+            console.log('[updateUI] Current stats:', stats);
+            console.log('[updateUI] usersPerGame:', stats?.usersPerGame);
+            
+            // Use the real active users count from websocket server
+            const activeUserCount = stats?.activeUsers !== undefined ? stats.activeUsers : 0;
+            const activeGameCount = stats.activeGames !== undefined ? stats.activeGames : (data.liveGames?.length || 0);
+            
+            console.log('[updateUI] Setting active users:', activeUserCount, 'active games:', activeGameCount);
+            
+            // Update Overview tab
+            const userElements = [
+                document.getElementById('overviewActiveUsers'),
+                document.getElementById('activeUsers')
+            ];
+            
+            userElements.forEach(el => {
+                if (el) el.textContent = activeUserCount;
+            });
+            
+            const gameElements = [
+                document.getElementById('overviewActiveGames'),
+                document.getElementById('activeGames')
+            ];
+            
+            gameElements.forEach(el => {
+                if (el) el.textContent = activeGameCount;
+            });
+
+            // Update Secret Syndicates stats
+            const ssTotal = document.getElementById('ssTotal');
+            if (ssTotal) ssTotal.textContent = stats.ss_total || 0;
+            
+            const ssActive = document.getElementById('ssActive');
+            if (ssActive) ssActive.textContent = activeGameCount;
+            
+            const ssTotalRounds = document.getElementById('ssTotalRounds');
+            if (ssTotalRounds) ssTotalRounds.textContent = stats.ss_rounds || 0;
+            
+            // Calculate total players in active games
+            let totalActivePlayers = 0;
+            if (data.liveGames && data.liveGames.length > 0) {
+                totalActivePlayers = data.liveGames.reduce((sum, game) => sum + (game.playerCount || 0), 0);
+            }
+            const ssActivePlayers = document.getElementById('ssActivePlayers');
+            if (ssActivePlayers) ssActivePlayers.textContent = totalActivePlayers || 0;
+
+            // Update Analytics tab - Current Users Summary
+            document.getElementById('analyticsCurrentUsers').textContent = activeUserCount;
+            document.getElementById('analyticsCurrentGames').textContent = activeGameCount;
+            
+            // Update Analytics tab - Player Distribution Bars
+            const totalPlayers = totalActivePlayers || activeUserCount;
+            const maxPlayers = Math.max(totalPlayers, 1);
+            
+            // Secret Syndicates distribution
+            const ssPlayers = stats.usersPerGame?.secretSyndicates || 0;
+            document.getElementById('analyticsSSCount').textContent = ssPlayers;
+            document.getElementById('analyticsSSBar').style.width = (ssPlayers / maxPlayers * 100) + '%';
+            
+            // Flag Guardians distribution
+            const fgPlayers = stats.usersPerGame?.flagGuardians || 0;
+            document.getElementById('analyticsFGCount').textContent = fgPlayers;
+            document.getElementById('analyticsFGBar').style.width = (fgPlayers / maxPlayers * 100) + '%';
+            
+            // Are We There Yet distribution
+            const awtPlayers = stats.usersPerGame?.areWeThereYet || 0;
+            document.getElementById('analyticsAWTCount').textContent = awtPlayers;
+            document.getElementById('analyticsAWTBar').style.width = (awtPlayers / maxPlayers * 100) + '%';
+
+            // Update Analytics tab - Performance Metrics
+            document.getElementById('websocketConnections').textContent = activeUserCount;
+            document.getElementById('totalGamesPlayed').textContent = (stats.total_games || 0) + (stats.ss_total || 0);
+            document.getElementById('serverUptime').textContent = getServerUptime();
+
+            // Update Users Per Game card
+            if (stats.usersPerGame) {
+                console.log('[updateUI] Updating users per game:', stats.usersPerGame);
+                document.getElementById('analyticsHomeCount').textContent = stats.usersPerGame.home || 0;
+                document.getElementById('analyticsSSUserCount').textContent = stats.usersPerGame.secretSyndicates || 0;
+                document.getElementById('analyticsFGUserCount').textContent = stats.usersPerGame.flagGuardians || 0;
+                document.getElementById('analyticsAWTUserCount').textContent = stats.usersPerGame.areWeThereYet || 0;
+            }
+
+            // Update Analytics tab - Game Statistics Table
+            document.getElementById('analyticsSSActiveGames').textContent = stats.ss_active || 0;
+            document.getElementById('analyticsSTotal').textContent = stats.ss_total || 0;
+            document.getElementById('analyticsSPlayers').textContent = ssPlayers;
+            
+            document.getElementById('analyticsFGActiveGames').textContent = stats.fg_active || 0;
+            document.getElementById('analyticsFGTotal').textContent = stats.fg_total || 0;
+            document.getElementById('analyticsFGPlayers').textContent = fgPlayers;
+            
+            document.getElementById('analyticsAWTActiveGames').textContent = stats.awt_active || 0;
+            document.getElementById('analyticsAWTTotal').textContent = stats.awt_total || 0;
+            document.getElementById('analyticsAWTPlayers').textContent = awtPlayers;
+
+            const lastRefresh = document.getElementById('lastRefresh');
+            if (lastRefresh) lastRefresh.textContent = new Date().toLocaleTimeString();
+            
+            // Update the activity chart with current data
+            updateActivityChart();
+        }
+
+        function getServerUptime() {
+            const startTime = localStorage.getItem('dashboardStartTime');
+            if (!startTime) {
+                localStorage.setItem('dashboardStartTime', Date.now().toString());
+                return '0h 0m';
+            }
+            const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
+            const hours = Math.floor(elapsed / 3600);
+            const minutes = Math.floor((elapsed % 3600) / 60);
+            return hours + 'h ' + minutes + 'm';
+        }
+
+        let currentTimelineView = 'day';
+        
+        function switchTimelineView(view) {
+            console.log('=== SWITCHING VIEW TO:', view, '===');
+            currentTimelineView = view;
+            
+            // Update button states
+            const buttons = document.querySelectorAll('.view-toggle');
+            console.log('Found', buttons.length, 'buttons');
+            buttons.forEach((btn, idx) => {
+                btn.classList.remove('active');
+            });
+            
+            const activeBtn = document.getElementById('btn-' + view);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                console.log('Activated button:', view);
+            } else {
+                console.log('ERROR: Could not find button btn-' + view);
+            }
+            
+            // Update chart label
+            const labels = {
+                day: "Today's Activity (Per Minute)",
+                week: "Weekly Activity (Per Hour)",
+                month: "Monthly Activity (Per Day)",
+                year: "Yearly Activity (Per Week)",
+                all: "Historical Activity (Per Month)"
+            };
+            document.getElementById('timelineLabel').textContent = labels[view];
+            console.log('Label updated to:', labels[view]);
+            
+            // Update chart with new view
+            console.log('Calling updateActivityChart...');
+            updateActivityChart();
+            console.log('Chart updated.');
+        }
+
+        function getTimeLabels(view) {
+            const now = new Date();
+            const labels = [];
+            
+            if (view === 'minute') {
+                // Show last 60 seconds in 6-second intervals
+                for (let i = 9; i >= 0; i--) {
+                    labels.push((i * 6) + 's');
+                }
+            } else if (view === 'hour') {
+                // Show last 60 minutes in 1-minute intervals
+                // Only show labels for every 5th minute to avoid crowding
+                for (let i = 59; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setMinutes(time.getMinutes() - i);
+                    if (i % 5 === 0) {
+                        const hour = time.getHours();
+                        const minute = time.getMinutes();
+                        const ampm = hour >= 12 ? 'PM' : 'AM';
+                        const displayHour = hour % 12 || 12;
+                        const displayMinute = minute.toString().padStart(2, '0');
+                        labels.push(displayHour + ':' + displayMinute + ampm);
+                    } else {
+                        labels.push('');
+                    }
+                }
+            } else if (view === 'day') {
+                // Show last 24 hours in 2.4-hour intervals
+                for (let i = 9; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setHours(time.getHours() - (i * 2.4));
+                    const hour = time.getHours();
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const displayHour = hour % 12 || 12;
+                    labels.push(displayHour + ampm);
+                }
+            } else if (view === 'week') {
+                // Show last 10 hours
+                for (let i = 9; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setHours(time.getHours() - i);
+                    const hour = time.getHours();
+                    const ampm = hour >= 12 ? 'PM' : 'AM';
+                    const displayHour = hour % 12 || 12;
+                    labels.push(displayHour + ampm);
+                }
+            } else if (view === 'month') {
+                // Show last 7 days
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - i);
+                    labels.push(dayNames[date.getDay()]);
+                }
+            } else if (view === 'month') {
+                // Show last 10 days
+                for (let i = 9; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setDate(date.getDate() - i);
+                    labels.push(date.getDate());
+                }
+            } else if (view === 'year') {
+                // Show last 10 months
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                for (let i = 9; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setMonth(date.getMonth() - i);
+                    labels.push(monthNames[date.getMonth()]);
+                }
+            } else if (view === 'all') {
+                // Show last 10 years
+                for (let i = 9; i >= 0; i--) {
+                    const date = new Date(now);
+                    date.setFullYear(date.getFullYear() - i);
+                    labels.push(date.getFullYear().toString().slice(-2)); // Last 2 digits
+                }
+            }
+            
+            return labels;
+        }
+
+        function aggregateUserHistory(view) {
+            // Aggregate historical data based on time view
+            if (!data.userHistory || data.userHistory.length === 0) {
+                // If no history, create demo data showing current trend
+                const current = data.stats?.activeUsers || 0;
+                console.log('[Chart] No history available, using current user count:', current);
+                return Array(10).fill(current);
+            }
+            
+            console.log('[Chart] Aggregating', data.userHistory.length, 'history points for view:', view);
+            
+            const now = Date.now();
+            const aggregated = [];
+            let timeRanges = [];
+            
+            if (view === 'minute') {
+                // 6 seconds per bar (last 60 seconds in 10 bars)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 6000);
+                    const startTime = endTime - 6000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'hour') {
+                // 1 minute per bar (last 60 minutes in 60 bars)
+                for (let i = 59; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'day') {
+                // 2.4 hours per bar (last 24 hours in 10 bars)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 8640000);
+                    const startTime = endTime - 8640000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'week') {
+                // 1 hour per bar (last 10 hours)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 3600000);
+                    const startTime = endTime - 3600000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'month') {
+                // 1 day per bar (last 10 days)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 86400000);
+                    const startTime = endTime - 86400000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'year') {
+                // 1 week per bar (last 10 weeks)
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 604800000);
+                    const startTime = endTime - 604800000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'all') {
+                // 1 month per bar (last 10 months)
+                for (let i = 9; i >= 0; i--) {
+                    const endDate = new Date(now);
+                    endDate.setMonth(endDate.getMonth() - i);
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    timeRanges.push({ start: startDate.getTime(), end: endDate.getTime() });
+                }
+            }
+            
+            // Calculate average for each time range
+            timeRanges.forEach(range => {
+                const pointsInRange = data.userHistory.filter(point => 
+                    point.timestamp >= range.start && point.timestamp < range.end
+                );
+                
+                if (pointsInRange.length > 0) {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + p.userCount, 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else {
+                    aggregated.push(0);
+                }
+            });
+            
+            return aggregated;
+        }
+
+        function updateActivityChart() {
+            // Update chart with historical data from user history
+            const chartContainer = document.getElementById('userActivityChart');
+            const timeLabels = getTimeLabels(currentTimelineView);
+            const chartData = aggregateUserHistory(currentTimelineView);
+            
+            console.log('[Chart] Updating chart for view:', currentTimelineView);
+            console.log('[Chart] User history size:', data.userHistory?.length || 0);
+            console.log('[Chart] Chart data:', chartData);
+            console.log('[Chart] Time labels:', timeLabels);
+            
+            // Find max value for scaling
+            const maxValue = Math.max(...chartData, 1);
+            
+            let html = '';
+            
+            // Generate bars with time labels
+            for (let i = 0; i < chartData.length; i++) {
+                const displayValue = chartData[i];
+                const height = Math.max(15, (displayValue / maxValue) * 100);
+                
+                html += `<div style="flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 30px;">
+                    <div class="chart-bar" style="height: 250px; background: linear-gradient(to top, #667eea, #764ba2); width: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative; border-radius: 4px 4px 0 0;">
+                        <div style="height: ${height}%; width: 100%; display: flex; align-items: flex-start; justify-content: center; padding-top: 5px;">
+                            <span style="font-size: 11px; color: white; font-weight: bold;">${displayValue}</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 10px; color: #666; margin-top: 8px; text-align: center; min-height: 20px;">${timeLabels[i]}</div>
+                </div>`;
+            }
+            
+            chartContainer.innerHTML = html;
+        }
+
+        let currentDetailedView = 'day';
+        let currentDetailedChart = 'usersPerGame';
+        let currentGameFilter = null; // Track which game is selected
+
+        function showGameHistory(gameKey) {
+            currentGameFilter = gameKey;
+            currentDetailedView = 'day';
+            
+            const titles = {
+                'home': 'GameHappy Home - User History',
+                'secretSyndicates': 'Secret Syndicates - User History',
+                'flagGuardians': 'Flag Guardians - User History',
+                'areWeThereYet': 'Are We There Yet - User History'
+            };
+            
+            // Update all game selector buttons - remove active from all
+            document.querySelectorAll('.game-selector').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Add active class to clicked element (need to find it)
+            const gameNameMap = {
+                'home': 'GameHappy Home',
+                'secretSyndicates': 'Secret Syndicates',
+                'flagGuardians': 'Flag Guardians',
+                'areWeThereYet': 'Are We There Yet'
+            };
+            
+            document.getElementById('detailedChartTitle').textContent = titles[gameKey] || 'Chart Details';
+            document.getElementById('detailedChartModal').style.display = 'block';
+            
+            // Set day as active button
+            document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('detail-btn-day').classList.add('active');
+            
+            updateGameHistoryChart();
+        }
+
+        function openDetailedChart(chartType) {
+            currentGameFilter = null; // Reset game filter
+            currentDetailedChart = chartType;
+            currentDetailedView = 'day';
+            
+            const titles = {
+                'usersPerGame': 'Players Per Game - Historical',
+                'usersPerGameBreakdown': 'Users Per Game - Historical'
+            };
+            
+            document.getElementById('detailedChartTitle').textContent = titles[chartType] || 'Chart Details';
+            document.getElementById('detailedChartModal').style.display = 'block';
+            
+            // Set day as active button
+            document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('detail-btn-day').classList.add('active');
+            
+            updateDetailedChart();
+        }
+
+        function closeDetailedChart() {
+            document.getElementById('detailedChartModal').style.display = 'none';
+        }
+
+        function switchDetailedView(view) {
+            currentDetailedView = view;
+            document.querySelectorAll('#detailedChartModal .view-toggle').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`#detailedChartModal [onclick*="'${view}'"]`).classList.add('active');
+            
+            // Call the appropriate update function based on whether we're viewing game history or other metrics
+            if (currentGameFilter) {
+                updateGameHistoryChart();
+            } else {
+                updateDetailedChart();
+            }
+        }
+
+        function updateDetailedChart() {
+            const chartContainer = document.getElementById('detailedChart');
+            const timeLabels = getTimeLabels(currentDetailedView);
+            let chartData = [];
+
+            if (currentDetailedChart === 'usersPerGame') {
+                chartData = aggregateGameMetrics(currentDetailedView, data.playersPerGameHistory || [], 'players');
+            } else if (currentDetailedChart === 'usersPerGameBreakdown') {
+                chartData = aggregateGameMetrics(currentDetailedView, data.usersPerGameHistory || [], 'users');
+            }
+
+            const maxValue = Math.max(...chartData, 1);
+            const containerHeight = chartContainer.clientHeight || 400;
+
+            let html = '';
+            for (let i = 0; i < chartData.length; i++) {
+                const value = chartData[i];
+                const percentage = (value / maxValue) * 100;
+                const height = (percentage / 100) * (containerHeight - 40);
+                const label = timeLabels[i] || '';
+                
+                html += `
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                        <div style="background: linear-gradient(to top, #667eea, #764ba2); width: 100%; height: ${height}px; border-radius: 4px; margin-bottom: 5px; position: relative;" title="${value}">
+                            <span style="position: absolute; top: -20px; font-size: 10px; width: 100%; text-align: center;">${value}</span>
+                        </div>
+                        <div style="font-size: 10px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+                    </div>
+                `;
+            }
+
+            chartContainer.innerHTML = html;
+            document.getElementById('detailedChartLabel').textContent = currentDetailedView.charAt(0).toUpperCase() + currentDetailedView.slice(1) + ' view';
+        }
+
+        function updateGameHistoryChart() {
+            const chartContainer = document.getElementById('detailedChart');
+            const timeLabels = getTimeLabels(currentDetailedView);
+            let chartData = [];
+
+            if (currentGameFilter === 'home') {
+                // Get home user history from usersPerGameHistory
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'home');
+            } else if (currentGameFilter === 'secretSyndicates') {
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'secretSyndicates');
+            } else if (currentGameFilter === 'flagGuardians') {
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'flagGuardians');
+            } else if (currentGameFilter === 'areWeThereYet') {
+                chartData = aggregateGameSpecificMetrics(currentDetailedView, data.usersPerGameHistory || [], 'areWeThereYet');
+            }
+
+            console.log('[Game History] Filter:', currentGameFilter, 'View:', currentDetailedView, 'Data:', chartData);
+
+            const maxValue = Math.max(...chartData, 1);
+            const containerHeight = chartContainer.clientHeight || 400;
+
+            let html = '';
+            for (let i = 0; i < chartData.length; i++) {
+                const value = chartData[i];
+                const percentage = (value / maxValue) * 100;
+                const height = (percentage / 100) * (containerHeight - 40);
+                const label = timeLabels[i] || '';
+                
+                html += `
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+                        <div style="background: linear-gradient(to top, #667eea, #764ba2); width: 100%; height: ${height}px; border-radius: 4px; margin-bottom: 5px; position: relative;" title="${value}">
+                            <span style="position: absolute; top: -20px; font-size: 10px; width: 100%; text-align: center;">${value}</span>
+                        </div>
+                        <div style="font-size: 10px; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</div>
+                    </div>
+                `;
+            }
+
+            chartContainer.innerHTML = html;
+            document.getElementById('detailedChartLabel').textContent = currentDetailedView.charAt(0).toUpperCase() + currentDetailedView.slice(1) + ' view';
+        }
+
+        function aggregateGameSpecificMetrics(view, historyData, gameKey) {
+            if (!historyData || historyData.length === 0) {
+                console.log('[aggregateGameSpecificMetrics] No history data for', gameKey);
+                return Array(10).fill(0);
+            }
+
+            const now = Date.now();
+            const aggregated = [];
+            let timeRanges = [];
+
+            if (view === 'minute') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 6000);
+                    const startTime = endTime - 6000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'hour') {
+                for (let i = 59; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'day') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 8640000);
+                    const startTime = endTime - 8640000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'week') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 3600000);
+                    const startTime = endTime - 3600000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'month') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 86400000);
+                    const startTime = endTime - 86400000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'year') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 604800000);
+                    const startTime = endTime - 604800000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'all') {
+                for (let i = 9; i >= 0; i--) {
+                    const endDate = new Date(now);
+                    endDate.setMonth(endDate.getMonth() - i);
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    timeRanges.push({ start: startDate.getTime(), end: endDate.getTime() });
+                }
+            }
+
+            // Aggregate values for this specific game
+            timeRanges.forEach(range => {
+                const pointsInRange = historyData.filter(point => 
+                    point.timestamp >= range.start && point.timestamp < range.end
+                );
+                
+                if (pointsInRange.length > 0) {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + (p[gameKey] || 0), 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else {
+                    aggregated.push(0);
+                }
+            });
+
+            return aggregated;
+        }
+
+        function aggregateGameMetrics(view, historyData, type) {
+            if (!historyData || historyData.length === 0) {
+                return Array(10).fill(0);
+            }
+
+            const now = Date.now();
+            const aggregated = [];
+            let timeRanges = [];
+
+            if (view === 'minute') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 6000);
+                    const startTime = endTime - 6000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'hour') {
+                for (let i = 59; i >= 0; i--) {
+                    const endTime = now - (i * 60000);
+                    const startTime = endTime - 60000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'day') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 8640000);
+                    const startTime = endTime - 8640000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'week') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 3600000);
+                    const startTime = endTime - 3600000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'month') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 86400000);
+                    const startTime = endTime - 86400000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'year') {
+                for (let i = 9; i >= 0; i--) {
+                    const endTime = now - (i * 604800000);
+                    const startTime = endTime - 604800000;
+                    timeRanges.push({ start: startTime, end: endTime });
+                }
+            } else if (view === 'all') {
+                for (let i = 9; i >= 0; i--) {
+                    const endDate = new Date(now);
+                    endDate.setMonth(endDate.getMonth() - i);
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    timeRanges.push({ start: startDate.getTime(), end: endDate.getTime() });
+                }
+            }
+
+            timeRanges.forEach(range => {
+                const pointsInRange = historyData.filter(point => 
+                    point.timestamp >= range.start && point.timestamp < range.end
+                );
+
+                if (pointsInRange.length > 0 && type === 'players') {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + (p.secretSyndicates + p.flagGuardians + p.areWeThereYet), 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else if (pointsInRange.length > 0 && type === 'users') {
+                    const avg = Math.round(
+                        pointsInRange.reduce((sum, p) => sum + (p.home + p.secretSyndicates + p.flagGuardians + p.areWeThereYet), 0) / pointsInRange.length
+                    );
+                    aggregated.push(avg);
+                } else {
+                    aggregated.push(0);
+                }
+            });
+
+            return aggregated;
+        }
+
+        async function clearOldGames() {
+            if (!confirm('Clear all games older than 24 hours?')) return;
+            try {
+                const response = await fetch('./api/admin/clear-old-games', { method: 'POST' });
+                if (response.ok) {
+                    alert('Old games cleared');
+                    loadData();
+                }
+            } catch (error) {
+                alert('Error clearing games');
+            }
+        }
+
+        async function exportData() {
+            try {
+                const response = await fetch('./api/admin/export');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `gamehappy-export-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            } catch (error) {
+                alert('Error exporting data');
+            }
+        }
+
+        function resetStats() {
+            if (!confirm('Reset all statistics? This cannot be undone.')) return;
+            alert('Stats reset functionality coming soon');
+        }
+
+        function init() {
+            checkAuth();
+            connectWebsocket();
+            loadMessages();
+            loadData();  // Load static data once on init
+            
+            // Set "Day" view as active by default
+            document.getElementById('btn-day').classList.add('active');
+            updateActivityChart();
+            
+            // Only refresh messages periodically, NOT data (websocket provides real-time data)
+            updateInterval = setInterval(() => {
+                loadMessages();
+            }, 5000);
+        }
+
+        window.addEventListener('beforeunload', () => {
+            clearInterval(updateInterval);
+        });
+
+        init();
+    </script>
+</body>
+</html>

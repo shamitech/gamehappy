@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameHappy Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 60px 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 18px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .start-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            color: #667eea;
+            font-weight: 600;
+            display: none;
+            margin-top: 20px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Test Game</h1>
+        <p class="subtitle">Opens 5 players in separate tabs</p>
+
+        <button class="start-btn" id="startBtn">Start Test Game</button>
+        <div class="loading" id="loading">Creating game...</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+
+        async function startTestGame() {
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            startBtn.disabled = true;
+
+            try {
+                const response = await fetch('https://gamehappy.app:8443/test-game');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Open 5 tabs with different players
+                    data.players.forEach((player, index) => {
+                        const delay = index * 200; // Stagger opening tabs
+                        setTimeout(() => {
+                            const url = `/secretsyndicates/?test=${player.token}&gameCode=${data.gameCode}&playerName=${player.name}`;
+                            window.open(url, `player-${player.name}`);
+                        }, delay);
+                    });
+                } else {
+                    showError(data.message || 'Failed to create game');
+                }
+            } catch (err) {
+                showError('Error: ' + err.message);
+            } finally {
+                loading.style.display = 'none';
+                startBtn.disabled = false;
+            }
+        }
+
+        function showError(msg) {
+            error.textContent = msg;
+            error.style.display = 'block';
+        }
+
+        startBtn.addEventListener('click', startTestGame);
+    </script>
+</body>
+</html>

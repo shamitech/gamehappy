@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open World Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .login-box {
+            background: #1a1f3a;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #2a5298;
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #64b5f6;
+            font-size: 28px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #1e3c72;
+            border: 2px solid #2a5298;
+            color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #2a5298;
+            border-color: #64b5f6;
+            color: #64b5f6;
+        }
+
+        .tab-btn:hover {
+            background: #2a5298;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .form-group.active {
+            display: block;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #64b5f6;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            background: #141829;
+            border: 1px solid #2a5298;
+            color: #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #64b5f6;
+            box-shadow: 0 0 10px rgba(100, 181, 246, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2a5298;
+            border: 2px solid #64b5f6;
+            color: #64b5f6;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #64b5f6;
+            color: #1a1f3a;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background: #1b5e20;
+            color: #4caf50;
+            display: block;
+        }
+
+        .message.error {
+            background: #b71c1c;
+            color: #ff5252;
+            display: block;
+        }
+
+        /* Game Interface */
+        .game-container {
+            display: none;
+            min-height: 100vh;
+            background: #0a0e27;
+            padding: 20px;
+        }
+
+        .game-container.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-header {
+            background: #1a1f3a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid #2a5298;
+        }
+
+        .player-info {
+            display: flex;
+            gap: 30px;
+            font-size: 18px;
+        }
+
+        .player-info div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gold-amount {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #b71c1c;
+            border: 2px solid #ff5252;
+            color: #ff5252;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .game-content {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .location-panel {
+            flex: 2;
+            background: #1a1f3a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #2a5298;
+        }
+
+        .location-panel h2 {
+            color: #64b5f6;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .location-description {
+            color: #b0bec5;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-style: italic;
+        }
+
+        .objects-list {
+            margin-top: 20px;
+        }
+
+        .objects-list h3 {
+            color: #64b5f6;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .object-item {
+            background: #141829;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #2a5298;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .object-item:hover {
+            background: #1e2438;
+            border-left-color: #64b5f6;
+        }
+
+        .object-name {
+            color: #64b5f6;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .object-desc {
+            color: #90caf9;
+            font-size: 13px;
+        }
+
+        .purchase-price {
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .navigation-panel {
+            background: #1a1f3a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #2a5298;
+            width: 250px;
+        }
+
+        .navigation-panel h3 {
+            color: #64b5f6;
+            margin-bottom: 15px;
+        }
+
+        .nav-button {
+            width: 100%;
+            padding: 12px;
+            background: #141829;
+            border: 2px solid #2a5298;
+            color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: 0.3s;
+            text-align: left;
+        }
+
+        .nav-button:hover {
+            background: #2a5298;
+            border-color: #64b5f6;
+            color: #64b5f6;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #1a1f3a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #2a5298;
+        }
+
+        .sidebar h3 {
+            color: #64b5f6;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .inventory-item {
+            background: #141829;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .inventory-item-name {
+            color: #4caf50;
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 13px;
+        }
+
+        .inventory-item-desc {
+            color: #81c784;
+            font-size: 11px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1f3a;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            border: 2px solid #2a5298;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #64b5f6;
+            font-size: 28px;
+            cursor: pointer;
+            width: auto;
+            padding: 0;
+            margin: 0;
+        }
+
+        .modal-close:hover {
+            color: #ff5252;
+        }
+
+        .modal h2 {
+            color: #64b5f6;
+            margin-bottom: 15px;
+            padding-right: 30px;
+        }
+
+        .modal p {
+            color: #b0bec5;
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-success {
+            flex: 1;
+            padding: 12px;
+            background: #1b5e20;
+            border: 2px solid #4caf50;
+            color: #4caf50;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .btn-success:hover {
+            background: #2e7d32;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            background: #3e2c27;
+            border: 2px solid #a1887f;
+            color: #a1887f;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .btn-cancel:hover {
+            background: #5d4037;
+        }
+
+        .no-items {
+            color: #90caf9;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="login-container active">
+        <div class="login-box">
+            <h2>Open World</h2>
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+                <button class="tab-btn" onclick="switchTab('register')">Register</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="login-form" class="form-group active">
+                <label>Username:</label>
+                <input type="text" id="login-username" placeholder="Enter username">
+                <label>Password:</label>
+                <input type="password" id="login-password" placeholder="Enter password">
+                <button onclick="loginPlayer()">Login</button>
+                <div id="login-message" class="message"></div>
+            </div>
+
+            <!-- REGISTER FORM -->
+            <div id="register-form" class="form-group">
+                <label>Username:</label>
+                <input type="text" id="register-username" placeholder="Choose username (3+ chars)">
+                <label>Password:</label>
+                <input type="password" id="register-password" placeholder="Choose password (4+ chars)">
+                <button onclick="registerPlayer()">Register</button>
+                <div id="register-message" class="message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="game-container">
+        <div class="game-header">
+            <div class="player-info">
+                <div>
+                    <span>Player:</span>
+                    <span id="player-name" style="color: #64b5f6; font-weight: bold;"></span>
+                </div>
+                <div>
+                    <span>Gold:</span>
+                    <span class="gold-amount" id="gold-balance">0</span>
+                </div>
+            </div>
+            <button class="logout-btn" onclick="logoutPlayer()">Logout</button>
+        </div>
+
+        <div class="game-content">
+            <div class="location-panel">
+                <h2 id="location-name">Loading...</h2>
+                <div class="location-description" id="location-desc"></div>
+                
+                <div class="objects-list">
+                    <h3>Objects in this location:</h3>
+                    <div id="objects-container">
+                        <p class="no-items">No objects here</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="navigation-panel">
+                <h3>Navigation</h3>
+                <div id="exits-container">
+                    <p class="no-items">No exits</p>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <h3>Inventory</h3>
+                <div id="inventory-container">
+                    <p class="no-items">Empty</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PURCHASE MODAL -->
+    <div id="purchase-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closePurchaseModal()">&times;</button>
+            <h2 id="modal-item-name"></h2>
+            <p id="modal-item-desc"></p>
+            <p>Price: <span class="gold-amount" id="modal-item-price">0</span> gold</p>
+            <p id="modal-balance-check"></p>
+            <div class="modal-buttons">
+                <button class="btn-success" id="confirm-purchase" onclick="confirmPurchase()">Purchase</button>
+                <button class="btn-cancel" onclick="closePurchaseModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/openworld/api/player.php';
+        let currentPlayer = null;
+        let currentPlace = null;
+        let pendingPurchaseObject = null;
+
+        function switchTab(tab) {
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update forms
+            document.querySelectorAll('.form-group').forEach(form => form.classList.remove('active'));
+            if (tab === 'login') {
+                document.getElementById('login-form').classList.add('active');
+            } else {
+                document.getElementById('register-form').classList.add('active');
+            }
+        }
+
+        async function registerPlayer() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const messageEl = document.getElementById('register-message');
+
+            if (!username || !password) {
+                showMessage(messageEl, 'Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'register_player',
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(messageEl, 'Registered! You can now login.', 'success');
+                    setTimeout(() => {
+                        document.getElementById('register-username').value = '';
+                        document.getElementById('register-password').value = '';
+                        switchTab('login');
+                    }, 1500);
+                } else {
+                    showMessage(messageEl, data.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showMessage(messageEl, 'Connection error', 'error');
+            }
+        }
+
+        async function loginPlayer() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const messageEl = document.getElementById('login-message');
+
+            if (!username || !password) {
+                showMessage(messageEl, 'Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login_player',
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentPlayer = data;
+                    enterGame();
+                } else {
+                    showMessage(messageEl, data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showMessage(messageEl, 'Connection error', 'error');
+            }
+        }
+
+        function enterGame() {
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            document.getElementById('player-name').textContent = currentPlayer.username;
+            document.getElementById('gold-balance').textContent = currentPlayer.gold;
+
+            // Start in first world/place - for now, just load inventory
+            loadPlayerInventory();
+        }
+
+        async function loadPlayerInventory() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get_player_inventory',
+                        player_id: currentPlayer.player_id
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const container = document.getElementById('inventory-container');
+                    if (data.items.length === 0) {
+                        container.innerHTML = '<p class="no-items">Empty</p>';
+                    } else {
+                        container.innerHTML = data.items.map(item => `
+                            <div class="inventory-item">
+                                <div class="inventory-item-name">${escapeHtml(item.name)}</div>
+                                <div class="inventory-item-desc">${escapeHtml(item.description || 'No description')}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load inventory:', error);
+            }
+        }
+
+        function logoutPlayer() {
+            currentPlayer = null;
+            document.getElementById('login-screen').classList.add('active');
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+        }
+
+        function showMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `message ${type}`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function openPurchaseModal(objectId, name, description, price) {
+            pendingPurchaseObject = objectId;
+            document.getElementById('modal-item-name').textContent = name;
+            document.getElementById('modal-item-desc').textContent = description || 'No description';
+            document.getElementById('modal-item-price').textContent = price;
+
+            const balanceCheck = document.getElementById('modal-balance-check');
+            if (currentPlayer.gold >= price) {
+                balanceCheck.textContent = `You have ${currentPlayer.gold} gold.`;
+                balanceCheck.style.color = '#4caf50';
+                document.getElementById('confirm-purchase').disabled = false;
+            } else {
+                balanceCheck.textContent = `You need ${price - currentPlayer.gold} more gold.`;
+                balanceCheck.style.color = '#ff5252';
+                document.getElementById('confirm-purchase').disabled = true;
+            }
+
+            document.getElementById('purchase-modal').classList.add('active');
+        }
+
+        function closePurchaseModal() {
+            document.getElementById('purchase-modal').classList.remove('active');
+            pendingPurchaseObject = null;
+        }
+
+        async function confirmPurchase() {
+            if (!pendingPurchaseObject) return;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'purchase_object',
+                        player_id: currentPlayer.player_id,
+                        object_id: pendingPurchaseObject
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    currentPlayer.gold = data.new_balance;
+                    document.getElementById('gold-balance').textContent = data.new_balance;
+                    loadPlayerInventory();
+                    closePurchaseModal();
+                    alert('Purchase successful! Item added to inventory.');
+                } else {
+                    alert('Purchase failed: ' + data.message);
+                }
+            } catch (error) {
+                alert('Connection error');
+            }
+        }
+    </script>
+</body>
+</html>
