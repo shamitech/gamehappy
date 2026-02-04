@@ -1087,10 +1087,17 @@ function ensureQuestTables($pdo) {
                     current_place_id INT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (current_place_id) REFERENCES ow_places(id) ON DELETE SET NULL,
                     INDEX (username)
                 )
             ");
+            
+            // Add foreign key constraint if ow_places exists and constraint doesn't exist
+            try {
+                $pdo->query("SELECT 1 FROM ow_places LIMIT 1");
+                $pdo->exec("ALTER TABLE ow_players ADD FOREIGN KEY (current_place_id) REFERENCES ow_places(id) ON DELETE SET NULL");
+            } catch (Exception $e) {
+                // ow_places doesn't exist yet or constraint already exists, that's OK
+            }
             
             $pdo->exec("
                 CREATE TABLE IF NOT EXISTS ow_quests (

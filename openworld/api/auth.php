@@ -43,25 +43,16 @@ switch ($action) {
 
 function login() {
     $data = json_decode(file_get_contents('php://input'), true);
-    
     $username = $data['username'] ?? null;
     $password = $data['password'] ?? null;
     
-    // Simple hardcoded admin for Phase 1
     if ($username === 'admin' && $password === 'admin123') {
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_username'] = 'admin';
-        
-        echo json_encode([
-            'success' => true,
-            'message' => 'Logged in successfully'
-        ]);
+        echo json_encode(['success' => true, 'message' => 'Logged in successfully']);
     } else {
         http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Invalid credentials'
-        ]);
+        echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
     }
 }
 
@@ -72,17 +63,9 @@ function logout() {
 
 function checkAuth() {
     if ($_SESSION['admin_logged_in'] ?? false) {
-        echo json_encode([
-            'success' => true,
-            'authenticated' => true,
-            'username' => $_SESSION['admin_username'] ?? 'admin'
-        ]);
+        echo json_encode(['success' => true, 'authenticated' => true, 'username' => $_SESSION['admin_username'] ?? 'admin']);
     } else {
-        echo json_encode([
-            'success' => false,
-            'authenticated' => false,
-            'message' => 'Not authenticated'
-        ]);
+        echo json_encode(['success' => false, 'authenticated' => false, 'message' => 'Not authenticated']);
     }
 }
 ?>

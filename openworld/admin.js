@@ -1,5 +1,5 @@
 // Admin Dashboard - Hierarchical Navigation
-const API_URL = '/gamehappy.app/openworld/api/admin.php';
+const API_URL = './api/admin.php';
 
 // Navigation state
 let navState = {
@@ -26,7 +26,7 @@ window.addEventListener('load', () => {
 
 async function checkAuth() {
     try {
-        const response = await fetch('/gamehappy.app/openworld/api/auth.php?action=checkAuth');
+        const response = await fetch('./api/auth.php?action=checkAuth');
         const data = await response.json();
         
         if (data.authenticated) {
@@ -55,7 +55,7 @@ async function performLogin() {
 
     try {
         console.log('[performLogin] Attempting login with username:', username);
-        const response = await fetch('/gamehappy.app/openworld/api/auth.php', {
+        const response = await fetch('./api/auth.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -83,7 +83,7 @@ async function performLogin() {
 }
 
 function logout() {
-    fetch('/gamehappy.app/openworld/api/auth.php?action=logout').then(() => {
+    fetch('./api/auth.php?action=logout').then(() => {
         document.getElementById('login-screen').classList.add('visible');
         document.getElementById('dashboard').style.display = 'none';
     });
