@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameHappy Admin Panel</title>
+    <link rel="stylesheet" href="css/style.css?v=20260105">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            background: var(--dark-bg);
+            color: var(--text-light);
+        }
+
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+        }
+
+        .login-box {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid var(--primary-gold);
+            border-radius: 8px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--primary-gold);
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--primary-gold);
+            border-radius: 4px;
+            color: var(--text-light);
+            font-family: 'Raleway', sans-serif;
+        }
+
+        .login-form input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .login-form button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-gold);
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Raleway', sans-serif;
+            transition: opacity 0.3s;
+        }
+
+        .login-form button:hover {
+            opacity: 0.8;
+        }
+
+        .login-error {
+            color: #ff6b6b;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .admin-dashboard {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+            padding: 20px;
+            display: none;
+        }
+
+        .admin-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary-gold);
+        }
+
+        .admin-header h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--primary-gold);
+            font-size: 2em;
+        }
+
+        .logout-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            opacity: 0.8;
+        }
+
+        #admin-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            min-height: calc(100vh - 150px);
+        }
+
+        /* LEFT COLUMN - ACTIVE GAMES */
+        .column-left, .column-right {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            color: var(--primary-gold);
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-gold);
+        }
+
+        .games-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .game-item {
+            background: rgba(212, 175, 55, 0.1);
+            border: 2px solid var(--primary-gold);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .game-item:hover {
+            background: rgba(212, 175, 55, 0.2);
+            transform: translateX(5px);
+        }
+
+        .game-item.active {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: #ffd700;
+        }
+
+        .game-code {
+            font-family: 'Cinzel', serif;
+            font-size: 16px;
+            color: var(--primary-gold);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .game-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 3px 0;
+        }
+
+        /* MONITOR VIEW */
+        .monitor-view {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .monitor-view.active {
+            display: flex;
+        }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+        }
+
+        .monitor-header h3 {
+            color: var(--primary-gold);
+            margin: 0;
+        }
+
+        .back-btn {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .back-btn:hover {
+            opacity: 0.8;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .player-mini-screen {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--primary-gold);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            overflow: hidden;
+        }
+
+        .mini-screen-header {
+            background: rgba(212, 175, 55, 0.2);
+            padding: 10px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .mini-player-name {
+            font-family: 'Cinzel', serif;
+            color: var(--primary-gold);
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .mini-player-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin: 2px 0;
+        }
+
+        .mini-screen-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* RIGHT COLUMN - GAME HISTORY */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .history-item:hover {
+            background: rgba(212, 175, 55, 0.2);
+            transform: translateX(5px);
+        }
+
+        .history-item.active {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: #ffd700;
+        }
+
+        .history-code {
+            font-family: 'Cinzel', serif;
+            font-size: 14px;
+            color: var(--primary-gold);
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .history-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* REPLAY VIEW */
+        .replay-view {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .replay-view.active {
+            display: flex;
+        }
+
+        .replay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+        }
+
+        .replay-header h3 {
+            color: var(--primary-gold);
+            margin: 0;
+        }
+
+        .phase-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .phase-nav button {
+            background: var(--primary-gold);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .phase-nav button:hover:not(:disabled) {
+            opacity: 0.8;
+        }
+
+        .phase-nav button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .phase-display {
+            text-align: center;
+            color: var(--primary-gold);
+            font-weight: bold;
+            min-width: 150px;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .column-header-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .column-header-action .section-title {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+    </style>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-box">
+            <h1>🎮 Admin Panel</h1>
+            <form class="login-form" id="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <div class="login-error" id="login-error"></div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="admin-dashboard">
+        <div class="admin-container">
+            <div class="admin-header">
+                <h1>📊 Admin Panel</h1>
+                <button class="logout-btn" id="logout-btn">Logout</button>
+            </div>
+
+            <div id="admin-content">
+                <!-- LEFT COLUMN: ACTIVE GAMES -->
+                <div class="column-left">
+                    <div class="column-header-action">
+                        <h2 class="section-title">🎮 Active Games</h2>
+                    </div>
+
+                    <!-- Games List View -->
+                    <div class="games-list" id="games-list">
+                        <div class="empty-message">Loading games...</div>
+                    </div>
+
+                    <!-- Monitor View -->
+                    <div class="monitor-view" id="monitor-view">
+                        <div class="monitor-header">
+                            <h3>Monitoring: <span id="monitor-code">----</span></h3>
+                            <button class="back-btn" id="back-from-monitor">← Back</button>
+                        </div>
+                        <div class="players-grid" id="monitor-players-grid">
+                            <div class="empty-message">Waiting for player data...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: GAME HISTORY -->
+                <div class="column-right">
+                    <div class="column-header-action">
+                        <h2 class="section-title">📊 Game History</h2>
+                    </div>
+
+                    <!-- History List View -->
+                    <div class="history-list" id="history-list">
+                        <div class="empty-message">Loading history...</div>
+                    </div>
+
+                    <!-- Replay View -->
+                    <div class="replay-view" id="replay-view">
+                        <div class="replay-header">
+                            <h3>Replay: <span id="replay-code">----</span></h3>
+                            <button class="back-btn" id="back-from-replay">← Back</button>
+                        </div>
+                        <div class="phase-nav">
+                            <button id="btn-prev-phase" disabled>← Previous</button>
+                            <div class="phase-display" id="phase-display">Phase 1</div>
+                            <button id="btn-next-phase" disabled>Next →</button>
+                        </div>
+                        <div class="players-grid" id="replay-players-grid">
+                            <div class="empty-message">Loading replay...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AdminPanel {
+            constructor() {
+                this.isAuthenticated = false;
+                this.socket = null;
+                this.activeGames = {};
+                this.gameHistory = [];
+                this.currentMonitorGame = null;
+                this.currentReplayGame = null;
+                this.currentReplayPhase = 0;
+                this.playerScreens = {};
+                
+                this.setupEventListeners();
+                this.attemptAutoLogin();
+            }
+
+            setupEventListeners() {
+                document.getElementById('login-form').addEventListener('submit', (e) => this.handleLogin(e));
+                document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+                document.getElementById('back-from-monitor').addEventListener('click', () => this.backFromMonitor());
+                document.getElementById('back-from-replay').addEventListener('click', () => this.backFromReplay());
+                document.getElementById('btn-prev-phase').addEventListener('click', () => this.previousPhase());
+                document.getElementById('btn-next-phase').addEventListener('click', () => this.nextPhase());
+            }
+
+            attemptAutoLogin() {
+                const token = localStorage.getItem('adminToken');
+                if (token) {
+                    this.isAuthenticated = true;
+                    this.connectWebSocket();
+                    setTimeout(() => this.showDashboard(), 500);
+                }
+            }
+
+            handleLogin(e) {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const errorEl = document.getElementById('login-error');
+
+                if (username === 'admin' && password === 'admin') {
+                    errorEl.style.display = 'none';
+                    this.isAuthenticated = true;
+                    localStorage.setItem('adminToken', 'admin-' + Date.now());
+                    this.connectWebSocket();
+                    setTimeout(() => this.showDashboard(), 500);
+                } else {
+                    errorEl.textContent = 'Invalid username or password';
+                    errorEl.style.display = 'block';
+                }
+            }
+
+            logout() {
+                this.isAuthenticated = false;
+                localStorage.removeItem('adminToken');
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('admin-dashboard').style.display = 'none';
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
+            }
+
+            showDashboard() {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'block';
+                this.loadGameHistory();
+                this.startRefreshingGames();
+            }
+
+            connectWebSocket() {
+                this.socket = io('https://gamehappy.app:8443', {
+                    path: '/websocket',
+                    query: { adminPanel: true }
+                });
+
+                this.socket.on('connect', () => {
+                    console.log('[ADMIN] Connected to WebSocket');
+                });
+
+                this.socket.on('games-list', (data) => {
+                    this.activeGames = data;
+                    this.renderGamesList();
+                });
+
+                this.socket.on('player-state-update', (data) => {
+                    if (data.gameCode === this.currentMonitorGame) {
+                        this.playerScreens[data.playerToken] = data;
+                        this.renderMonitorPlayers();
+                    }
+                });
+
+                this.socket.on('disconnect', () => {
+                    console.log('[ADMIN] Disconnected from WebSocket');
+                });
+            }
+
+            startRefreshingGames() {
+                if (this.socket && this.isAuthenticated) {
+                    this.socket.emit('admin-get-games', {}, (games) => {
+                        this.activeGames = games || {};
+                        this.renderGamesList();
+                    });
+                    setTimeout(() => this.startRefreshingGames(), 2000);
+                }
+            }
+
+            renderGamesList() {
+                const gamesList = document.getElementById('games-list');
+                
+                if (Object.keys(this.activeGames).length === 0) {
+                    gamesList.innerHTML = '<div class="empty-message">No active games</div>';
+                    return;
+                }
+
+                gamesList.innerHTML = Object.entries(this.activeGames).map(([code, game]) => `
+                    <div class="game-item ${this.currentMonitorGame === code ? 'active' : ''}" onclick="adminPanel.monitorGame('${code}')">
+                        <div class="game-code">${code}</div>
+                        <div class="game-meta">👥 Players: ${game.players ? game.players.length : 0}</div>
+                        <div class="game-meta">📍 Phase: ${game.phase || 'Lobby'}</div>
+                        <div class="game-meta">Status: ${game.status || 'Unknown'}</div>
+                    </div>
+                `).join('');
+            }
+
+            monitorGame(gameCode) {
+                this.currentMonitorGame = gameCode;
+                this.playerScreens = {};
+                document.getElementById('games-list').style.display = 'none';
+                document.getElementById('monitor-view').classList.add('active');
+                document.getElementById('monitor-code').textContent = gameCode;
+                
+                if (this.socket) {
+                    this.socket.emit('admin-watch-game', { gameCode });
+                }
+                
+                this.renderGamesList();
+            }
+
+            backFromMonitor() {
+                this.currentMonitorGame = null;
+                this.playerScreens = {};
+                document.getElementById('monitor-view').classList.remove('active');
+                document.getElementById('games-list').style.display = 'flex';
+                
+                if (this.socket) {
+                    this.socket.emit('admin-stop-watching');
+                }
+            }
+
+            renderMonitorPlayers() {
+                const grid = document.getElementById('monitor-players-grid');
+                const players = Object.values(this.playerScreens);
+
+                if (players.length === 0) {
+                    grid.innerHTML = '<div class="empty-message" style="grid-column: 1/-1;">Waiting for player data...</div>';
+                    return;
+                }
+
+                grid.innerHTML = players.map(player => `
+                    <div class="player-mini-screen">
+                        <div class="mini-screen-header">
+                            <div class="mini-player-name">${player.playerName || 'Unknown'}</div>
+                            <div class="mini-player-meta">🎭 ${player.role || 'Unknown'}</div>
+                            <div class="mini-player-meta">📍 ${player.phase || 'Unknown'}</div>
+                            <div class="mini-player-meta">❤️ ${player.alive !== false ? 'ALIVE' : 'ELIMINATED'}</div>
+                        </div>
+                        <div class="mini-screen-content">
+                            ${this.renderGameScreen(player)}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            renderGameScreen(playerData) {
+                const screen = playerData.screen || 'unknown';
+                const phase = playerData.phase || 'unknown';
+                const role = playerData.role || 'Unknown';
+                
+                let html = '';
+
+                // SCREEN-BASED ROUTING (Primary)
+                if (screen === 'role-screen' || screen === 'player-role') {
+                    html = this.renderRoleScreen(playerData);
+                } else if (screen === 'lobby-screen') {
+                    html = this.renderLobbyScreen(playerData);
+                } else if (phase.includes('phase-1') || phase === 'night') {
+                    html = this.renderPhase1Screen(playerData);
+                } else if (phase.includes('phase-2') || phase === 'news') {
+                    html = this.renderPhase2Screen(playerData);
+                } else if (phase.includes('phase-3') || phase === 'discussion') {
+                    html = this.renderPhase3Screen(playerData);
+                } else if (phase.includes('phase-4') || phase === 'voting') {
+                    html = this.renderPhase4Screen(playerData);
+                } else if (phase.includes('phase-5') || phase === 'trial') {
+                    html = this.renderPhase5Screen(playerData);
+                } else {
+                    html = `<p style="color: #888; text-align: center; padding: 20px;">Waiting for phase...</p>`;
+                }
+
+                return html;
+            }
+
+            renderRoleScreen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                
+                const roleEmojis = {
+                    'Syndicate': '🔴',
+                    'Detective': '🔍',
+                    'Body Guard': '🛡️',
+                    'Eye Witness': '👁️',
+                    'Bystander': '👤'
+                };
+                
+                const descriptions = {
+                    'Syndicate': 'You are part of the secret criminal organization. Your goal is to eliminate all innocent citizens without being discovered.',
+                    'Detective': 'You are a skilled investigator working to expose the Syndicate. Use your abilities wisely to uncover the truth.',
+                    'Bystander': 'You are an ordinary citizen caught in the crossfire. Stay vigilant and help identify the Syndicate through observation and deduction.',
+                    'Eye Witness': 'You witnessed a crime and caught a glimpse of the underworld. You see who commits the assassination each round.',
+                    'Body Guard': 'You are a professional protector. Each night, you can choose one player to shield from harm.'
+                };
+                
+                const abilities = {
+                    'Syndicate': [
+                        'Vote each night to select a target',
+                        'Know the identity of your fellow Syndicate members',
+                        'Blend in during the day and mislead investigations'
+                    ],
+                    'Detective': [
+                        'Receive a secret keyword each round',
+                        'Share your findings during day discussions',
+                        'Lead the town to vote out Syndicate members'
+                    ],
+                    'Bystander': [
+                        'Vote during the day to eliminate suspected Syndicate',
+                        'Observe player behavior and discussions',
+                        'Form alliances with other players'
+                    ],
+                    'Eye Witness': [
+                        'Learn the assassin\'s identity each round',
+                        'Receive a keyword to signal the Detective',
+                        'Vote during the day like other citizens'
+                    ],
+                    'Body Guard': [
+                        'Protect one player each night from elimination',
+                        'Cannot protect yourself',
+                        'Cannot protect the same player two nights in a row'
+                    ]
+                };
+                
+                const winConditions = {
+                    'Syndicate': 'Eliminate enough players until Syndicate equals or outnumbers the Town',
+                    'Detective': 'Survive and help eliminate all Syndicate members',
+                    'Bystander': 'Survive and help eliminate all Syndicate members',
+                    'Eye Witness': 'Survive and help eliminate all Syndicate members',
+                    'Body Guard': 'Survive and help eliminate all Syndicate members'
+                };
+                
+                const roleClasses = {
+                    'Syndicate': 'syndicate',
+                    'Detective': 'detective',
+                    'Bystander': 'bystander',
+                    'Eye Witness': 'eye-witness',
+                    'Body Guard': 'body-guard'
+                };
+                
+                const emoji = roleEmojis[role] || '❓';
+                const desc = descriptions[role] || 'Role description unavailable';
+                const roleAbilities = abilities[role] || [];
+                const winCond = winConditions[role] || 'Unknown';
+                const roleClass = roleClasses[role] || '';
+                
+                let html = `<div style="padding: 10px; display: flex; flex-direction: column; height: 100%; overflow: hidden;">`;
+                
+                // Role reveal header - matching actual game style
+                html += `<div style="text-align: center; margin-bottom: 15px;">
+                    <div style="font-size: 8px; color: #999; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">Your Secret Role</div>
+                    <div style="font-size: 18px; font-weight: bold; font-family: 'Cinzel', serif; letter-spacing: 2px; color: var(--primary-gold);">${emoji} ${role}</div>
+                </div>`;
+                
+                // Role card
+                html += `<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid rgba(212,175,55,0.2); flex: 1; overflow-y: auto;">`;
+                
+                // Role description
+                html += `<div style="font-size: 9px; color: #ccc; line-height: 1.4; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(212,175,55,0.2);">
+                    ${desc}
+                </div>`;
+                
+                // Abilities section
+                html += `<div style="margin-bottom: 10px;">
+                    <div style="font-size: 8px; font-weight: bold; color: var(--primary-gold); font-family: 'Cinzel', serif; margin-bottom: 4px; letter-spacing: 1px;">YOUR ABILITIES</div>
+                    <ul style="margin: 0; padding: 0; list-style: none; font-size: 8px; color: #bbb;">`;
+                roleAbilities.forEach(ability => {
+                    html += `<li style="margin-bottom: 3px; padding-left: 12px; position: relative;">
+                        <span style="position: absolute; left: 0; color: var(--primary-gold); font-size: 5px;">◆</span>
+                        ${ability}
+                    </li>`;
+                });
+                html += `</ul>
+                </div>`;
+                
+                // Win condition
+                html += `<div style="background: rgba(212,175,55,0.1); padding: 8px; border-radius: 5px; border-left: 2px solid var(--primary-gold); margin-bottom: 10px;">
+                    <div style="font-size: 8px; font-weight: bold; color: var(--primary-gold); font-family: 'Cinzel', serif; margin-bottom: 3px; letter-spacing: 1px;">WIN CONDITION</div>
+                    <div style="font-size: 8px; color: #bbb; line-height: 1.3;">${winCond}</div>
+                </div>`;
+                
+                // Teammates section for Syndicate
+                if (role === 'Syndicate' && gs.syndicate && gs.syndicate.length > 1) {
+                    html += `<div style="margin-bottom: 8px;">
+                        <div style="font-size: 8px; font-weight: bold; color: var(--primary-gold); font-family: 'Cinzel', serif; margin-bottom: 3px; letter-spacing: 1px;">YOUR FELLOW MEMBERS</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 3px;">`;
+                    gs.syndicate.filter(s => s.name !== playerData.playerName).forEach(teammate => {
+                        html += `<div style="background: rgba(139,0,0,0.3); border: 1px solid rgba(255,107,107,0.5); padding: 3px 8px; border-radius: 12px; font-size: 7px; color: #ff6b6b;">${teammate.name}</div>`;
+                    });
+                    html += `</div>
+                    </div>`;
+                }
+                
+                html += `</div>`;
+                
+                // Ready section - matching actual game style
+                html += `<div style="text-align: center; padding-top: 8px; border-top: 1px solid rgba(212,175,55,0.2);">
+                    <div style="font-size: 7px; color: var(--primary-gold); margin-bottom: 5px; font-weight: bold;">⚠️ MEMORIZE YOUR ROLE</div>
+                    <div style="background: rgba(212,175,55,0.2); padding: 8px; border-radius: 4px; border: 1px solid var(--primary-gold); font-size: 10px; font-weight: bold; color: var(--primary-gold); margin-bottom: 4px; cursor: pointer;">
+                        I'M READY
+                    </div>
+                    <div style="font-size: 7px; color: #999;">
+                        ${gs.readyCount || 0} / ${gs.totalPlayers || 0} ready
+                    </div>
+                </div>
+                </div>`;
+                
+                return html;
+            }
+
+            renderLobbyScreen(playerData) {
+                const gs = playerData.gameState || {};
+                const gameCode = gs.gameCode || '----';
+                const playerCount = (gs.players && gs.players.length) || 0;
+                
+                let html = `<div style="padding: 0 5px; display: flex; flex-direction: column; height: 100%;">`;
+                
+                // Game code
+                html += `<div style="background: rgba(212,175,55,0.2); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-size: 8px; color: var(--text-muted); margin-bottom: 2px;">Game Code</div>
+                    <div style="font-size: 14px; font-weight: bold; color: var(--primary-gold);">${gameCode}</div>
+                </div>`;
+                
+                // Player list
+                html += `<div style="margin-bottom: 10px;">
+                    <div style="font-size: 9px; font-weight: bold; color: var(--primary-gold); margin-bottom: 4px;">Players (${playerCount}/5)</div>
+                    <ul style="margin: 0; padding-left: 12px; font-size: 9px; color: #bbb;">`;
+                if (gs.players) {
+                    gs.players.forEach(p => {
+                        html += `<li>${p.name}</li>`;
+                    });
+                }
+                html += `</ul>
+                </div>`;
+                
+                // Waiting message
+                html += `<div style="border-top: 1px solid rgba(212,175,55,0.2); padding-top: 8px; margin-top: auto; text-align: center; font-size: 9px; color: var(--text-muted);">
+                    Waiting for host to start...
+                </div>
+                </div>`;
+                
+                return html;
+            }
+
+            renderPhase1Screen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                const roleEmojis = { 'Syndicate': '🔴', 'Detective': '🔍', 'Body Guard': '🛡️', 'Eye Witness': '👁️', 'Bystander': '👤' };
+                const emoji = roleEmojis[role] || '❓';
+
+                let html = `<div style="padding: 0 5px;">`;
+                html += `<div style="background: rgba(212,175,55,0.15); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-weight: bold; color: var(--primary-gold);">${emoji} ${role}</div>
+                </div>`;
+
+                if (role === 'Syndicate') {
+                    html += `<div style="font-size: 11px; color: #aaa; margin-bottom: 8px;"><strong>Night Phase - Select Target</strong></div>`;
+                    html += `<div style="display: grid; gap: 4px;">`;
+                    if (gs.players) {
+                        gs.players.filter(p => p.alive).forEach(p => {
+                            const selected = gs.selectedTarget === p.name;
+                            html += `<div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; font-size: 10px; border-left: 3px solid ${selected ? '#fbbf24' : 'rgba(212,175,55,0.3)'};">${p.name}${selected ? ' ✓' : ''}</div>`;
+                        });
+                    }
+                    html += `</div>`;
+                } else if (role === 'Detective') {
+                    html += `<div style="font-size: 11px; color: #aaa; margin-bottom: 8px;"><strong>🔍 Investigate</strong></div>`;
+                    html += `<div style="display: grid; gap: 4px;">`;
+                    if (gs.players) {
+                        gs.players.filter(p => p.alive).forEach(p => {
+                            const selected = gs.selectedInvestigation === p.name;
+                            html += `<div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; font-size: 10px; border-left: 3px solid ${selected ? '#60a5fa' : 'rgba(96,165,250,0.3)'};">${p.name}${selected ? ' ✓' : ''}</div>`;
+                        });
+                    }
+                    html += `</div>`;
+                } else if (role === 'Body Guard') {
+                    html += `<div style="font-size: 11px; color: #aaa; margin-bottom: 8px;"><strong>🛡️ Protect</strong></div>`;
+                    html += `<div style="display: grid; gap: 4px;">`;
+                    if (gs.players) {
+                        gs.players.filter(p => p.alive).forEach(p => {
+                            const selected = gs.selectedProtection === p.name;
+                            html += `<div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; font-size: 10px; border-left: 3px solid ${selected ? '#60a5fa' : 'rgba(96,165,250,0.3)'};">${p.name}${selected ? ' ✓' : ''}</div>`;
+                        });
+                    }
+                    html += `</div>`;
+                } else if (role === 'Eye Witness') {
+                    html += `<div style="font-size: 11px; color: #aaa; text-align: center; padding: 20px 0;">Observing the night...</div>`;
+                } else {
+                    html += `<div style="font-size: 11px; color: #aaa; text-align: center; padding: 20px 0;">Rest...</div>`;
+                }
+
+                html += `</div>`;
+                return html;
+            }
+
+            renderPhase2Screen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                const roleEmojis = { 'Syndicate': '🔴', 'Detective': '🔍', 'Body Guard': '🛡️', 'Eye Witness': '👁️', 'Bystander': '👤' };
+                const emoji = roleEmojis[role] || '❓';
+
+                let html = `<div style="padding: 0 5px;">`;
+                html += `<div style="background: rgba(212,175,55,0.15); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-weight: bold; color: var(--primary-gold);">${emoji} ${role}</div>
+                </div>`;
+
+                html += `<div style="font-size: 10px; color: var(--primary-gold); margin-bottom: 8px; font-weight: bold;">📰 NEWS REPORT</div>`;
+                
+                if (gs.lastEliminatedPlayer) {
+                    html += `<div style="background: rgba(255,107,107,0.15); padding: 8px; border-radius: 4px; border-left: 2px solid #ff6b6b; margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #ff6b6b;">❌ ${gs.lastEliminatedPlayer} was eliminated</div>
+                    </div>`;
+                } else if (gs.lastSavedPlayer) {
+                    html += `<div style="background: rgba(74,222,128,0.15); padding: 8px; border-radius: 4px; border-left: 2px solid #4ade80; margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #4ade80;">✓ ${gs.lastSavedPlayer} was saved</div>
+                    </div>`;
+                }
+
+                html += `</div>`;
+                return html;
+            }
+
+            renderPhase3Screen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                const roleEmojis = { 'Syndicate': '🔴', 'Detective': '🔍', 'Body Guard': '🛡️', 'Eye Witness': '👁️', 'Bystander': '👤' };
+                const emoji = roleEmojis[role] || '❓';
+
+                let html = `<div style="padding: 0 5px;">`;
+                html += `<div style="background: rgba(248,215,0,0.15); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-weight: bold; color: #ffd700;">${emoji} DISCUSSION</div>
+                </div>`;
+
+                html += `<div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Alive players:</div>`;
+                html += `<div style="display: grid; gap: 3px;">`;
+                if (gs.players) {
+                    gs.players.filter(p => p.alive).forEach(p => {
+                        html += `<div style="padding: 4px; font-size: 10px; background: rgba(0,0,0,0.2); border-radius: 2px;">• ${p.name}</div>`;
+                    });
+                }
+                html += `</div>`;
+                html += `</div>`;
+                return html;
+            }
+
+            renderPhase4Screen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                const roleEmojis = { 'Syndicate': '🔴', 'Detective': '🔍', 'Body Guard': '🛡️', 'Eye Witness': '👁️', 'Bystander': '👤' };
+                const emoji = roleEmojis[role] || '❓';
+
+                let html = `<div style="padding: 0 5px;">`;
+                html += `<div style="background: rgba(74,222,128,0.15); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-weight: bold; color: #4ade80;">${emoji} VOTING</div>
+                </div>`;
+
+                html += `<div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Vote for who to eliminate:</div>`;
+                html += `<div style="display: grid; gap: 4px;">`;
+                if (gs.players) {
+                    gs.players.filter(p => p.alive).forEach(p => {
+                        const voted = gs.playerVote === p.name;
+                        html += `<div style="padding: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; font-size: 10px; border-left: 3px solid ${voted ? '#4ade80' : 'rgba(74,222,128,0.3)'};">${p.name}${voted ? ' ✓' : ''}</div>`;
+                    });
+                }
+                html += `</div>`;
+                html += `</div>`;
+                return html;
+            }
+
+            renderPhase5Screen(playerData) {
+                const role = playerData.role || 'Unknown';
+                const gs = playerData.gameState || {};
+                const roleEmojis = { 'Syndicate': '🔴', 'Detective': '🔍', 'Body Guard': '🛡️', 'Eye Witness': '👁️', 'Bystander': '👤' };
+                const emoji = roleEmojis[role] || '❓';
+
+                let html = `<div style="padding: 0 5px;">`;
+                html += `<div style="background: rgba(239,68,68,0.15); padding: 8px; border-radius: 4px; margin-bottom: 10px; text-align: center;">
+                    <div style="font-weight: bold; color: #ef4444;">${emoji} TRIAL</div>
+                </div>`;
+
+                if (gs.trialTarget) {
+                    html += `<div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">Voting on:</div>`;
+                    html += `<div style="background: rgba(239,68,68,0.2); padding: 8px; border-radius: 4px; border-left: 2px solid #ef4444; margin-bottom: 8px;">
+                        <div style="font-size: 11px; font-weight: bold; color: #ef4444;">${gs.trialTarget}</div>
+                    </div>`;
+                    
+                    html += `<div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">Cast your verdict:</div>`;
+                    html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                        <div style="padding: 6px; background: rgba(74,222,128,0.2); border-radius: 3px; border-left: 2px solid #4ade80; text-align: center; font-size: 10px; color: #4ade80; ${gs.verdictVote === 'guilty' ? 'opacity: 1;' : 'opacity: 0.5;'}">Guilty${gs.verdictVote === 'guilty' ? ' ✓' : ''}</div>
+                        <div style="padding: 6px; background: rgba(96,165,250,0.2); border-radius: 3px; border-left: 2px solid #60a5fa; text-align: center; font-size: 10px; color: #60a5fa; ${gs.verdictVote === 'not-guilty' ? 'opacity: 1;' : 'opacity: 0.5;'}">Not Guilty${gs.verdictVote === 'not-guilty' ? ' ✓' : ''}</div>
+                    </div>`;
+                }
+
+                html += `</div>`;
+                return html;
+            }
+
+            loadGameHistory() {
+                fetch('/api/game-history')
+                    .then(r => r.json())
+                    .then(data => {
+                        this.gameHistory = data.games || [];
+                        this.renderHistoryList();
+                    })
+                    .catch(err => {
+                        console.error('[ADMIN] Error loading history:', err);
+                        document.getElementById('history-list').innerHTML = '<div class="empty-message">Error loading history</div>';
+                    });
+            }
+
+            renderHistoryList() {
+                const historyList = document.getElementById('history-list');
+
+                if (this.gameHistory.length === 0) {
+                    historyList.innerHTML = '<div class="empty-message">No completed games</div>';
+                    return;
+                }
+
+                historyList.innerHTML = this.gameHistory.map(game => `
+                    <div class="history-item ${this.currentReplayGame?.id === game.id ? 'active' : ''}" onclick="adminPanel.replayGame('${game.id}')">
+                        <div class="history-code">${game.gameCode}</div>
+                        <div class="history-meta">👥 ${game.playerCount} players</div>
+                        <div class="history-meta">🏆 ${game.winner === 'Innocents' ? '👤 Town' : '🔴 Syndicate'} won</div>
+                        <div class="history-meta">${new Date(game.completedAt).toLocaleDateString()}</div>
+                    </div>
+                `).join('');
+            }
+
+            replayGame(gameId) {
+                const game = this.gameHistory.find(g => g.id === gameId);
+                if (!game) return;
+
+                this.currentReplayGame = game;
+                this.currentReplayPhase = 0;
+                
+                document.getElementById('history-list').style.display = 'none';
+                document.getElementById('replay-view').classList.add('active');
+                document.getElementById('replay-code').textContent = game.gameCode;
+                
+                this.renderHistoryList();
+                this.updateReplayPhaseNavigation();
+                this.renderReplayPlayers();
+            }
+
+            backFromReplay() {
+                this.currentReplayGame = null;
+                this.currentReplayPhase = 0;
+                document.getElementById('replay-view').classList.remove('active');
+                document.getElementById('history-list').style.display = 'flex';
+                this.renderHistoryList();
+            }
+
+            previousPhase() {
+                if (this.currentReplayPhase > 0) {
+                    this.currentReplayPhase--;
+                    this.updateReplayPhaseNavigation();
+                    this.renderReplayPlayers();
+                }
+            }
+
+            nextPhase() {
+                // Max phases would be determined by game data - for now allow incrementing
+                if (this.currentReplayGame && this.currentReplayPhase < 20) {
+                    this.currentReplayPhase++;
+                    this.updateReplayPhaseNavigation();
+                    this.renderReplayPlayers();
+                }
+            }
+
+            updateReplayPhaseNavigation() {
+                const phaseNames = ['Lobby', 'Night 1', 'Day 1', 'Voting 1', 'Trial 1', 'Night 2', 'Day 2', 'Voting 2', 'Trial 2', 'Night 3', 'Day 3', 'Voting 3', 'Trial 3', 'Results'];
+                const phaseName = phaseNames[Math.min(this.currentReplayPhase, phaseNames.length - 1)] || `Phase ${this.currentReplayPhase}`;
+                
+                document.getElementById('phase-display').textContent = phaseName;
+                document.getElementById('btn-prev-phase').disabled = this.currentReplayPhase === 0;
+                document.getElementById('btn-next-phase').disabled = this.currentReplayPhase >= (phaseNames.length - 1);
+            }
+
+            renderReplayPlayers() {
+                const grid = document.getElementById('replay-players-grid');
+
+                if (!this.currentReplayGame) {
+                    grid.innerHTML = '<div class="empty-message" style="grid-column: 1/-1;">No game selected</div>';
+                    return;
+                }
+
+                // For now, show placeholder - real game replay data would come from server
+                grid.innerHTML = `
+                    <div class="empty-message" style="grid-column: 1/-1;">
+                        <p>Game replay at phase ${this.currentReplayPhase}</p>
+                        <p style="font-size: 12px; margin-top: 10px; color: #666;">
+                            This will show what each player saw at this phase
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        const adminPanel = new AdminPanel();
+    </script>
+</body>
+</html>
