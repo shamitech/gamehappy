@@ -34,7 +34,10 @@
         <div class="container">
             <header>
                 <h1>Open World - Admin Dashboard</h1>
-                <button class="btn-logout" onclick="logout()">Logout</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="btn-small" onclick="navigateToWebsocket()" title="Manage websocket server">🔌 Websocket</button>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
             </header>
 
             <!-- BREADCRUMB NAVIGATION -->
@@ -180,6 +183,59 @@
                                     <div>→ Task connection (required)</div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- WEBSOCKET CONTROL VIEW -->
+                <section id="view-websocket" class="view">
+                    <div class="panel">
+                        <div class="section-header">
+                            <h2>🔌 Websocket Server Control</h2>
+                            <button class="btn-add" onclick="checkWebsocketStatus()">🔄 Refresh Status</button>
+                        </div>
+                        
+                        <div id="websocket-status-panel" style="background: #0f1419; padding: 20px; border-radius: 4px; margin-bottom: 20px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <div>
+                                    <p style="color: #aaa; margin-bottom: 8px;">Server Status:</p>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div id="websocket-status-indicator" style="width: 16px; height: 16px; border-radius: 50%; background: #f44336;"></div>
+                                        <span id="websocket-status-text" style="font-size: 16px; color: #fff;">Loading...</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p style="color: #aaa; margin-bottom: 8px;">Process ID (PID):</p>
+                                    <span id="websocket-pid-text" style="font-size: 16px; color: #64b5f6;">--</span>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                                <button class="btn-primary" id="btn-start-websocket" onclick="startWebsocket()" style="flex: 1;">▶ Start Server</button>
+                                <button class="btn-secondary" id="btn-stop-websocket" onclick="stopWebsocket()" style="flex: 1; opacity: 0.5; cursor: not-allowed;" disabled>⏹ Stop Server</button>
+                                <button class="btn-small" id="btn-restart-websocket" onclick="restartWebsocket()" style="flex: 1;">⟳ Restart Server</button>
+                            </div>
+
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn-small" onclick="toggleWebsocketLogs()" style="flex: 1;">📋 View Logs</button>
+                                <button class="btn-small" onclick="clearWebsocketLogs()" style="flex: 1;">🗑️ Clear Logs</button>
+                            </div>
+                        </div>
+
+                        <div id="websocket-logs-panel" style="display: none;">
+                            <h3 style="margin-top: 0;">Server Logs (Last 50 lines)</h3>
+                            <div id="websocket-logs" style="background: #000; border: 1px solid #333; border-radius: 4px; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 400px; overflow-y: auto; color: #0f0;">
+                                <p style="color: #666;">Logs will appear here...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <h3>Connection Info</h3>
+                        <div style="background: #0f1419; padding: 15px; border-radius: 4px;">
+                            <p><strong>Websocket URL:</strong> <code style="background: #1a1a1a; padding: 5px 10px; border-radius: 3px; color: #64b5f6;">wss://gamehappy.app:8443/websocket</code></p>
+                            <p><strong>Status:</strong> <span id="ws-connection-info" style="color: #aaa;">Check status above</span></p>
+                            <p style="color: #999; font-size: 12px; margin-top: 10px;">The websocket server runs on port 8443 and requires Node.js with npm packages installed.</p>
                         </div>
                     </div>
                 </section>

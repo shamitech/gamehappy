@@ -3103,5 +3103,216 @@ function openTaskLinkingModal(taskId, taskName) {
     alert(`Link task: ${taskName}`);
 }
 
+// ===== WEBSOCKET CONTROL =====
+function navigateToWebsocket() {
+    navState = { world_id: null, world_name: null, place_id: null, place_name: null, object_id: null, object_name: null };
+    
+    // Set custom breadcrumb for websocket
+    const breadcrumb = document.getElementById('breadcrumb');
+    breadcrumb.innerHTML = '<a href="#" onclick="navigateToWorlds(); return false;" class="breadcrumb-item">Worlds</a> / <span class="breadcrumb-item active">🔌 Websocket Control</span>';
+    
+    showView('view-websocket');
+    checkWebsocketStatus();
+}
 
+async function checkWebsocketStatus() {
+    try {
+        const response = await fetch('./api/websocket.php?action=status');
+        const data = await response.json();
+        
+        const indicator = document.getElementById('websocket-status-indicator');
+        const statusText = document.getElementById('websocket-status-text');
+        const pidText = document.getElementById('websocket-pid-text');
+        const startBtn = document.getElementById('btn-start-websocket');
+        const stopBtn = document.getElementById('btn-stop-websocket');
+        
+        if (data.running) {
+            indicator.style.background = '#4caf50';
+            statusText.textContent = '✓ Running';
+            statusText.style.color = '#4caf50';
+            pidText.textContent = data.pid || '--';
+            startBtn.disabled = true;
+            startBtn.style.opacity = '0.5';
+            startBtn.style.cursor = 'not-allowed';
+            stopBtn.disabled = false;
+            stopBtn.style.opacity = '1';
+            stopBtn.style.cursor = 'pointer';
+            document.getElementById('ws-connection-info').textContent = 'Connected and active';
+            document.getElementById('ws-connection-info').style.color = '#4caf50';
+        } else {
+            indicator.style.background = '#f44336';
+            statusText.textContent = '✗ Not Running';
+            statusText.style.color = '#f44336';
+            pidText.textContent = '--';
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+            stopBtn.disabled = true;
+            stopBtn.style.opacity = '0.5';
+            stopBtn.style.cursor = 'not-allowed';
+            document.getElementById('ws-connection-info').textContent = 'Server offline';
+            document.getElementById('ws-connection-info').style.color = '#f44336';
+        }
+    } catch (error) {
+        console.error('[checkWebsocketStatus] Error:', error);
+        document.getElementById('websocket-status-text').textContent = '⚠ Error checking status';
+        document.getElementById('websocket-status-indicator').style.background = '#ff9800';
+    }
+}
 
+async function startWebsocket() {
+    const statusText = document.getElementById('websocket-status-text');
+    statusText.textContent = 'Starting...';
+    statusText.style.color = '#ffc107';
+    
+    try {
+        const response = await fetch('./api/websocket.php?action=start', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            setTimeout(() => checkWebsocketStatus(), 2000);
+            showWebsocketNotification('✓ Websocket server started successfully!', 'success');
+        } else {
+            checkWebsocketStatus();
+            showWebsocketNotification('✗ Failed to start: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('[startWebsocket] Error:', error);
+        checkWebsocketStatus();
+        showWebsocketNotification('✗ Error starting server: ' + error.message, 'error');
+    }
+}
+
+async function stopWebsocket() {
+    const statusText = document.getElementById('websocket-status-text');
+    statusText.textContent = 'Stopping...';
+    statusText.style.color = '#ffc107';
+    
+    try {
+        const response = await fetch('./api/websocket.php?action=stop', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            setTimeout(() => checkWebsocketStatus(), 1000);
+            showWebsocketNotification('✓ Websocket server stopped', 'success');
+        } else {
+            checkWebsocketStatus();
+            showWebsocketNotification('✗ Failed to stop: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('[stopWebsocket] Error:', error);
+        checkWebsocketStatus();
+        showWebsocketNotification('✗ Error stopping server: ' + error.message, 'error');
+    }
+}
+
+async function restartWebsocket() {
+    const statusText = document.getElementById('websocket-status-text');
+    statusText.textContent = 'Restarting...';
+    statusText.style.color = '#ffc107';
+    
+    try {
+        const response = await fetch('./api/websocket.php?action=restart', { method: 'POST' });
+        const data = await response.json();
+        
+        if (data.success) {
+            setTimeout(() => checkWebsocketStatus(), 2000);
+            showWebsocketNotification('✓ Websocket server restarted!', 'success');
+        } else {
+            checkWebsocketStatus();
+            showWebsocketNotification('✗ Failed to restart: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('[restartWebsocket] Error:', error);
+        checkWebsocketStatus();
+        showWebsocketNotification('✗ Error restarting server: ' + error.message, 'error');
+    }
+}
+
+async function loadWebsocketLogs() {
+    try {
+        const response = await fetch('./api/websocket.php?action=logs&lines=100');
+        const data = await response.json();
+        
+        const logsDiv = document.getElementById('websocket-logs');
+        if (data.logs && data.logs.length > 0) {
+            logsDiv.innerHTML = data.logs.map(line => {
+                const colored = colorizeLogLine(line);
+                return `<div>${colored}</div>`;
+            }).join('');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        } else {
+            logsDiv.innerHTML = '<p style="color: #666;">No logs available</p>';
+        }
+    } catch (error) {
+        console.error('[loadWebsocketLogs] Error:', error);
+        document.getElementById('websocket-logs').innerHTML = '<p style="color: #f44336;">Error loading logs: ' + error.message + '</p>';
+    }
+}
+
+function colorizeLogLine(line) {
+    // Color-code different log levels
+    if (line.includes('[ERROR]')) {
+        return `<span style="color: #f44336;">${escapeHtml(line)}</span>`;
+    } else if (line.includes('[WARNING]')) {
+        return `<span style="color: #ff9800;">${escapeHtml(line)}</span>`;
+    } else if (line.includes('[INFO]')) {
+        return `<span style="color: #2196f3;">${escapeHtml(line)}</span>`;
+    } else if (line.includes('[SUCCESS]')) {
+        return `<span style="color: #4caf50;">${escapeHtml(line)}</span>`;
+    }
+    return escapeHtml(line);
+}
+
+function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function toggleWebsocketLogs() {
+    const logsPanel = document.getElementById('websocket-logs-panel');
+    if (logsPanel.style.display === 'none') {
+        logsPanel.style.display = 'block';
+        loadWebsocketLogs();
+    } else {
+        logsPanel.style.display = 'none';
+    }
+}
+
+async function clearWebsocketLogs() {
+    if (confirm('Are you sure you want to clear all websocket logs?')) {
+        try {
+            // Note: You may want to implement a PHP endpoint to clear logs
+            // For now, just reload them
+            loadWebsocketLogs();
+            showWebsocketNotification('✓ Logs cleared', 'success');
+        } catch (error) {
+            console.error('[clearWebsocketLogs] Error:', error);
+        }
+    }
+}
+
+function showWebsocketNotification(message, type = 'info') {
+    // Create a temporary notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3'};
+        color: white;
+        border-radius: 4px;
+        z-index: 10000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}

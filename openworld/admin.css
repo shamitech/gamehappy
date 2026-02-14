@@ -1537,3 +1537,78 @@ button {
     align-self: center;
     font-size: 14px;
 }
+
+/* WEBSOCKET CONTROL STYLES */
+#websocket-status-panel {
+    border-left: 4px solid #2196f3 !important;
+}
+
+#websocket-status-indicator {
+    transition: background-color 0.3s ease;
+    box-shadow: 0 0 8px currentColor;
+}
+
+#btn-start-websocket,
+#btn-stop-websocket,
+#btn-restart-websocket {
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+#btn-start-websocket:hover:not(:disabled) {
+    background: #388e3c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+#btn-stop-websocket:hover:not(:disabled) {
+    background: #c62828;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
+#btn-restart-websocket:hover:not(:disabled) {
+    background: #1976d2;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
+}
+
+#websocket-logs {
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+#websocket-logs > div {
+    padding: 2px 0;
+    border-bottom: 1px solid #111;
+}
+
+#websocket-logs > div:last-child {
+    border-bottom: none;
+}
+
+header > div {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Code styling in websocket panel */
+#websocket-status-panel code {
+    background: #1a1a1a !important;
+    color: #64b5f6 !important;
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+    font-family: 'Courier New', monospace !important;
+}
