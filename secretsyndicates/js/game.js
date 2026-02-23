@@ -84,13 +84,16 @@ class Game {
         // Auto-rejoin silently if there's an active session (don't show rejoin screen)
         if (!testToken && !this.isConnected) {
             const sessionData = this.getSessionData();
+            console.log('[AUTO-REJOIN] Session data present:', !!sessionData);
             if (sessionData) {
                 try {
                     const session = JSON.parse(sessionData);
+                    console.log('[AUTO-REJOIN] Parsed session:', session);
                     // Check if session is recent (within 24 hours)
                     const sessionAge = Date.now() - (session.createdAt || 0);
                     const dayInMs = 24 * 60 * 60 * 1000;
                     
+                    console.log('[AUTO-REJOIN] Session age:', sessionAge, 'ms, Max age:', dayInMs, 'ms');
                     if (sessionAge < dayInMs) {
                         // Valid session - load it and auto-reconnect after connection
                         this.playerToken = session.playerToken;
@@ -107,6 +110,7 @@ class Game {
                         // Will auto-reconnect in connect() when socket connects
                     } else {
                         // Session expired - show home screen
+                        console.log('[AUTO-REJOIN] Session expired');
                         this.clearSession();
                         this.showScreen('home-screen');
                     }
@@ -116,6 +120,7 @@ class Game {
                 }
             } else {
                 // No session - show home screen
+                console.log('[AUTO-REJOIN] No session found, showing home screen');
                 this.showScreen('home-screen');
             }
         }
@@ -277,7 +282,11 @@ class Game {
     }
 
     getSessionData() {
-        return localStorage.getItem('secretSyndicatesSession');
+        const data = localStorage.getItem('secretSyndicatesSession');
+        if (data) {
+            console.log('[SESSION] Retrieved session data from localStorage');
+        }
+        return data;
     }
 
     saveSession() {
@@ -291,6 +300,9 @@ class Game {
                 createdAt: Date.now()
             });
             localStorage.setItem('secretSyndicatesSession', sessionData);
+            console.log('[SESSION] Saved session:', { playerToken: this.playerToken, gameCode: this.gameCode, playerName: this.playerName });
+        } else {
+            console.log('[SESSION] Cannot save - missing data:', { hasToken: !!this.playerToken, hasCode: !!this.gameCode, hasName: !!this.playerName });
         }
     }
 
