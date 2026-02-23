@@ -509,6 +509,7 @@ class Game {
             console.log('[REJOIN] Rejoin accepted, returning to game:', data);
             console.log('[REJOIN] gameState:', data.gameState);
             console.log('[REJOIN] gameState.currentPhase:', data.gameState?.currentPhase);
+            console.log('[REJOIN] Setting reconnecting to FALSE');
             this.reconnecting = false;
             this.updateConnectionStatus('connected');
             
@@ -528,9 +529,12 @@ class Game {
             } else {
                 // Game hasn't started yet, show lobby
                 console.log('[REJOIN] Game not started, showing lobby');
+                console.log('[REJOIN] About to call showScreen(lobby-screen)');
                 this.showScreen('lobby-screen');
+                console.log('[REJOIN] Called showScreen(lobby-screen)');
                 this.updateLobby(data.game);
             }
+            console.log('[REJOIN] Handler complete');
         });
 
         this.socket.on('rejoin-rejected', (data) => {
@@ -979,6 +983,13 @@ class Game {
     // Screen Management
     showScreen(screenId) {
         console.log('showScreen called with:', screenId);
+        
+        // Log stack trace for home screen to debug why it's being shown
+        if (screenId === 'home-screen') {
+            console.warn('[SCREEN] home-screen being shown, stack trace:');
+            console.trace();
+        }
+        
         try {
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.remove('active');
