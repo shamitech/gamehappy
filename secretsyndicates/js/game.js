@@ -1025,9 +1025,21 @@ class Game {
                 // Use server-assigned playerToken
                 if (response.playerToken) {
                     this.playerToken = response.playerToken;
+                    console.log('[CREATE] Received playerToken from server:', this.playerToken);
                 }
                 
                 this.saveSession();
+                console.log('[CREATE] Session saved after game creation');
+                
+                // Verify session was saved
+                const savedSession = this.getSessionData();
+                if (savedSession) {
+                    const parsed = JSON.parse(savedSession);
+                    console.log('[CREATE] Verification - session contains token:', !!parsed.playerToken, 'gameCode:', parsed.gameCode);
+                } else {
+                    console.warn('[CREATE] WARNING - Session was not saved!');
+                }
+                
                 this.showScreen('lobby-screen');
                 this.updateLobby(response.game);
             } else {
@@ -1071,9 +1083,21 @@ class Game {
                 // Use server-assigned playerToken
                 if (response.playerToken) {
                     this.playerToken = response.playerToken;
+                    console.log('[JOIN] Received playerToken from server:', this.playerToken);
                 }
                 
                 this.saveSession();
+                console.log('[JOIN] Session saved after successful join');
+                
+                // Verify session was saved
+                const savedSession = this.getSessionData();
+                if (savedSession) {
+                    const parsed = JSON.parse(savedSession);
+                    console.log('[JOIN] Verification - session contains token:', !!parsed.playerToken, 'gameCode:', parsed.gameCode);
+                } else {
+                    console.warn('[JOIN] WARNING - Session was not saved!');
+                }
+                
                 this.showScreen('lobby-screen');
                 this.updateLobby(response.game);
             } else {

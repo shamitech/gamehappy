@@ -401,6 +401,19 @@ io.on('connection', (socket) => {
       const { gameCode, playerName } = data;
       console.log(`Player ${playerName} joining game: ${gameCode}, socket token: ${playerToken}, socket.id: ${socket.id}`);
 
+      // Check if this player is already in the game with a different token (page reload case)
+      const game = gameServer.getGame(gameCode);
+      if (game) {
+        const existingPlayer = game.getPlayers().find(p => p.name === playerName);
+        if (existingPlayer && existingPlayer.token !== playerToken) {
+          console.log(`[REJOIN] Player ${playerName} detected as reload/reconnect. Old token: ${existingPlayer.token}, New token: ${playerToken}`);
+          // Remove the old session and let them rejoin with the new token
+          gameServer.playerSessions.delete(existingPlayer.token);
+          game.removePlayer(existingPlayer.token);
+          console.log(`[REJOIN] Removed old session for ${playerName}, allowing new join`);
+        }
+      }
+
       const result = gameServer.joinGame(gameCode, playerToken, playerName);
       
       if (result.success) {
