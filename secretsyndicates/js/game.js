@@ -528,6 +528,7 @@ class Game {
             } else {
                 // Game hasn't started yet, show lobby
                 console.log('[REJOIN] Game not started, showing lobby');
+                this.showScreen('lobby-screen');
                 this.updateLobby(data.game);
             }
         });
