@@ -100,6 +100,10 @@ class Game {
                         this.lastGameState = session.gameState;
                         console.log(`[AUTO-REJOIN] Loaded session for ${this.playerName} in game ${this.gameCode}`);
                         console.log(`[AUTO-REJOIN] Restoring to phase: ${this.lastGameState?.currentPhase}`);
+                        // Show connecting state while reconnecting
+                        this.showScreen('lobby-screen');
+                        this.updateConnectionStatus('reconnecting');
+                        console.log('[AUTO-REJOIN] Showing lobby screen, waiting to reconnect');
                         // Will auto-reconnect in connect() when socket connects
                     } else {
                         // Session expired - show home screen
