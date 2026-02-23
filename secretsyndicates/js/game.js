@@ -103,10 +103,10 @@ class Game {
                         this.lastGameState = session.gameState;
                         console.log(`[AUTO-REJOIN] Loaded session for ${this.playerName} in game ${this.gameCode}`);
                         console.log(`[AUTO-REJOIN] Restoring to phase: ${this.lastGameState?.currentPhase}`);
-                        // Show connecting state while reconnecting
-                        this.showScreen('lobby-screen');
+                        // Show connecting state while reconnecting - DON'T show lobby screen yet
+                        // Wait for rejoin-accepted to get fresh game data before showing the screen
                         this.updateConnectionStatus('reconnecting');
-                        console.log('[AUTO-REJOIN] Showing lobby screen, waiting to reconnect');
+                        console.log('[AUTO-REJOIN] Status set to reconnecting, waiting for rejoin-accepted event');
                         // Will auto-reconnect in connect() when socket connects
                     } else {
                         // Session expired - show home screen
@@ -599,9 +599,13 @@ class Game {
 
             // Connection event - fires when socket successfully connects
             this.socket.on('connect', () => {
-                console.log('[CONNECT] Socket.IO connected successfully');
+                console.log('[CONNECT] Socket.IO connected successfully, socket.id:', this.socket.id);
                 this.isConnected = true;
-                this.updateConnectionStatus('connected');
+                
+                // Only update status if we're not already reconnecting
+                if (this.reconnecting !== true) {
+                    this.updateConnectionStatus('connected');
+                }
                 
                 // Notify server that a regular user (not admin) is connected
                 const sessionId = localStorage.getItem('gamehappy-session-id');
@@ -623,8 +627,19 @@ class Game {
                 if (this.playerToken && this.gameCode) {
                     console.log('[CONNECT] Auto-rejoining game:', this.gameCode);
                     this.attemptReconnect();
+                    
+                    // Add a timeout - if rejoin doesn't complete in 5 seconds, show home screen
+                    setTimeout(() => {
+                        if (this.reconnecting === true) {
+                            console.warn('[CONNECT] Rejoin timeout after 5 seconds, showing home screen');
+                            this.reconnecting = false;
+                            this.clearSession();
+                            this.showScreen('home-screen');
+                        }
+                    }, 5000);
                 } else {
                     console.log('[CONNECT] No session to rejoin (token:', this.playerToken, 'code:', this.gameCode, ')');
+                    this.showScreen('home-screen');
                 }
             });
 
@@ -643,12 +658,14 @@ class Game {
     attemptReconnect() {
         if (!this.playerToken || !this.gameCode) {
             console.log('[RECONNECT] Missing credentials - token:', this.playerToken, 'code:', this.gameCode);
+            this.reconnecting = false;
+            this.clearSession();
+            this.showScreen('home-screen');
             return;
         }
         
         console.log('[RECONNECT] Attempting to rejoin game:', this.gameCode, 'with token:', this.playerToken, 'as player:', this.playerName);
         this.reconnecting = true;
-        this.updateConnectionStatus('reconnecting');
         
         // Emit rejoin event to server - response will be handled by rejoin-accepted or rejoin-rejected listeners
         this.socket.emit('rejoin-game', {
@@ -656,6 +673,8 @@ class Game {
             playerToken: this.playerToken,
             playerName: this.playerName
         });
+        
+        console.log('[RECONNECT] rejoin-game event emitted to server');
     }
 
     searchRejoinGame() {
