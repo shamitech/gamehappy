@@ -26,6 +26,22 @@ const io = new Server(server, {
   }
 });
 
+// Global error handlers to prevent server crash
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err);
+  // Don't exit - keep server running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit - keep server running
+});
+
+// Socket.IO error handler
+io.engine.on('connection_error', (err) => {
+  console.error('[SOCKET.IO] Connection error:', err);
+});
+
 // Game history file path - use absolute path for reliability
 const GAME_HISTORY_FILE = require('path').join(__dirname, 'game-history.json');
 
@@ -2149,52 +2165,70 @@ io.on('connection', (socket) => {
   });
 
   /**
-   * Disconnect handler
+   * Disconnect handler - carefully wrapped to prevent server crash
    */
   socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id}, token: ${playerToken}`);
-    
-    // Get the session ID from this socket
-    const userSocket = activeUsers.get(socket.id);
-    const sessionId = userSocket?.sessionId;
-    const wasAdmin = adminUsers.has(socket.id);
-    
-    // Remove from active users tracking and admin tracking
-    activeUsers.delete(socket.id);
-    adminUsers.delete(socket.id);
-    
-    // Only remove session if no other sockets have this sessionId AND it wasn't admin
-    if (sessionId && !wasAdmin) {
-      const hasOtherSockets = Array.from(activeUsers.values()).some(user => 
-        user.sessionId === sessionId && !user.isAdmin
-      );
-      if (!hasOtherSockets) {
-        activeSessions.delete(sessionId);
-        sessionPages.delete(sessionId);
-        console.log(`[USERS] Session ${sessionId} removed (no more active sockets)`);
-      }
-    }
-    
-    console.log(`[USERS] Total active sessions: ${activeSessions.size}`);
-    
-    // Broadcast updated user count (with safety check)
     try {
-      broadcastActiveStats();
-    } catch (err) {
-      console.error(`[BROADCAST] Error broadcasting stats on disconnect:`, err);
-    }
-    // Don't remove player from game - they might rejoin!
-    // Just notify other players they disconnected
-    const game = gameServer.getPlayerGame(playerToken);
-    if (game) {
-      const gameCode = game.gameCode;
-      console.log(`[DISCONNECT] Player ${playerToken} left game ${gameCode} but remains for rejoin`);
+      console.log(`Player disconnected: ${socket.id}, token: ${playerToken}`);
       
-      // Notify other players
-      io.to(`game-${gameCode}`).emit('player-disconnected', {
-        playerToken,
-        game: gameServer.getGameLobbyInfo(gameCode)
-      });
+      // Get the session ID from this socket
+      const userSocket = activeUsers.get(socket.id);
+      const sessionId = userSocket?.sessionId;
+      const wasAdmin = adminUsers.has(socket.id);
+      
+      // Remove from active users tracking and admin tracking
+      activeUsers.delete(socket.id);
+      adminUsers.delete(socket.id);
+      
+      // Only remove session if no other sockets have this sessionId AND it wasn't admin
+      if (sessionId && !wasAdmin) {
+        try {
+          const hasOtherSockets = Array.from(activeUsers.values()).some(user => 
+            user.sessionId === sessionId && !user.isAdmin
+          );
+          if (!hasOtherSockets) {
+            activeSessions.delete(sessionId);
+            sessionPages.delete(sessionId);
+            console.log(`[USERS] Session ${sessionId} removed (no more active sockets)`);
+          }
+        } catch (sessionErr) {
+          console.error(`[DISCONNECT] Error handling session cleanup:`, sessionErr);
+        }
+      }
+      
+      console.log(`[USERS] Total active sessions: ${activeSessions.size}`);
+      
+      // Broadcast updated user count (with extra safety check)
+      try {
+        broadcastActiveStats();
+      } catch (err) {
+        console.error(`[BROADCAST] Error broadcasting stats on disconnect:`, err);
+      }
+      
+      // Don't remove player from game - they might rejoin!
+      // Just notify other players they disconnected (with safety check)
+      try {
+        const game = gameServer.getPlayerGame(playerToken);
+        if (game && game.gameCode) {
+          const gameCode = game.gameCode;
+          console.log(`[DISCONNECT] Player ${playerToken} left game ${gameCode} but remains for rejoin`);
+          
+          // Safely get game info before broadcasting
+          const gameInfo = gameServer.getGameLobbyInfo(gameCode);
+          if (gameInfo) {
+            // Notify other players
+            io.to(`game-${gameCode}`).emit('player-disconnected', {
+              playerToken,
+              game: gameInfo
+            });
+          }
+        }
+      } catch (gameErr) {
+        console.error(`[DISCONNECT] Error notifying players of disconnect:`, gameErr);
+      }
+    } catch (err) {
+      console.error(`[DISCONNECT] Critical error in disconnect handler:`, err);
+      // Log but don't re-throw - this would crash the server
     }
   });
 
@@ -2854,45 +2888,71 @@ function broadcastActiveStats() {
       }
     };
     
-    console.log(`[STATS] Current sessionPages map:`, Array.from(sessionPages.entries()));
-    console.log(`[STATS] Current activeSessions:`, Array.from(activeSessions));
-    
-    // Count users by page they're on (from sessionPages tracking)
-    for (const [sessionId, page] of sessionPages) {
-      if (activeSessions.has(sessionId)) {
-        console.log(`[STATS]   Counting ${sessionId} on page "${page}"`);
-        if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
-          stats.usersPerGame.secretSyndicates++;
-        } else if (page === 'flagguardians-home' || page === 'flagguardians') {
-          stats.usersPerGame.flagGuardians++;
-        } else if (page === 'arewethereyet-home' || page === 'arewethereyet') {
-          stats.usersPerGame.areWeThereYet++;
-        } else {
-          stats.usersPerGame.home++;
+    try {
+      console.log(`[STATS] Current sessionPages map:`, Array.from(sessionPages.entries()));
+      console.log(`[STATS] Current activeSessions:`, Array.from(activeSessions));
+      
+      // Count users by page they're on (from sessionPages tracking) - with safety check
+      if (sessionPages && sessionPages.size > 0) {
+        for (const [sessionId, page] of sessionPages) {
+          try {
+            if (sessionId && activeSessions && activeSessions.has(sessionId)) {
+              console.log(`[STATS]   Counting ${sessionId} on page "${page}"`);
+              if (page === 'secretsyndicates-home' || page === 'secretsyndicates') {
+                stats.usersPerGame.secretSyndicates++;
+              } else if (page === 'flagguardians-home' || page === 'flagguardians') {
+                stats.usersPerGame.flagGuardians++;
+              } else if (page === 'arewethereyet-home' || page === 'arewethereyet') {
+                stats.usersPerGame.areWeThereYet++;
+              } else {
+                stats.usersPerGame.home++;
+              }
+            }
+          } catch (pageErr) {
+            console.error(`[STATS] Error processing page ${sessionId}:`, pageErr);
+          }
         }
       }
+    } catch (pageCountErr) {
+      console.error(`[STATS] Error counting users per page:`, pageCountErr);
+      stats.usersPerGame.home = regularUserCount;
     }
     
-    // Count active games
-    if (gameServer && gameServer.games && gameServer.games.size > 0) {
-      for (const [gameCode, game] of gameServer.games) {
-        if (game && game.gameState !== 'ended') {
-          stats.activeGames++;
+    // Count active games - with safety check
+    try {
+      if (gameServer && gameServer.games && gameServer.games.size > 0) {
+        for (const [gameCode, game] of gameServer.games) {
+          if (game && game.gameState && game.gameState !== 'ended') {
+            stats.activeGames++;
+          }
         }
       }
+    } catch (gameCountErr) {
+      console.error(`[STATS] Error counting active games:`, gameCountErr);
     }
     
     console.log(`[STATS] Broadcasting: ${stats.activeUsers} users (${adminUsers.size} admins), ${stats.activeGames} games`);
     console.log(`[STATS] Users per game - Home: ${stats.usersPerGame.home}, SS: ${stats.usersPerGame.secretSyndicates}, FG: ${stats.usersPerGame.flagGuardians}, AWT: ${stats.usersPerGame.areWeThereYet}`);
     
-    // Include user history and game metrics for chart updates
-    stats.userHistory = userHistory;
-    stats.playersPerGameHistory = playersPerGameHistory;
-    stats.usersPerGameHistory = usersPerGameHistory;
+    // Include user history and game metrics for chart updates - with safety check
+    try {
+      stats.userHistory = userHistory || [];
+      stats.playersPerGameHistory = playersPerGameHistory || [];
+      stats.usersPerGameHistory = usersPerGameHistory || [];
+    } catch (historyErr) {
+      console.error(`[STATS] Error including history:`, historyErr);
+      stats.userHistory = [];
+      stats.playersPerGameHistory = [];
+      stats.usersPerGameHistory = [];
+    }
     
-    io.emit('activeStats', stats);
+    // Broadcast safely
+    if (io && io.emit) {
+      io.emit('activeStats', stats);
+    }
   } catch (err) {
     console.error(`[STATS] Error in broadcastActiveStats:`, err);
+    // Don't re-throw - this shouldn't crash the server
   }
 }
 
