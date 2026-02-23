@@ -273,7 +273,7 @@ class Game {
     }
 
     getSessionData() {
-        return sessionStorage.getItem('secretSyndicatesSession');
+        return localStorage.getItem('secretSyndicatesSession');
     }
 
     saveSession() {
@@ -286,12 +286,12 @@ class Game {
                 gameState: this.lastGameState || null,
                 createdAt: Date.now()
             });
-            sessionStorage.setItem('secretSyndicatesSession', sessionData);
+            localStorage.setItem('secretSyndicatesSession', sessionData);
         }
     }
 
     clearSession() {
-        sessionStorage.removeItem('secretSyndicatesSession');
+        localStorage.removeItem('secretSyndicatesSession');
         this.playerToken = null;
     }
 
