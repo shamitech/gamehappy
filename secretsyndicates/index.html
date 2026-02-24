@@ -13,6 +13,19 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
+    <!-- Force reload if cached with old version -->
+    <script>
+        (function() {
+            const currentVersion = '202602231500';
+            const lastLoadedVersion = sessionStorage.getItem('gameJsVersion');
+            if (lastLoadedVersion && lastLoadedVersion !== currentVersion) {
+                sessionStorage.setItem('gameJsVersion', currentVersion);
+                location.reload();
+                return;
+            }
+            sessionStorage.setItem('gameJsVersion', currentVersion);
+        })();
+    </script>
     <div class="container">
         <!-- Home Screen -->
         <div id="home-screen" class="screen active">
