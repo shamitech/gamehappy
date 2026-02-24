@@ -506,61 +506,28 @@ class Game {
         });
 
         this.socket.on('rejoin-accepted', (data) => {
-            console.log('[REJOIN] Rejoin accepted, returning to game:', data);
-            console.log('[REJOIN] gameState:', data.gameState);
-            console.log('[REJOIN] gameState.currentPhase:', data.gameState?.currentPhase);
-            console.log('[REJOIN] Setting reconnecting to FALSE');
+            console.log('[REJOIN] Rejoin accepted');
             this.reconnecting = false;
             this.updateConnectionStatus('connected');
             
-            // Save the gameState to session for potential future refreshes
+            // Save the gameState to session
             if (data.gameState) {
                 this.lastGameState = data.gameState;
                 this.playerRole = data.gameState.playerRole || data.gameState.role;
                 this.saveSession();
             }
             
-            // Restore game state - gameState is an object with gameState, currentPhase, playerRole
-            if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
-                // Game is in progress, show role screen
-                console.log('[REJOIN] Game is in progress, showing role screen');
-                
-                // Force show role screen directly
+            // If game is waiting (hasn't started), show lobby
+            if (data.gameState && data.gameState.gameState === 'waiting') {
+                console.log('[REJOIN] Game is in waiting state, showing lobby');
                 document.querySelectorAll('.screen').forEach(screen => {
                     screen.classList.remove('active');
                     screen.style.display = 'none';
                 });
-                const roleScreen = document.getElementById('role-screen');
-                if (roleScreen) {
-                    roleScreen.classList.add('active');
-                    roleScreen.style.display = 'block';
-                    console.log('[REJOIN] Role screen shown');
-                } else {
-                    console.error('[REJOIN] ERROR: role-screen element not found!');
-                }
-                
-                this.displayRoleIntro(data.gameState);
-            } else {
-                // Game hasn't started yet, show lobby - simple and direct
-                console.log('[REJOIN] Game not started, showing lobby');
-                
-                // Force show lobby screen directly - no fancy error handling, just do it
-                document.querySelectorAll('.screen').forEach(screen => {
-                    screen.classList.remove('active');
-                    screen.style.display = 'none';
-                });
-                const lobbyScreen = document.getElementById('lobby-screen');
-                if (lobbyScreen) {
-                    lobbyScreen.classList.add('active');
-                    lobbyScreen.style.display = 'block';
-                    console.log('[REJOIN] Lobby screen shown');
-                } else {
-                    console.error('[REJOIN] ERROR: lobby-screen element not found!');
-                }
-                
+                document.getElementById('lobby-screen').classList.add('active');
+                document.getElementById('lobby-screen').style.display = 'block';
                 this.updateLobby(data.game);
             }
-            console.log('[REJOIN] Handler complete');
         });
 
         this.socket.on('rejoin-rejected', (data) => {
