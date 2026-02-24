@@ -524,14 +524,43 @@ class Game {
             if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
                 // Game is in progress, show role screen
                 console.log('[REJOIN] Game is in progress, showing role screen');
-                this.showScreen('role-screen');
-                this.displayRoleIntro(data.gameState);
+                try {
+                    this.showScreen('role-screen');
+                    this.displayRoleIntro(data.gameState);
+                } catch (e) {
+                    console.error('[REJOIN] Error showing role screen:', e);
+                    // Fallback
+                    document.querySelectorAll('.screen').forEach(screen => {
+                        screen.classList.remove('active');
+                        screen.style.display = 'none';
+                    });
+                    const roleScreen = document.getElementById('role-screen');
+                    if (roleScreen) {
+                        roleScreen.classList.add('active');
+                        roleScreen.style.display = 'block';
+                    }
+                }
             } else {
                 // Game hasn't started yet, show lobby
                 console.log('[REJOIN] Game not started, showing lobby');
                 console.log('[REJOIN] About to call showScreen(lobby-screen)');
-                this.showScreen('lobby-screen');
-                console.log('[REJOIN] Called showScreen(lobby-screen)');
+                try {
+                    this.showScreen('lobby-screen');
+                    console.log('[REJOIN] Called showScreen(lobby-screen) successfully');
+                } catch (e) {
+                    console.error('[REJOIN] Error calling showScreen:', e);
+                    // Fallback: directly manipulate DOM
+                    document.querySelectorAll('.screen').forEach(screen => {
+                        screen.classList.remove('active');
+                        screen.style.display = 'none';
+                    });
+                    const lobbyScreen = document.getElementById('lobby-screen');
+                    if (lobbyScreen) {
+                        lobbyScreen.classList.add('active');
+                        lobbyScreen.style.display = 'block';
+                        console.log('[REJOIN] Used DOM fallback to show lobby-screen');
+                    }
+                }
                 this.updateLobby(data.game);
             }
             console.log('[REJOIN] Handler complete');
