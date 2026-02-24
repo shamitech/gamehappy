@@ -383,13 +383,13 @@ io.on('connection', (socket) => {
           playerToken: playerToken
         });
 
-        callback({ success: true, gameCode, game: result.game, isHost: result.isHost, playerToken: playerToken });
+        if (typeof callback === 'function') callback({ success: true, gameCode, game: result.game, isHost: result.isHost, playerToken: playerToken });
       } else {
-        callback({ success: false, message: result.message });
+        if (typeof callback === 'function') callback({ success: false, message: result.message });
       }
     } catch (err) {
       console.error('Error creating game:', err);
-      callback({ success: false, message: 'Server error' });
+      if (typeof callback === 'function') callback({ success: false, message: 'Server error' });
     }
   });
 
@@ -427,31 +427,37 @@ io.on('connection', (socket) => {
           playerToken: playerToken
         });
 
-        callback({ success: true, gameCode, game: result.game, isHost: result.isHost, playerToken: playerToken });
+        if (typeof callback === 'function') callback({ success: true, gameCode, game: result.game, isHost: result.isHost, playerToken: playerToken });
       } else {
-        callback({ success: false, message: result.message });
+        if (typeof callback === 'function') callback({ success: false, message: result.message });
       }
     } catch (err) {
       console.error('Error joining game:', err);
-      callback({ success: false, message: 'Server error' });
+      if (typeof callback === 'function') callback({ success: false, message: 'Server error' });
     }
   });
 
   /**
    * Get current game state
    */
-  socket.on('get-game-state', (callback) => {
+  socket.on('get-game-state', (data, callback) => {
     try {
       const gameState = gameServer.getGameStateForPlayer(playerToken);
       
       if (gameState) {
-        callback({ success: true, gameState });
+        if (typeof callback === 'function') {
+          callback({ success: true, gameState });
+        }
       } else {
-        callback({ success: false, message: 'Player not in a game' });
+        if (typeof callback === 'function') {
+          callback({ success: false, message: 'Player not in a game' });
+        }
       }
     } catch (err) {
       console.error('Error getting game state:', err);
-      callback({ success: false, message: 'Server error' });
+      if (typeof callback === 'function') {
+        callback({ success: false, message: 'Server error' });
+      }
     }
   });
 
@@ -484,13 +490,13 @@ io.on('connection', (socket) => {
           }
         }
 
-        callback({ success: true, phase: result.phase });
+        if (typeof callback === 'function') callback({ success: true, phase: result.phase });
       } else {
-        callback({ success: false, message: result.message });
+        if (typeof callback === 'function') callback({ success: false, message: result.message });
       }
     } catch (err) {
       console.error('Error starting game:', err);
-      callback({ success: false, message: 'Server error' });
+      if (typeof callback === 'function') callback({ success: false, message: 'Server error' });
     }
   });
 
@@ -2385,7 +2391,9 @@ io.on('connection', (socket) => {
   /**
    * Debug: List active games (remove in production)
    */
-  socket.on('debug-games', (callback) => {
+  socket.on('debug-games', (data, callback) => {
+    if (typeof callback !== 'function') return;
+    
     const games = [];
     for (const [code, game] of gameServer.games) {
       games.push({
