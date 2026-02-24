@@ -506,7 +506,8 @@ class Game {
         });
 
         this.socket.on('rejoin-accepted', (data) => {
-            console.log('[REJOIN] Rejoin accepted');
+            console.log('[REJOIN] Rejoin accepted, data:', data);
+            console.log('[REJOIN] gameState value:', data.gameState?.gameState);
             this.reconnecting = false;
             this.updateConnectionStatus('connected');
             
@@ -520,13 +521,26 @@ class Game {
             // If game is waiting (hasn't started), show lobby
             if (data.gameState && data.gameState.gameState === 'waiting') {
                 console.log('[REJOIN] Game is in waiting state, showing lobby');
+                console.log('[REJOIN] Finding lobby-screen element...');
+                const lobbyScreen = document.getElementById('lobby-screen');
+                console.log('[REJOIN] Lobby screen element:', lobbyScreen);
+                
                 document.querySelectorAll('.screen').forEach(screen => {
                     screen.classList.remove('active');
                     screen.style.display = 'none';
                 });
-                document.getElementById('lobby-screen').classList.add('active');
-                document.getElementById('lobby-screen').style.display = 'block';
+                
+                if (lobbyScreen) {
+                    lobbyScreen.classList.add('active');
+                    lobbyScreen.style.display = 'block';
+                    console.log('[REJOIN] Lobby screen displayed, classes:', lobbyScreen.className, 'display:', lobbyScreen.style.display);
+                } else {
+                    console.log('[REJOIN] ERROR: Lobby screen element not found');
+                }
+                
                 this.updateLobby(data.game);
+            } else {
+                console.log('[REJOIN] Game is NOT in waiting state. gameState:', data.gameState?.gameState);
             }
         });
 
