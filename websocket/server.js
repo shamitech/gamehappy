@@ -1767,25 +1767,42 @@ io.on('connection', (socket) => {
             
             if (game.hasPlayer(pToken)) {
               const pGameState = gameServer.getGameStateForPlayer(pToken);
-              const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
-                               phaseResult.phase === 'murder' ? 'Murder Discovery' :
-                               phaseResult.phase === 'trial' ? 'Trial Phase' : 
-                               phaseResult.phase === 'accusation' ? 'Accusation Vote' :
-                               phaseResult.phase === 'verdict' ? 'Verdict Phase' : phaseResult.phase;
               
-              const phaseData = {
-                phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : phaseResult.phase === 'trial' ? 3 : phaseResult.phase === 'accusation' ? 4 : phaseResult.phase === 'verdict' ? 5 : 1,
-                phaseState: pGameState,
-                phaseName: phaseName
-              };
-              
-              if (phaseResult.phase === 'verdict' && pGameState.accusedName) {
-                phaseData.accusedName = pGameState.accusedName;
-                phaseData.guiltyCount = pGameState.guiltyVotes || 0;
-                phaseData.notGuiltyCount = pGameState.notGuiltyVotes || 0;
+              // Check if this player was eliminated by the verdict
+              if (pGameState.eliminated && pGameState.eliminated.includes(pToken)) {
+                // Send elimination event to eliminated players
+                let reason = 'You were voted guilty and arrested.';
+                let verdict = 'GUILTY';
+                playerSocket.emit('player-eliminated', {
+                  playerName: pGameState.players.find(p => p.token === pToken)?.name || 'Unknown',
+                  role: pGameState.playerRole,
+                  reason: reason,
+                  verdict: verdict,
+                  round: pGameState.currentRound
+                });
+                console.log(`[VERDICT] [${game.gameCode}] Sent elimination event to ${pToken}`);
+              } else {
+                // Send phase start to alive players
+                const phaseName = phaseResult.phase === 'night' ? 'Night Phase' : 
+                                 phaseResult.phase === 'murder' ? 'Murder Discovery' :
+                                 phaseResult.phase === 'trial' ? 'Trial Phase' : 
+                                 phaseResult.phase === 'accusation' ? 'Accusation Vote' :
+                                 phaseResult.phase === 'verdict' ? 'Verdict Phase' : phaseResult.phase;
+                
+                const phaseData = {
+                  phase: phaseResult.phase === 'night' ? 1 : phaseResult.phase === 'murder' ? 2 : phaseResult.phase === 'trial' ? 3 : phaseResult.phase === 'accusation' ? 4 : phaseResult.phase === 'verdict' ? 5 : 1,
+                  phaseState: pGameState,
+                  phaseName: phaseName
+                };
+                
+                if (phaseResult.phase === 'verdict' && pGameState.accusedName) {
+                  phaseData.accusedName = pGameState.accusedName;
+                  phaseData.guiltyCount = pGameState.guiltyVotes || 0;
+                  phaseData.notGuiltyCount = pGameState.notGuiltyVotes || 0;
+                }
+                
+                playerSocket.emit('on-phase-start', phaseData);
               }
-              
-              playerSocket.emit('on-phase-start', phaseData);
             }
           }
           
