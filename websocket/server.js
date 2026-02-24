@@ -652,7 +652,7 @@ io.on('connection', (socket) => {
   /**
    * Leave current game
    */
-  socket.on('leave-game', (callback) => {
+  socket.on('leave-game', (data, callback) => {
     try {
       const game = gameServer.getPlayerGame(playerToken);
       
@@ -667,13 +667,19 @@ io.on('connection', (socket) => {
           game: gameServer.getGameLobbyInfo(gameCode)
         });
 
-        callback({ success: true });
+        if (callback && typeof callback === 'function') {
+          callback({ success: true });
+        }
       } else {
-        callback({ success: false, message: 'Not in a game' });
+        if (callback && typeof callback === 'function') {
+          callback({ success: false, message: 'Not in a game' });
+        }
       }
     } catch (err) {
       console.error('Error leaving game:', err);
-      callback({ success: false, message: 'Server error' });
+      if (callback && typeof callback === 'function') {
+        callback({ success: false, message: 'Server error' });
+      }
     }
   });
 
