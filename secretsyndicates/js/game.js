@@ -827,6 +827,15 @@ class Game {
             this.showScreen('join-screen');
         });
 
+        // Rejoin button - rejoin existing waiting game
+        const rejoinBtn = document.getElementById('btn-rejoin-lobby');
+        if (rejoinBtn) {
+            rejoinBtn.addEventListener('click', () => {
+                console.log('[REJOIN-BTN] Rejoin button clicked, attempting to reconnect');
+                this.attemptReconnect();
+            });
+        }
+
         // How to Play button
         document.getElementById('btn-how-to-play').addEventListener('click', () => {
             this.showScreen('how-to-play-screen');
@@ -995,6 +1004,8 @@ class Game {
         if (screenId === 'home-screen') {
             console.warn('[SCREEN] home-screen being shown, stack trace:');
             console.trace();
+            // Check if we should show rejoin button
+            this.checkAndShowRejoinButton();
         }
         
         try {
@@ -1012,6 +1023,45 @@ class Game {
             }
         } catch (e) {
             console.error('Error changing screen:', e);
+        }
+    }
+
+    checkAndShowRejoinButton() {
+        const rejoinBtn = document.getElementById('btn-rejoin-lobby');
+        if (!rejoinBtn) {
+            console.log('[REJOIN-BTN] Rejoin button not found in DOM');
+            return;
+        }
+
+        // Get session data
+        const sessionData = this.getSessionData();
+        if (!sessionData) {
+            console.log('[REJOIN-BTN] No session data, hiding rejoin button');
+            rejoinBtn.style.display = 'none';
+            return;
+        }
+
+        try {
+            const session = JSON.parse(sessionData);
+            // Check if session is recent (within 24 hours)
+            const sessionAge = Date.now() - (session.createdAt || 0);
+            const dayInMs = 24 * 60 * 60 * 1000;
+
+            // Show rejoin button if:
+            // 1. Session is valid (not expired)
+            // 2. gameCode is set
+            // 3. gameState is 'waiting'
+            if (sessionAge < dayInMs && session.gameCode && session.gameState === 'waiting') {
+                console.log('[REJOIN-BTN] Showing rejoin button for game:', session.gameCode);
+                document.getElementById('rejoin-code-display').textContent = session.gameCode;
+                rejoinBtn.style.display = 'block';
+            } else {
+                console.log('[REJOIN-BTN] Session invalid or game not waiting. Age:', sessionAge, 'Code:', session.gameCode, 'State:', session.gameState);
+                rejoinBtn.style.display = 'none';
+            }
+        } catch (e) {
+            console.error('[REJOIN-BTN] Error parsing session:', e);
+            rejoinBtn.style.display = 'none';
         }
     }
 

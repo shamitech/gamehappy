@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Secret Syndicates</title>
-    <link rel="stylesheet" href="css/style.css?t=202602231615">
+    <link rel="stylesheet" href="css/style.css?t=202602241630">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
     <!-- Socket.IO Client -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -16,7 +16,7 @@
     <!-- Force reload if cached with old version -->
     <script>
         (function() {
-            const currentVersion = '202602231615';
+            const currentVersion = '202602241630';
             const lastLoadedVersion = sessionStorage.getItem('gameJsVersion');
             if (lastLoadedVersion && lastLoadedVersion !== currentVersion) {
                 sessionStorage.setItem('gameJsVersion', currentVersion);
@@ -35,6 +35,7 @@
             </div>
             <div class="tagline">Trust No One. Suspect Everyone.</div>
             <div class="button-group">
+                <button id="btn-rejoin-lobby" class="btn btn-success" style="display: none;">Rejoin Game (Code: <span id="rejoin-code-display"></span>)</button>
                 <button id="btn-create-game" class="btn btn-primary">Create Game</button>
                 <button id="btn-join-game" class="btn btn-secondary">Join Game</button>
             </div>
@@ -779,6 +780,6 @@
         </div>
     </div>
 
-    <script src="js/game.js?t=202602231615"></script>
+    <script src="js/game.js?t=202602241630"></script>
 </body>
 </html>
