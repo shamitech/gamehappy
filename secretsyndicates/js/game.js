@@ -524,43 +524,40 @@ class Game {
             if (data.gameState && (data.gameState.currentPhase >= 1 || data.gameState.gameState === 'started')) {
                 // Game is in progress, show role screen
                 console.log('[REJOIN] Game is in progress, showing role screen');
-                try {
-                    this.showScreen('role-screen');
-                    this.displayRoleIntro(data.gameState);
-                } catch (e) {
-                    console.error('[REJOIN] Error showing role screen:', e);
-                    // Fallback
-                    document.querySelectorAll('.screen').forEach(screen => {
-                        screen.classList.remove('active');
-                        screen.style.display = 'none';
-                    });
-                    const roleScreen = document.getElementById('role-screen');
-                    if (roleScreen) {
-                        roleScreen.classList.add('active');
-                        roleScreen.style.display = 'block';
-                    }
+                
+                // Force show role screen directly
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                    screen.style.display = 'none';
+                });
+                const roleScreen = document.getElementById('role-screen');
+                if (roleScreen) {
+                    roleScreen.classList.add('active');
+                    roleScreen.style.display = 'block';
+                    console.log('[REJOIN] Role screen shown');
+                } else {
+                    console.error('[REJOIN] ERROR: role-screen element not found!');
                 }
+                
+                this.displayRoleIntro(data.gameState);
             } else {
-                // Game hasn't started yet, show lobby
+                // Game hasn't started yet, show lobby - simple and direct
                 console.log('[REJOIN] Game not started, showing lobby');
-                console.log('[REJOIN] About to call showScreen(lobby-screen)');
-                try {
-                    this.showScreen('lobby-screen');
-                    console.log('[REJOIN] Called showScreen(lobby-screen) successfully');
-                } catch (e) {
-                    console.error('[REJOIN] Error calling showScreen:', e);
-                    // Fallback: directly manipulate DOM
-                    document.querySelectorAll('.screen').forEach(screen => {
-                        screen.classList.remove('active');
-                        screen.style.display = 'none';
-                    });
-                    const lobbyScreen = document.getElementById('lobby-screen');
-                    if (lobbyScreen) {
-                        lobbyScreen.classList.add('active');
-                        lobbyScreen.style.display = 'block';
-                        console.log('[REJOIN] Used DOM fallback to show lobby-screen');
-                    }
+                
+                // Force show lobby screen directly - no fancy error handling, just do it
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                    screen.style.display = 'none';
+                });
+                const lobbyScreen = document.getElementById('lobby-screen');
+                if (lobbyScreen) {
+                    lobbyScreen.classList.add('active');
+                    lobbyScreen.style.display = 'block';
+                    console.log('[REJOIN] Lobby screen shown');
+                } else {
+                    console.error('[REJOIN] ERROR: lobby-screen element not found!');
                 }
+                
                 this.updateLobby(data.game);
             }
             console.log('[REJOIN] Handler complete');
