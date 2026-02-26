@@ -1406,20 +1406,31 @@ class Game {
             overlay.style.display = 'flex';
         }
         
+        const closeOverlay = () => {
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            this.showScreen('lobby-screen');
+            this.clearErrors();
+        };
+        
         if (closeBtn) {
             closeBtn.onclick = () => {
-                console.log('Closing interstitial ad');
-                if (overlay) {
-                    overlay.style.display = 'none';
-                }
-                this.showScreen('lobby-screen');
-                this.clearErrors();
+                console.log('Closing interstitial ad manually');
+                closeOverlay();
             };
         } else {
             // If button doesn't exist, just show screen immediately
             this.showScreen('lobby-screen');
             this.clearErrors();
+            return;
         }
+        
+        // Auto-close after 10 seconds
+        setTimeout(() => {
+            console.log('Auto-closing interstitial ad after 10 seconds');
+            closeOverlay();
+        }, 10000);
     }
 
     updateLobby(gameData) {
@@ -3781,22 +3792,31 @@ class Game {
             overlay.style.display = 'flex';
         }
         
+        const closeOverlay = () => {
+            console.log('[PLAY-AGAIN] Emitting play-again event from ad overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            if (this.socket && this.socket.connected && this.gameCode) {
+                this.socket.emit('play-again', { gameCode: this.gameCode });
+            }
+        };
+        
         if (closeBtn) {
-            closeBtn.onclick = () => {
-                console.log('[PLAY-AGAIN] Emitting play-again event from ad overlay');
-                if (overlay) {
-                    overlay.style.display = 'none';
-                }
-                if (this.socket && this.socket.connected && this.gameCode) {
-                    this.socket.emit('play-again', { gameCode: this.gameCode });
-                }
-            };
+            closeBtn.onclick = closeOverlay;
         } else {
             // If button doesn't exist, just emit event immediately
             if (this.socket && this.socket.connected && this.gameCode) {
                 this.socket.emit('play-again', { gameCode: this.gameCode });
             }
+            return;
         }
+        
+        // Auto-close after 10 seconds
+        setTimeout(() => {
+            console.log('Auto-closing new game ad overlay after 10 seconds');
+            closeOverlay();
+        }, 10000);
     }
     
     onNextRoundStart(data) {
