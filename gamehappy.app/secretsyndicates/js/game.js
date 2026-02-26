@@ -1266,7 +1266,29 @@ class Game {
         }
 
         console.log('About to show lobby-screen');
-        this.showScreen('lobby-screen');
+        this.showInterstitialAd();
+    }
+
+    showInterstitialAd() {
+        console.log('Showing interstitial ad');
+        const overlay = document.getElementById('interstitial-ad-overlay');
+        const closeBtn = document.getElementById('close-interstitial');
+        
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+        
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                console.log('Closing interstitial ad');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+                this.showScreen('lobby-screen');
+            };
+        } else {
+            // If button doesn't exist, just show screen immediately
+            this.showScreen('lobby-screen');
         console.log('Clearing errors');
         this.clearErrors();
     }
