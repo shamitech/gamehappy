@@ -11,6 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
     <!-- Socket.IO Client -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3825297494916588"
+         crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
@@ -332,6 +335,19 @@
             </div>
             <div id="guest-message" class="guest-message" style="display: none;">
                 <p>Waiting for the host to start the game...</p>
+            </div>
+            <!-- Ad Unit 1: Lobby Screen Ad -->
+            <div style="text-align: center; margin: 20px 0; min-height: 250px;">
+                <!-- Secret Syndicates Lobby -->
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-3825297494916588"
+                     data-ad-slot="1031349633"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
             </div>
             <div class="lobby-actions">
                 <button id="btn-leave-game" class="btn btn-secondary btn-leave" onclick="game.leaveGame()">
@@ -746,6 +762,20 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+                
+                <!-- Ad Unit 2: Game Over Screen Ad -->
+                <div style="text-align: center; margin: 20px 0; min-height: 250px;">
+                    <!-- Secret Syndicates Game Over -->
+                    <ins class="adsbygoogle"
+                         style="display:block"
+                         data-ad-client="ca-pub-3825297494916588"
+                         data-ad-slot="1514206575"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
                 </div>
                 
                 <button id="btn-play-again" class="btn btn-primary">Play Again</button>

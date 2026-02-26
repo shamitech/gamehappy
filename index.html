@@ -6,6 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta name="version" content="20260225-v2">
     <title>GameHappy - Mobile Games</title>
     <style>
         * {
@@ -29,11 +30,12 @@
             width: 100%;
             padding: 20px;
             margin: 0 auto;
+            padding-bottom: 180px;
         }
 
         .header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             color: white;
             padding: 30px 0 20px 0;
@@ -170,8 +172,8 @@
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
             padding: 20px 0;
             justify-items: center;
         }
@@ -190,16 +192,16 @@
         }
 
         .game-icon {
-            width: 120px;
-            height: 120px;
-            border-radius: 24px;
+            width: 95px;
+            height: 95px;
+            border-radius: 16px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-            margin-bottom: 12px;
-            font-size: 48px;
+            margin-bottom: 8px;
+            font-size: 38px;
             transition: all 0.3s ease;
             border: 3px solid rgba(255, 255, 255, 0.2);
             background-size: cover;
@@ -215,30 +217,103 @@
 
         .game-name {
             color: white;
-            font-size: 14px;
+            font-size: 11px;
             font-weight: 600;
             text-align: center;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
             word-break: break-word;
-            width: 130px;
+            width: 90px;
         }
 
-        /* Responsive for larger screens */
-        @media (max-width: 400px) {
+        .game-card.coming-soon {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .game-card.coming-soon .game-icon {
+            position: relative;
+        }
+
+        .coming-soon-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* Responsive for mobile */
+        @media (max-width: 768px) {
             .games-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px;
                 padding: 15px 0;
+                justify-items: center;
             }
 
             .game-icon {
-                width: 100px;
-                height: 100px;
-                font-size: 40px;
+                width: 82px;
+                height: 82px;
+                font-size: 32px;
+                border-radius: 12px;
+                margin-bottom: 6px;
+            }
+
+            .game-name {
+                font-size: 10px;
+                width: 85px;
             }
 
             .header h1 {
                 font-size: 28px;
+            }
+        }
+
+        /* Responsive for tiny screens */
+        @media (max-width: 480px) {
+            .container {
+                padding-bottom: 200px;
+            }
+
+            .games-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 4px;
+                padding: 12px 0;
+                justify-items: center;
+            }
+
+            .game-icon {
+                width: 70px;
+                height: 70px;
+                font-size: 26px;
+                border-radius: 10px;
+                margin-bottom: 4px;
+            }
+
+            .game-name {
+                font-size: 9px;
+                width: 72px;
+            }
+
+            .content-card-btn {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+
+            .footer-auth {
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+
+            .footer-auth .btn-auth {
+                padding: 7px 12px;
+                font-size: 13px;
             }
         }
 
@@ -285,6 +360,308 @@
             font-size: 12px;
             margin-top: 15px;
         }
+
+        .content-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            color: #333;
+        }
+
+        .content-section h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .content-section h3 {
+            color: #764ba2;
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .content-section p {
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 12px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .feature-item {
+            background: #f0f7ff;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .feature-item strong {
+            color: #667eea;
+        }
+
+        .game-overview {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #764ba2;
+        }
+
+        .game-overview-title {
+            font-weight: 600;
+            color: #764ba2;
+            margin-bottom: 8px;
+        }
+
+        .game-overview-desc {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .cta-section h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .cta-button {
+            background: white;
+            color: #667eea;
+            padding: 10px 25px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .guides-preview {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .guide-link {
+            background: #e6f3ff;
+            padding: 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #667eea;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .guide-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 20px auto;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .close-modal {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-modal:hover {
+            color: #764ba2;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .content-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .content-card:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border-color: #667eea;
+            transform: translateY(-3px);
+        }
+
+        .content-card-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .content-card-title {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+        }
+
+        .hidden-content {
+            display: none;
+        }
+
+        .content-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding: 15px 0;
+            margin-top: 20px;
+        }
+
+        .content-card-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+        }
+
+        .content-card-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateX(5px);
+        }
+
+        .content-card-icon-box {
+            display: none;
+        }
+
+        .content-card-label {
+            display: inline;
+            color: white;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -305,10 +682,6 @@
                         <button id="logoutBtn">🚪 Logout</button>
                     </div>
                 </div>
-                <div class="auth-buttons show">
-                    <a href="/auth/signup.html" class="btn-auth btn-signup">Sign Up</a>
-                    <a href="/auth/login.html" class="btn-auth btn-login">Log In</a>
-                </div>
             </div>
         </div>
 
@@ -318,9 +691,210 @@
                 <div class="game-icon" style="background-image: url('assets/gametiles/secretsyndicate.png');"></div>
                 <div class="game-name">Secret Syndicates</div>
             </a>
+            <!-- Coming Soon Games -->
+            <div class="game-card coming-soon">
+                <div class="game-icon" style="background-image: url('assets/gametiles/flagguardians.png');">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                </div>
+                <div class="game-name">Flag Guardians</div>
+            </div>
+            <div class="game-card coming-soon">
+                <div class="game-icon" style="background-image: url('assets/gametiles/ultimatechess.png');">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                </div>
+                <div class="game-name">Ultimate Chess</div>
+            </div>
+            <div class="game-card coming-soon">
+                <div class="game-icon" style="background-image: url('assets/gametiles/rockpaperscissors.png');">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                </div>
+                <div class="game-name">RPS Psych</div>
+            </div>
+            <div class="game-card coming-soon">
+                <div class="game-icon" style="background-image: url('assets/gametiles/openworld.png');">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                </div>
+                <div class="game-name">Open World</div>
+            </div>
+            <div class="game-card coming-soon">
+                <div class="game-icon" style="background-image: url('assets/gametiles/arewethere.png');">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                </div>
+                <div class="game-name">Are We There Yet</div>
+            </div>
+        </div>
+
+        <!-- Content Cards - Open in Modals (styled like game cards) -->
+        <div class="content-cards-grid">
+            <button class="content-card-btn" onclick="openModal('about-modal')" title="Learn about GameHappy">
+                <div class="content-card-icon-box">📚</div>
+                <div class="content-card-label">About Games</div>
+            </button>
+            <button class="content-card-btn" onclick="openModal('games-modal')" title="Game Overview">
+                <div class="content-card-icon-box">🎮</div>
+                <div class="content-card-label">Games</div>
+            </button>
+            <button class="content-card-btn" onclick="openModal('guides-modal')" title="Learn Strategies">
+                <div class="content-card-icon-box">🎯</div>
+                <div class="content-card-label">Guides</div>
+            </button>
+            <button class="content-card-btn" onclick="openModal('benefits-modal')" title="Why Play Games">
+                <div class="content-card-icon-box">🧠</div>
+                <div class="content-card-label">Benefits</div>
+            </button>
+            <button class="content-card-btn" onclick="openModal('quality-modal')" title="Our Quality">
+                <div class="content-card-icon-box">⭐</div>
+                <div class="content-card-label">Quality</div>
+            </button>
+            <button class="content-card-btn" onclick="openModal('explore-modal')" title="Explore More">
+                <div class="content-card-icon-box">🌐</div>
+                <div class="content-card-label">Explore</div>
+            </button>
+        </div>
+
+        <!-- Hidden Content - Shown in Modals (for crawler to read) -->
+        <div class="hidden-content">
+            <!-- About Modal -->
+            <div id="about-modal" style="display: none;">
+                <h2>Welcome to GameHappy</h2>
+                <p>GameHappy is your destination for high-quality, strategic games that challenge your mind and bring joy to your gaming experience. Our curated collection of games is designed to develop critical thinking skills, enhance strategic planning abilities, and provide hours of engaging entertainment.</p>
+                
+                <h3>What Makes GameHappy Different?</h3>
+                <p>We believe gaming should be more than mindless clicking. Our games are:</p>
+                <div class="feature-list">
+                    <div class="feature-item"><strong>🧠 Skill-Based:</strong> Success comes from strategy, not luck</div>
+                    <div class="feature-item"><strong>👥 Social:</strong> Games that bring people together</div>
+                    <div class="feature-item"><strong>🎯 Fair Play:</strong> No pay-to-win mechanics</div>
+                    <div class="feature-item"><strong>📈 Accessible:</strong> Easy to learn, hard to master</div>
+                </div>
+            </div>
+
+            <!-- Games Overview Modal -->
+            <div id="games-modal" style="display: none;">
+                <h2>Featured Games</h2>
+                <p>Explore our collection of strategic games that challenge different aspects of your mind:</p>
+                
+                <div class="game-overview">
+                    <div class="game-overview-title">🔴 Secret Syndicates - Social Deduction</div>
+                    <div class="game-overview-desc">A thrilling game of deduction and psychology where you must identify hidden traitors among innocent players. Combines strategy, communication, and psychological insight. Perfect for 5+ players.</div>
+                </div>
+
+                <div class="game-overview">
+                    <div class="game-overview-title">🚩 Flag Guardians - Team Strategy</div>
+                    <div class="game-overview-desc">An intense real-time team strategy game where tactical positioning and coordination determine victory. Develop advanced planning skills and learn to work with teammates in dynamic situations.</div>
+                </div>
+
+                <div class="game-overview">
+                    <div class="game-overview-title">♗ Ultimate Chess - Classic Strategy</div>
+                    <div class="game-overview-desc">The timeless game of kings where every move matters. Whether you're a beginner or advanced player, chess teaches planning, tactical thinking, and long-term decision-making.</div>
+                </div>
+
+                <div class="game-overview">
+                    <div class="game-overview-title">✊ Rock Paper Scissors Psych - Psychological Strategy</div>
+                    <div class="game-overview-desc">This classic game elevated with psychological strategy. Learn to predict opponent behavior, recognize patterns, and outthink opponents through personality analysis and pattern recognition.</div>
+                </div>
+            </div>
+
+            <!-- Benefits Modal -->
+            <div id="benefits-modal" style="display: none;">
+                <h2>Why Play Strategic Games?</h2>
+                <p>Beyond entertainment, strategic games provide significant cognitive and social benefits:</p>
+                
+                <h3>Cognitive Development</h3>
+                <p>Strategic games enhance problem-solving abilities, improve decision-making under pressure, strengthen pattern recognition skills, and develop long-term planning capabilities. Players consistently report improved analytical thinking after regular gameplay.</p>
+
+                <h3>Social Connection</h3>
+                <p>Multiplayer games create opportunities for meaningful interaction, friendly competition, and team collaboration. Whether playing with friends locally or connecting with global players, strategic games foster community and camaraderie.</p>
+
+                <h3>Competitive Excellence</h3>
+                <p>For competitive players, our games offer ranking systems, tournaments, and leaderboards where skill determines success. Progress from casual player to competitive master through consistent practice and strategic improvement.</p>
+
+                <h3>Stress Relief & Enjoyment</h3>
+                <p>While challenging, strategic games provide satisfying gameplay where every decision matters. The sense of accomplishment from a well-played game or tournament victory offers genuine satisfaction.</p>
+            </div>
+
+            <!-- Learning & Guides Modal -->
+            <div id="guides-modal" style="display: none;">
+                <h2>Learn & Improve Your Game</h2>
+                <p>We provide comprehensive guides to help you master every game:</p>
+                
+                <h3>Comprehensive Strategy Guides</h3>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li><strong>Secret Syndicates:</strong> Master roles, deduction, Town and Syndicate strategies, advanced tactics</li>
+                    <li><strong>Flag Guardians:</strong> Learn team dynamics, flag control, map positioning, and tactical concepts</li>
+                    <li><strong>Ultimate Chess:</strong> Opening principles, middle game strategy, endgame fundamentals, tactical patterns</li>
+                    <li><strong>Rock Paper Scissors Psych:</strong> Pattern recognition, prediction techniques, psychological warfare, counter-strategies</li>
+                </ul>
+
+                <h3>General Gaming Strategy Tips</h3>
+                <p><strong>Observation is Key:</strong> Pay attention to player behavior, patterns, and subtle cues. In social deduction games, how people behave reveals their roles. In strategy games, understanding opponent patterns gives you an edge.</p>
+
+                <p><strong>Adapt Your Strategy:</strong> Rigid strategies fail. The best players adapt based on opponents, current game state, and emerging threats. Flexibility is more valuable than perfection.</p>
+
+                <p><strong>Communication is Crucial:</strong> In team games, clear communication with allies is essential. Share information, coordinate tactics, and work toward common goals.</p>
+
+                <p><strong>Learn from Every Game:</strong> Whether you win or lose, each game offers lessons. Review your decisions, understand what worked, and continuously improve.</p>
+
+                <p><strong>Manage Your Resources:</strong> Most games have limited resources. Smart resource management separates expert players from novices.</p>
+
+                <p style="text-align: center; margin-top: 20px;"><a href="/guides.html" style="color: #667eea; font-weight: 600; text-decoration: none;">Browse All Guides →</a></p>
+            </div>
+
+            <!-- Quality & Values Modal -->
+            <div id="quality-modal" style="display: none;">
+                <h2>Our Commitment to Quality</h2>
+                <p>GameHappy is dedicated to providing the best gaming experience possible:</p>
+                
+                <h3>Continuous Improvement</h3>
+                <p>We actively listen to player feedback and regularly update our games with new features, balance improvements, and community-requested content.</p>
+
+                <h3>Fair & Transparent</h3>
+                <p>All our games use transparent mechanics. No hidden algorithms punishing you into spending money. Your skill determines your success—nothing more, nothing less.</p>
+
+                <h3>Community Focused</h3>
+                <p>Our community managers monitor gameplay to ensure respectful, toxic-free environments. We take player safety and enjoyment seriously.</p>
+
+                <h3>Accessibility</h3>
+                <p>Games should be for everyone. Our titles are designed to be easy to learn while offering deep strategic gameplay for experienced players. Whether you're a casual player or competitive enthusiast, there's a place for you at GameHappy.</p>
+
+                <h3>No Pay-to-Win</h3>
+                <p>We don't believe in predatory monetization. Our games are designed around fair competition where skill and strategy determine outcomes, not wallet size.</p>
+            </div>
+
+            <!-- Explore More Modal -->
+            <div id="explore-modal" style="display: none;">
+                <h2>Explore More Content</h2>
+                <p>Beyond games, GameHappy offers comprehensive resources for gaming enthusiasts:</p>
+                
+                <h3>Complete Game Information</h3>
+                <p>Visit our <strong>Game Overview</strong> page for detailed descriptions of all our games, including gameplay mechanics, game lengths, player counts, and recommendations for different occasions.</p>
+
+                <h3>Strategy Guides & Tips</h3>
+                <p>Access our full library of strategy guides, beginner tips, and advanced tactics for every game. Learn from experienced players and improve your gameplay systematically.</p>
+
+                <h3>Community & Support</h3>
+                <p>Join our growing community of strategic game enthusiasts. Get help from other players, share your experiences, and participate in tournaments and competitions.</p>
+
+                <h3>About GameHappy</h3>
+                <p>Learn about our mission, values, and commitment to creating fair, engaging games. Discover what makes GameHappy different from other gaming platforms.</p>
+
+                <h3>Company Information</h3>
+                <p>Read our privacy policy, terms of service, and company information. We maintain transparent operations and respect player privacy.</p>
+
+                <p style="margin-top: 20px; padding: 15px; background: #f0f7ff; border-radius: 8px;">
+                    <strong>Quick Links:</strong><br>
+                    <a href="/content.html" style="color: #667eea; text-decoration: none;">📚 Complete Game Guide</a> | 
+                    <a href="/about.html" style="color: #667eea; text-decoration: none;">ℹ️ About Us</a> | 
+                    <a href="/contact.html" style="color: #667eea; text-decoration: none;">📧 Contact Support</a>
+                </p>
+            </div>
         </div>
 
         <div class="footer-section">
+            <div class="footer-auth">
+                <a href="/auth/signup.html" class="btn-auth btn-signup">Sign Up</a>
+                <a href="/auth/login.html" class="btn-auth btn-login">Log In</a>
+            </div>
             <div class="footer-links">
                 <a href="/about.html">About</a>
                 <a href="/privacy-policy.html">Privacy</a>
@@ -336,6 +910,75 @@
     <!-- Socket.IO for user tracking -->
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
+        // ============ MODAL MANAGEMENT ============
+        function openModal(modalId) {
+            const contentDiv = document.getElementById(modalId);
+            if (!contentDiv) return;
+
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('modal-' + modalId);
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'modal-' + modalId;
+                modal.className = 'modal';
+                
+                const content = document.createElement('div');
+                content.className = 'modal-content';
+                
+                // Create header
+                const header = document.createElement('div');
+                header.className = 'modal-header';
+                
+                const title = contentDiv.querySelector('h2');
+                const titleClone = title ? title.cloneNode(true) : document.createElement('h2');
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-modal';
+                closeBtn.innerHTML = '×';
+                closeBtn.onclick = () => closeModal(modal.id);
+                
+                header.appendChild(titleClone);
+                header.appendChild(closeBtn);
+                
+                content.appendChild(header);
+                
+                // Clone the content
+                const children = contentDiv.children;
+                for (let i = 1; i < children.length; i++) {
+                    content.appendChild(children[i].cloneNode(true));
+                }
+                
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+                
+                // Close modal when clicking outside
+                modal.onclick = (e) => {
+                    if (e.target === modal) {
+                        closeModal(modal.id);
+                    }
+                };
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal.active');
+                modals.forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+
         // ============ AUTHENTICATION MANAGEMENT ============
         class HomepageAuth {
             constructor() {

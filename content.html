@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="description" content="GameHappy - Premium mobile party games including Secret Syndicates, Flag Guardians, and more. Play free social deduction games online with friends.">
+    <meta name="keywords" content="party games, social deduction games, online games, free games, mobile games, werewolf, secret syndicates">
+    <title>GameHappy - Free Online Party Games | Play Secret Syndicates, Flag Guardians & More</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        nav {
+            background: white;
+            padding: 15px 0;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        nav a {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 0 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+            border-radius: 5px;
+        }
+
+        nav a:hover {
+            color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .game-card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .game-card p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .game-card .features {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .game-card .features h4 {
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .game-card .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .game-card .features li {
+            padding: 5px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .game-card .features li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .content-section {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .content-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .content-section h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .content-section p {
+            color: #555;
+            margin-bottom: 15px;
+            line-height: 1.8;
+        }
+
+        .content-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .content-section li {
+            margin-bottom: 10px;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 60px;
+        }
+
+        footer p {
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .guide-link {
+            display: inline-block;
+            margin: 10px 5px;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .guide-link:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎮 GameHappy</h1>
+        <p>Premium Online Party Games - Play Free with Friends</p>
+    </header>
+
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/content.html">Games</a>
+        <a href="/guides.html">Guides</a>
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+    </nav>
+
+    <div class="container">
+        <div class="content-section">
+            <h2>Welcome to GameHappy</h2>
+            <p>GameHappy is your ultimate destination for premium online party games. Whether you're looking for social deduction games, strategy challenges, or classic games with a twist, we have something for everyone. Play free games with your friends and family, no downloads required.</p>
+            <p>All our games are designed for group play and can be enjoyed on desktop or mobile devices. Perfect for game nights, team building events, or just casual gaming with friends.</p>
+        </div>
+
+        <h2 style="text-align: center; color: #667eea; margin-bottom: 30px; font-size: 2em;">Our Games</h2>
+        <div class="games-grid">
+            <div class="game-card">
+                <h2>🔴 Secret Syndicates</h2>
+                <p>A thrilling social deduction game where players are secretly assigned roles in a hidden criminal organization or innocent town. Work together to identify the syndicate members before they eliminate you all!</p>
+                <div class="features">
+                    <h4>Game Features:</h4>
+                    <ul>
+                        <li>2-5 players per game</li>
+                        <li>Dynamic night and day phases</li>
+                        <li>Multiple secret roles with unique abilities</li>
+                        <li>Deduction-based gameplay</li>
+                        <li>Quick rounds (10-20 minutes)</li>
+                    </ul>
+                </div>
+                <p><strong>Best for:</strong> Parties, team building, casual gaming with friends</p>
+                <a href="/guides/secret-syndicates.html" class="guide-link">Learn Rules & Strategy →</a>
+                <br><br>
+                <a href="/" class="cta-btn">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <h2>🚩 Flag Guardians</h2>
+                <p>A strategic team-based game where two teams compete to capture and defend flags. Coordinate with your teammates, plan your strategy, and outmaneuver the opposing team in this intense tactical game.</p>
+                <div class="features">
+                    <h4>Game Features:</h4>
+                    <ul>
+                        <li>Team-based gameplay</li>
+                        <li>Strategic positioning</li>
+                        <li>Real-time decision making</li>
+                        <li>Multiple map layouts</li>
+                        <li>Skill-based progression</li>
+                    </ul>
+                </div>
+                <p><strong>Best for:</strong> Competitive gaming, strategy enthusiasts, team events</p>
+                <a href="/guides/flag-guardians.html" class="guide-link">Learn Rules & Strategy →</a>
+                <br><br>
+                <a href="/" class="cta-btn">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <h2>✋ Rock Paper Scissors Psych</h2>
+                <p>A psychological twist on the classic. Predict what your opponents will play and outsmart them. This game combines luck, psychology, and strategy in a competition of wits.</p>
+                <div class="features">
+                    <h4>Game Features:</h4>
+                    <ul>
+                        <li>Psychological gameplay</li>
+                        <li>Tournament mode</li>
+                        <li>Instant results</li>
+                        <li>Player statistics tracking</li>
+                        <li>Multiplayer rounds</li>
+                    </ul>
+                </div>
+                <p><strong>Best for:</strong> Quick games, casual competitions, learning psychology</p>
+                <a href="/guides/rock-paper-scissors.html" class="guide-link">Learn Strategy Tips →</a>
+                <br><br>
+                <a href="/" class="cta-btn">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <h2>♞ Ultimate Chess</h2>
+                <p>Test your strategic thinking with our chess implementation. Whether you're a beginner learning the basics or an experienced player, Ultimate Chess offers challenging gameplay for all skill levels.</p>
+                <div class="features">
+                    <h4>Game Features:</h4>
+                    <ul>
+                        <li>Full chess rules</li>
+                        <li>Timed and untimed modes</li>
+                        <li>Move history</li>
+                        <li>Player ratings</li>
+                        <li>Beginner to advanced</li>
+                    </ul>
+                </div>
+                <p><strong>Best for:</strong> Strategy enthusiasts, competitive players, skill improvement</p>
+                <a href="/guides/chess-strategy.html" class="guide-link">Learn Chess Strategy →</a>
+                <br><br>
+                <a href="/" class="cta-btn">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <h2>🌐 Open World</h2>
+                <p>Explore a dynamic open world where you can engage in various activities, complete quests, and interact with other players. Build your character, earn gold, and unlock achievements.</p>
+                <div class="features">
+                    <h4>Game Features:</h4>
+                    <ul>
+                        <li>Persistent player profile</li>
+                        <li>Quest system</li>
+                        <li>Gold and economy</li>
+                        <li>Player interactions</li>
+                        <li>Achievement unlocks</li>
+                    </ul>
+                </div>
+                <p><strong>Best for:</strong> Long-term gaming, exploration, RPG fans</p>
+                <a href="/guides/open-world.html" class="guide-link">Game Guide →</a>
+                <br><br>
+                <a href="/" class="cta-btn">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <h2>🕵️ Are We There Yet</h2>
+                <p>A trivia and deduction game where players answer questions and attempt to figure out hidden patterns. Perfect for testing your knowledge and reasoning skills.</p>
+                <div class="features">
+                    <h4>Game Features:</h4>
+                    <ul>
+                        <li>Trivia-based questions</li>
+                        <li>Pattern recognition</li>
+                        <li>Competitive scoring</li>
+                        <li>Multiple difficulty levels</li>
+                        <li>Instant feedback</li>
+                    </ul>
+                </div>
+                <p><strong>Best for:</strong> Trivia lovers, puzzle enthusiasts, quick brain teasers</p>
+                <a href="/guides/are-we-there-yet.html" class="guide-link">Game Guide →</a>
+                <br><br>
+                <a href="/" class="cta-btn">Play Now</a>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2>Why Play on GameHappy?</h2>
+            <h3>✅ No Downloads Required</h3>
+            <p>All our games are browser-based. Simply visit our website and start playing immediately. No installation, no hassle, no storage space required.</p>
+
+            <h3>✅ Play with Friends</h3>
+            <p>Create private game rooms and invite your friends. Share a game code and start playing together instantly. Perfect for remote teams and long-distance friends.</p>
+
+            <h3>✅ Free to Play</h3>
+            <p>All our games are completely free. No subscriptions, no hidden fees, no premium currency. Just pure gaming fun.</p>
+
+            <h3>✅ Mobile & Desktop Friendly</h3>
+            <p>Play on your phone, tablet, or computer. Our responsive design ensures a great gaming experience on any device.</p>
+
+            <h3>✅ Fair & Balanced</h3>
+            <p>All our games are designed with fair mechanics. Success depends on skill, strategy, and a little luck - not pay-to-win mechanics.</p>
+
+            <h3>✅ Community Focused</h3>
+            <p>Join a community of gamers who love party games and social deduction. Make new friends and enjoy countless gaming sessions.</p>
+        </div>
+
+        <div class="content-section">
+            <h2>How to Get Started</h2>
+            <ol style="margin-left: 20px;">
+                <li><strong>Visit GameHappy:</strong> Go to the main dashboard and browse our game selection</li>
+                <li><strong>Choose a Game:</strong> Pick from our collection of unique games</li>
+                <li><strong>Create or Join:</strong> Start a new game or join a friend's game using a code</li>
+                <li><strong>Play with Friends:</strong> Invite your friends and enjoy multiplayer gameplay</li>
+                <li><strong>Have Fun:</strong> Compete, collaborate, and create memorable moments</li>
+            </ol>
+        </div>
+
+        <div class="content-section">
+            <h2>Game Recommendations by Occasion</h2>
+            <h3>For Parties</h3>
+            <p><strong>Secret Syndicates</strong> and <strong>Rock Paper Scissors Psych</strong> are perfect for parties. They're quick, fun, and great for large groups.</p>
+
+            <h3>For Team Building</h3>
+            <p><strong>Flag Guardians</strong> and <strong>Secret Syndicates</strong> encourage teamwork and communication. Ideal for corporate team building events.</p>
+
+            <h3>For Casual Gaming</h3>
+            <p><strong>Rock Paper Scissors Psych</strong> and <strong>Are We There Yet</strong> are perfect for casual sessions. Quick matches, high replay value.</p>
+
+            <h3>For Competitive Players</h3>
+            <p><strong>Ultimate Chess</strong> and <strong>Flag Guardians</strong> offer deep strategic gameplay for serious competitors.</p>
+
+            <h3>For Long Sessions</h3>
+            <p><strong>Open World</strong> provides persistent gameplay with quests, achievements, and gradual progression.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 GameHappy. All rights reserved.</p>
+        <p><a href="/privacy-policy.html">Privacy Policy</a> | <a href="/terms.html">Terms of Service</a> | <a href="/contact.html">Contact Us</a></p>
+    </footer>
+</body>
+</html>
