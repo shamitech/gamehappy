@@ -1413,12 +1413,13 @@ class Game {
                     overlay.style.display = 'none';
                 }
                 this.showScreen('lobby-screen');
+                this.clearErrors();
             };
         } else {
             // If button doesn't exist, just show screen immediately
             this.showScreen('lobby-screen');
-        console.log('Clearing errors');
-        this.clearErrors();
+            this.clearErrors();
+        }
     }
 
     updateLobby(gameData) {
@@ -3767,9 +3768,34 @@ class Game {
     }
     
     playAgain() {
-        console.log('[PLAY-AGAIN] Emitting play-again event');
-        if (this.socket && this.socket.connected && this.gameCode) {
-            this.socket.emit('play-again', { gameCode: this.gameCode });
+        console.log('[PLAY-AGAIN] Showing new game ad overlay');
+        this.showNewGameAdOverlay();
+    }
+
+    showNewGameAdOverlay() {
+        console.log('Showing new game ad overlay');
+        const overlay = document.getElementById('new-game-ad-overlay');
+        const closeBtn = document.getElementById('close-new-game-ad');
+        
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+        
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                console.log('[PLAY-AGAIN] Emitting play-again event from ad overlay');
+                if (overlay) {
+                    overlay.style.display = 'none';
+                }
+                if (this.socket && this.socket.connected && this.gameCode) {
+                    this.socket.emit('play-again', { gameCode: this.gameCode });
+                }
+            };
+        } else {
+            // If button doesn't exist, just emit event immediately
+            if (this.socket && this.socket.connected && this.gameCode) {
+                this.socket.emit('play-again', { gameCode: this.gameCode });
+            }
         }
     }
     
